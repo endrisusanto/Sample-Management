@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sample Management - Touch Scanner & User Cards</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-3">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fas fa-barcode"></i>
+        <span>SAMPLE TRACKER</span>
+        <span class="live-dot ms-1" id="live-connection-dot" title="Live WebSocket Active"></span>
+      </a>
+
+      <button class="navbar-toggler py-1 px-2 border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        <i class="fas fa-bars text-secondary"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link active" href="/"><i class="fas fa-qrcode"></i> Scan Peminjaman</a></li>
+          <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
+          <li class="nav-item"><a class="nav-link" href="/samples"><i class="fas fa-boxes"></i> Master Database</a></li>
+          <li class="nav-item"><a class="nav-link" href="/models"><i class="fas fa-microchip"></i> Card Per-Model</a></li>
+          <li class="nav-item"><a class="nav-link" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
+          <li class="nav-item"><a class="nav-link" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <div id="nav-user-container"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid px-3 py-3">
+
+    <!-- Top KPI Bar & Touch Scanner Hero -->
+    <div class="row g-2 mb-3">
+      <!-- KPI Stats -->
+      <div class="col-6 col-md-3">
+        <div class="stat-widget">
+          <div>
+            <div class="stat-label">Total Sample</div>
+            <div class="stat-val text-primary" id="kpi-total">0</div>
+          </div>
+          <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="fas fa-layer-group"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-widget">
+          <div>
+            <div class="stat-label">Sedang Dipinjam</div>
+            <div class="stat-val text-danger" id="kpi-borrowed">0</div>
+          </div>
+          <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="fas fa-hand-holding"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-widget">
+          <div>
+            <div class="stat-label">Tersedia</div>
+            <div class="stat-val text-success" id="kpi-available">0</div>
+          </div>
+          <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="fas fa-check-circle"></i></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-widget">
+          <div>
+            <div class="stat-label">Sudah Diaudit</div>
+            <div class="stat-val text-warning" id="kpi-audited">0</div>
+          </div>
+          <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="fas fa-clipboard-check"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Touchscreen Scan Panel -->
+    <div class="glass-panel p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-secondary fw-bold small text-uppercase"><i class="fas fa-hand-pointer me-1 text-primary"></i> Sentuh Nama PIC Peminjam (Touchscreen Quick-Select)</span>
+        <span class="text-muted small">atau Scan Kartu QR Badge</span>
+      </div>
+
+      <!-- Quick Touch User Pills -->
+      <div class="touch-pill-container mb-3" id="quick-user-pills">
+        <div class="text-muted small py-1"><i class="fas fa-spinner fa-spin me-1"></i>Memuat daftar peminjam...</div>
+      </div>
+
+      <form id="scan-form" class="row g-2 align-items-center">
+        <div class="col-md-4 col-12">
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-user text-primary"></i></span>
+            <input type="text" id="pic-name-input" class="form-control scan-input fs-6 py-2" placeholder="Nama Peminjam / Scan Badge" required>
+          </div>
+        </div>
+
+        <div class="col-md-5 col-8">
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-barcode text-success"></i></span>
+            <input type="text" id="asset-scan-input" class="form-control scan-input fs-6 py-2" placeholder="Scan No. Asset / Serial..." required autofocus>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-4">
+          <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center">
+            <i class="fas fa-bolt"></i> PROSES SCAN
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Borrower Cards Section (Index.php Replica with Dense 11px Layout) -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="fw-bold m-0 text-light"><i class="fas fa-users-viewfinder text-danger me-2"></i>Daftar Peminjam Aktif & Sample yang Dipinjam</h5>
+      <button class="btn btn-surface btn-sm py-1 px-2" id="btn-refresh-cards"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+    </div>
+
+    <div class="row g-2" id="borrower-cards-container">
+      <div class="col-12 text-center py-5 text-secondary">
+        <i class="fas fa-spinner fa-spin me-2"></i>Memuat kartu peminjam...
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Collapsible Sticky Footer Log Drawer -->
+  <div class="footer-log-drawer" id="footer-log-drawer">
+    <div class="footer-log-header" id="footer-log-header" title="Klik / Sentuh untuk Expand atau Collapse Log">
+      <div class="d-flex align-items-center gap-2">
+        <i class="fas fa-history text-primary"></i>
+        <span class="fw-bold text-uppercase" style="font-size: 11px;">Log Aktivitas Transaksi (Live)</span>
+        <span class="live-dot ms-1"></span>
+        <span class="text-secondary small d-none d-md-inline ms-2" id="footer-log-ticker" style="font-size: 11px;">(Menunggu transaksi...)</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-dark btn-sm py-0 px-2 text-secondary" id="btn-refresh-footer-log" title="Refresh Log" style="font-size: 10px;">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <button type="button" class="btn btn-primary-custom btn-sm py-0 px-2" id="btn-toggle-log-drawer" style="font-size: 10px; min-height: 24px;">
+          <span id="log-toggle-label">Buka Log</span> <i class="fas fa-chevron-up ms-1" id="log-toggle-icon"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="footer-log-content" id="footer-log-content">
+      <div class="table-responsive p-2" style="max-height: 240px; overflow-y: auto;">
+        <table class="dense-table" id="footer-flow-table">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Nama Peminjam</th>
+              <th>Nomor Asset / Serial</th>
+              <th>Model</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="footer-flow-tbody">
+            <tr><td colspan="5" class="text-center py-3 text-secondary">Memuat log aktivitas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Fullscreen Mode Button -->
+  <button class="floating-tool-btn" id="btn-fullscreen" title="Mode Layar Penuh" style="bottom: 55px;">
+    <i class="fas fa-expand"></i>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { Auth, showGiantAlert, setupWebSocket } from '/js/app.js';
+
+    const picInput = document.getElementById('pic-name-input');
+    const assetInput = document.getElementById('asset-scan-input');
+    const scanForm = document.getElementById('scan-form');
+    const pillsContainer = document.getElementById('quick-user-pills');
+    const cardsContainer = document.getElementById('borrower-cards-container');
+
+    // Calculate time difference string (Lama Pinjam)
+    function formatDuration(timestamp) {
+      if (!timestamp) return '-';
+      const start = new Date(timestamp.replace(' ', 'T')).getTime();
+      const now = Date.now();
+      const diffSec = Math.max(0, Math.floor((now - start) / 1000));
+
+      const days = Math.floor(diffSec / 86400);
+      const hours = Math.floor((diffSec % 86400) / 3600);
+      const minutes = Math.floor((diffSec % 3600) / 60);
+
+      if (days > 0) return `${days}h ${hours}j`;
+      if (hours > 0) return `${hours}j ${minutes}m`;
+      return `${minutes} mnt`;
+    }
+
+    // Load registered users into quick touchscreen pills
+    async function loadUserPills() {
+      try {
+        const res = await fetch('/api/auth/users');
+        const data = await res.json();
+        const users = data.users || [
+          { name: 'ENDRI SUSANTO' },
+          { name: 'APTA PRANA MAS ERLANGGA' },
+          { name: 'FAZLUR RAHMA' },
+          { name: 'LUTFI BUKHARI' },
+          { name: 'DHANAR KURNIA PUTRA' }
+        ];
+
+        pillsContainer.innerHTML = users.map(u => `
+          <button type="button" class="touch-user-pill" data-name="${u.name}">
+            <i class="fas fa-user-check text-primary"></i> ${u.name}
+          </button>
+        `).join('');
+
+        document.querySelectorAll('.touch-user-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            document.querySelectorAll('.touch-user-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            picInput.value = pill.dataset.name;
+            assetInput.focus();
+          });
+        });
+      } catch (e) {
+        pillsContainer.innerHTML = '';
+      }
+    }
+
+    // Load Dashboard Stats and User Borrower Cards (index.php replica)
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/stats/dashboard');
+        const { stats } = await res.json();
+
+        document.getElementById('kpi-total').textContent = stats.totalSamples;
+        document.getElementById('kpi-borrowed').textContent = stats.borrowed;
+        document.getElementById('kpi-available').textContent = stats.available;
+        document.getElementById('kpi-audited').textContent = stats.audited;
+
+        const userCards = stats.userCards || [];
+
+        if (userCards.length === 0) {
+          cardsContainer.innerHTML = `
+            <div class="col-12">
+              <div class="glass-panel text-center py-5 text-success">
+                <i class="fas fa-check-circle fs-1 mb-2"></i>
+                <h5 class="fw-bold">SEMUA SAMPLE TERSEDIA</h5>
+                <p class="text-secondary small">Tidak ada sample yang sedang dipinjam saat ini.</p>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Palette for card headers
+        const headerColors = ['#1e3a8a', '#14532d', '#701a75', '#7c2d12', '#1f2937', '#0e7490', '#312e81'];
+
+        cardsContainer.innerHTML = userCards.map((user, idx) => {
+          const bgHeader = headerColors[idx % headerColors.length];
+          const rowsHtml = user.items.map(item => {
+            const assetNo = item.nomor_asset || item.sn || '-';
+            const model = item.model || item.model_name || '-';
+            const duration = formatDuration(item.timestamp);
+            return `
+              <tr>
+                <td class="fw-bold text-light">${assetNo}</td>
+                <td class="text-secondary">${model}</td>
+                <td class="text-end"><span class="selisih-badge" data-time="${item.timestamp}">${duration}</span></td>
+              </tr>
+            `;
+          }).join('');
+
+          return `
+            <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+              <div class="user-borrow-card">
+                <div class="user-card-header" style="background: ${bgHeader};">
+                  <span class="user-card-name"><i class="fas fa-user me-1"></i> ${user.name}</span>
+                  <button type="button" class="btn btn-sm btn-dark py-0 px-2 select-this-user" data-name="${user.name}" title="Pilih PIC ini">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+                <div class="user-card-body">
+                  <table class="dense-table">
+                    <thead>
+                      <tr>
+                        <th>No. Asset</th>
+                        <th>Model</th>
+                        <th class="text-end">Lama Pinjam</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${rowsHtml}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="user-card-footer">
+                  <span>SEDANG PINJAM</span>
+                  <span class="badge bg-danger">${user.count} UNIT</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Attach quick select on card header
+        document.querySelectorAll('.select-this-user').forEach(btn => {
+          btn.addEventListener('click', () => {
+            picInput.value = btn.dataset.name;
+            assetInput.focus();
+          });
+        });
+      } catch (err) {
+        cardsContainer.innerHTML = `<div class="col-12 text-center py-4 text-danger">Gagal memuat kartu: ${err.message}</div>`;
+      }
+    }
+
+    // Live update duration timers every 30 seconds
+    setInterval(() => {
+      document.querySelectorAll('.selisih-badge').forEach(badge => {
+        const time = badge.dataset.time;
+        if (time) badge.textContent = formatDuration(time);
+      });
+    }, 30000);
+
+    // Form Submit Handler
+    scanForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = picInput.value.trim();
+      const nomor_asset = assetInput.value.trim();
+
+      if (!name) { picInput.focus(); return; }
+      if (!nomor_asset) { assetInput.focus(); return; }
+
+      try {
+        const res = await fetch('/api/borrow-return', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, nomor_asset })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          let title = 'DATA PEMINJAMAN BERHASIL DISIMPAN';
+          if (result.action === 'KEMBALI') title = 'SAMPLE SUDAH KEMBALI';
+          else if (result.action === 'BERGANTI') title = 'PIC PEMINJAM SAMPLE BERGANTI';
+
+          showGiantAlert({
+            title,
+            message: `<strong>SAMPLE:</strong> ${result.sample?.model || ''}<br><strong>NO. ASSET:</strong> ${result.sample?.nomor_asset || ''}<br><strong>PIC:</strong> ${name}`,
+            action: result.action
+          });
+
+          assetInput.value = '';
+          assetInput.focus();
+          loadDashboard();
+        } else {
+          showGiantAlert({
+            title: 'DATA TIDAK TERSEDIA',
+            message: result.message || 'Sample tidak ditemukan dalam database!',
+            action: 'TIDAK_TERSEDIA'
+          });
+          assetInput.select();
+        }
+      } catch (err) {
+        showGiantAlert({
+          title: 'ERROR SISTEM',
+          message: err.message,
+          action: 'TIDAK_TERSEDIA'
+        });
+      }
+    });
+
+    // Footer Log Drawer Expand / Collapse Logic
+    const footerDrawer = document.getElementById('footer-log-drawer');
+    const footerHeader = document.getElementById('footer-log-header');
+    const btnToggleDrawer = document.getElementById('btn-toggle-log-drawer');
+    const toggleLabel = document.getElementById('log-toggle-label');
+    const toggleIcon = document.getElementById('log-toggle-icon');
+    const footerTbody = document.getElementById('footer-flow-tbody');
+    const footerTicker = document.getElementById('footer-log-ticker');
+
+    function toggleLogDrawer(forceState) {
+      const isExpanded = typeof forceState === 'boolean' 
+        ? forceState 
+        : !footerDrawer.classList.contains('expanded');
+
+      if (isExpanded) {
+        footerDrawer.classList.add('expanded');
+        toggleLabel.textContent = 'Tutup Log';
+        toggleIcon.className = 'fas fa-chevron-down ms-1';
+        loadFooterLogs();
+      } else {
+        footerDrawer.classList.remove('expanded');
+        toggleLabel.textContent = 'Buka Log';
+        toggleIcon.className = 'fas fa-chevron-up ms-1';
+      }
+    }
+
+    footerHeader.addEventListener('click', (e) => {
+      // Don't toggle twice if clicking refresh button
+      if (e.target.closest('#btn-refresh-footer-log')) return;
+      toggleLogDrawer();
+    });
+
+    document.getElementById('btn-refresh-footer-log').addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadFooterLogs();
+    });
+
+    async function loadFooterLogs() {
+      try {
+        const res = await fetch('/api/flows?limit=25');
+        const { flows } = await res.json();
+
+        if (flows && flows.length > 0) {
+          const latest = flows[0];
+          const isPinjam = latest.status_pinjam === 'PINJAM';
+          footerTicker.innerHTML = `Terbaru: <strong>${latest.name}</strong> • ${latest.nomor_asset} (${latest.model || ''}) <span class="badge ${isPinjam ? 'bg-danger' : 'bg-success'}">${latest.status_pinjam}</span> [${latest.timestamp}]`;
+        
+          footerTbody.innerHTML = flows.map(f => {
+            const isPinjam = f.status_pinjam === 'PINJAM';
+            return `
+              <tr>
+                <td class="text-secondary"><i class="far fa-clock me-1"></i>${f.timestamp}</td>
+                <td class="fw-bold text-light">${f.name}</td>
+                <td><span class="badge bg-dark border border-secondary">${f.nomor_asset}</span></td>
+                <td>${f.model || '-'}</td>
+                <td>
+                  <span class="badge-status ${isPinjam ? 'badge-pinjam' : 'badge-kembali'}">
+                    <i class="fas ${isPinjam ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+                    ${f.status_pinjam}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          footerTicker.textContent = '(Belum ada log transaksi)';
+          footerTbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-muted">Belum ada transaksi</td></tr>`;
+        }
+      } catch (err) {
+        footerTbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-danger">Gagal memuat log</td></tr>`;
+      }
+    }
+
+    // Fullscreen Toggle
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    document.getElementById('btn-refresh-cards').addEventListener('click', () => {
+      loadDashboard();
+      loadFooterLogs();
+    });
+
+    // WebSocket real-time updates
+    setupWebSocket((event) => {
+      if (event.type === 'SAMPLE_UPDATED' || event.type === 'BULK_IMPORT_COMPLETED') {
+        loadDashboard();
+        loadFooterLogs();
+      }
+    });
+
+    // Init
+    loadUserPills();
+    loadDashboard();
+    loadFooterLogs();
+  </script>
+</body>
+</html>

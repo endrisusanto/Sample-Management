@@ -1,0 +1,28 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+
+# Android / Gradle build outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+android/.idea/
+*.apk
+*.aab
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+
+# Temporary / uploads
+uploads/*
+!uploads/.gitkeep

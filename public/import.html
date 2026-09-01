@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Data Ingestion - Sample Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .dropzone-box {
+      border: 2px dashed rgba(59, 130, 246, 0.4);
+      border-radius: var(--radius-md);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      background: rgba(59, 130, 246, 0.03);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .dropzone-box:hover, .dropzone-box.dragover {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.08);
+      box-shadow: 0 0 20px var(--accent-blue-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-3">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fas fa-barcode"></i>
+        <span>SAMPLE TRACKER</span>
+        <span class="live-dot ms-1" id="live-connection-dot" title="Live WebSocket Active"></span>
+      </a>
+
+      <button class="navbar-toggler py-1 px-2 border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        <i class="fas fa-bars text-secondary"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-qrcode"></i> Scan Peminjaman</a></li>
+          <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
+          <li class="nav-item"><a class="nav-link" href="/samples"><i class="fas fa-boxes"></i> Master Database</a></li>
+          <li class="nav-item"><a class="nav-link" href="/models"><i class="fas fa-microchip"></i> Card Per-Model</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
+          <li class="nav-item"><a class="nav-link" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <div id="nav-user-container"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+      <h2 class="fw-bold"><i class="fas fa-upload text-primary me-2"></i>Bulk Data Ingestion & Import</h2>
+      <p class="text-secondary">Import ratusan sample sekaligus melalui Paste Data (TSV / CSV) atau Upload File Excel (.xlsx, .csv).</p>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2" id="importTab" role="tablist">
+      <li class="nav-item">
+        <button class="btn btn-surface active px-4 py-2" id="paste-tab" data-bs-toggle="pill" data-bs-target="#paste-pane">
+          <i class="fas fa-paste me-2"></i> Paste Text / Table (TSV / CSV)
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="btn btn-surface px-4 py-2" id="file-tab" data-bs-toggle="pill" data-bs-target="#file-pane">
+          <i class="fas fa-file-excel me-2"></i> Upload File Excel (.xlsx / .csv)
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Pane 1: Paste Text / TSV -->
+      <div class="tab-pane fade show active" id="paste-pane">
+        <div class="glass-panel p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="fas fa-keyboard text-primary me-2"></i>Paste Data Kolom (Tab-Separated atau Comma-Separated)</h5>
+          <p class="text-secondary small mb-3">
+            Format yang didukung: Model Name, Serial, Sample separation status, OCTA status, UN, IMEI, IMEI2, HW Rev, Retention Owner, dll.
+          </p>
+
+          <textarea id="raw-tsv-input" class="form-control font-monospace mb-3" rows="10" placeholder="Model Name&#9;Serial&#9;Sample separation status... (Paste data tabel di sini)"></textarea>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <button class="btn btn-surface btn-sm" id="btn-load-sample-data">
+                <i class="fas fa-magic me-1"></i> Muat Template Sample Prompt
+              </button>
+              <button class="btn btn-surface btn-sm ms-2" id="btn-clear-text">
+                <i class="fas fa-trash me-1"></i> Bersihkan
+              </button>
+            </div>
+            <button class="btn btn-primary-custom" id="btn-parse-paste">
+              <i class="fas fa-table me-1"></i> Preview & Verifikasi Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 2: File Upload Dropzone -->
+      <div class="tab-pane fade" id="file-pane">
+        <div class="glass-panel p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="fas fa-cloud-upload-alt text-primary me-2"></i>Upload File Excel / CSV</h5>
+          <div class="dropzone-box" id="dropzone">
+            <i class="fas fa-file-excel text-success fs-1 mb-3"></i>
+            <h5 class="fw-bold">Drag & Drop file Excel (.xlsx, .xls) atau .csv di sini</h5>
+            <p class="text-secondary small mb-3">atau klik untuk memilih file dari komputer Anda</p>
+            <input type="file" id="file-input" class="d-none" accept=".xlsx, .xls, .csv">
+            <button type="button" class="btn btn-primary-custom" onclick="document.getElementById('file-input').click()">
+              <i class="fas fa-folder-open me-1"></i> Pilih File
+            </button>
+            <div id="file-selected-name" class="mt-3 text-info fw-bold"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview & Commit Card -->
+    <div class="glass-panel p-4 d-none" id="preview-container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="fw-bold m-0"><i class="fas fa-eye text-warning me-2"></i>Preview Data Ingestion</h4>
+          <span class="text-secondary small" id="preview-summary">0 data siap disimpan ke database</span>
+        </div>
+        <button class="btn btn-success fw-bold px-4 py-2" id="btn-commit-import">
+          <i class="fas fa-check-circle me-1"></i> Simpan ke Database
+        </button>
+      </div>
+
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="custom-table" id="preview-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model Name</th>
+              <th>Serial / No Asset</th>
+              <th>OCTA Status</th>
+              <th>UN Code</th>
+              <th>IMEI 1</th>
+              <th>IMEI 2</th>
+              <th>HW Rev.</th>
+              <th>Retention Owner</th>
+              <th>Departemen</th>
+            </tr>
+          </thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { Auth, showGiantAlert } from '/js/app.js';
+
+    let parsedRows = [];
+    const tsvInput = document.getElementById('raw-tsv-input');
+    const previewContainer = document.getElementById('preview-container');
+    const previewTbody = document.getElementById('preview-tbody');
+    const previewSummary = document.getElementById('preview-summary');
+    const btnCommit = document.getElementById('btn-commit-import');
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('dropzone');
+
+    // Parse pasted TSV / CSV text
+    function parseTextData(text) {
+      const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return [];
+
+      // Determine separator (tab or comma)
+      const firstLine = lines[0];
+      const isTab = firstLine.includes('\t');
+      const delimiter = isTab ? '\t' : ',';
+
+      let headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
+      const hasHeader = headers.some(h => /model|serial|asset|imei/i.test(h));
+
+      const rows = [];
+      const startIndex = hasHeader ? 1 : 0;
+
+      if (!hasHeader) {
+        headers = ['Model Name', 'Serial', 'Sample separation status', 'OCTA status', 'Material no matching status', 'Defect status Y/N', 'UN confirm necessity', 'UN', 'Sample Processing', 'Defect', 'IMEI confirm necessity', 'IMEI', 'IMEI2', 'HW Rev.', 'Pre result', 'Retention Owner', 'Retention Department'];
+      }
+
+      for (let i = startIndex; i < lines.length; i++) {
+        const cols = lines[i].split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (cols.length < 2) continue;
+        if (cols[0] === 'Model Name' && cols[1] === 'Serial') continue; // skip duplicate header
+
+        const obj = {};
+        headers.forEach((h, idx) => {
+          obj[h] = cols[idx] || '';
+        });
+        rows.push(obj);
+      }
+
+      return rows;
+    }
+
+    function renderPreview(rows) {
+      parsedRows = rows;
+      if (rows.length === 0) {
+        previewContainer.classList.add('d-none');
+        alert('Tidak ada data valid yang dapat diproses');
+        return;
+      }
+
+      previewSummary.textContent = `${rows.length} data sample siap di-UPSERT ke database`;
+      previewTbody.innerHTML = rows.slice(0, 100).map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="fw-bold text-primary">${r['Model Name'] || r.model_name || r.model || '-'}</td>
+          <td><span class="badge bg-dark border border-secondary">${r.Serial || r.serial || r.nomor_asset || r.sn || '-'}</span></td>
+          <td>${r['OCTA status'] || r.octa_status || '-'}</td>
+          <td>${r.UN || r.un || '-'}</td>
+          <td>${r.IMEI || r.imei || '-'}</td>
+          <td>${r.IMEI2 || r.imei2 || '-'}</td>
+          <td>${r['HW Rev.'] || r.hw_rev || '-'}</td>
+          <td>${r['Retention Owner'] || r.retention_owner || '-'}</td>
+          <td class="small text-secondary">${r['Retention Department'] || r.retention_department || '-'}</td>
+        </tr>
+      `).join('');
+
+      previewContainer.classList.remove('d-none');
+      previewContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('btn-parse-paste').addEventListener('click', () => {
+      const text = tsvInput.value.trim();
+      if (!text) {
+        alert('Silakan paste data tabel terlebih dahulu');
+        return;
+      }
+      const rows = parseTextData(text);
+      renderPreview(rows);
+    });
+
+    document.getElementById('btn-load-sample-data').addEventListener('click', () => {
+      tsvInput.value = `Model Name\tSerial\tSample separation status\tOCTA status\tMaterial no matching status\tDefect status Y/N\tUN confirm necessity\tUN\tSample Processing\tDefect\tIMEI confirm necessity\tIMEI\tIMEI2\tHW Rev.\tPre result\tRetention Owner\tRetention Department
+SM-A013G_SEA_XTC\tTFN0310M\tDev.\t\t\t\tNormal\tCQX00BD71D47F57\t\t\tNormal\t353211760041026\t\tUNKNOWN\tN\tLutfi Bukhari\tPE Solution P /SEIN-P
+SM-A022F_SEA_XXV\tTLQ1186M\tDev.\t\t\t\tNormal\tCGX0043716889B7\t\t\tNormal\t351389220012951\t\tREV0.2\tN\tEndri Susanto\tPE Solution P /SEIN-P
+SM-S928BE_SEA_DX\tWJD3587M\tDev.\tU\t\t\tNormal\tCE08237854219562107E\t\t\tNormal\t358366880012623\t\tREV0.5A\tN\tEndri Susanto\tPE Solution P /SEIN-P
+SM-S942BE_SEA_DX\tYKE0215M\tDev.\tU\t\t\tNormal\t98A25B4C473355583437\t\t\tNormal\t352259840015503\t353144250015509\tUNKNOWN\tN\tLutfi Bukhari\tPE Solution P /SEIN-P
+SM-X846B_EUR_XX\tZES1079M\tDev.\t\t\t\tNormal\tCE0426A43ADACDE9407E\t\t\tNormal\t350332310077675\t352438440077671\tREV0.4\tN\tDHANAR KURNIA PUTRA\tPE Solution P /SEIN-P`;
+    });
+
+    document.getElementById('btn-clear-text').addEventListener('click', () => {
+      tsvInput.value = '';
+      previewContainer.classList.add('d-none');
+    });
+
+    // File Dropzone handlers
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) handleFileUpload(fileInput.files[0]);
+    });
+
+    async function handleFileUpload(file) {
+      document.getElementById('file-selected-name').textContent = `File terpilih: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/samples/upload-file', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          showGiantAlert({
+            title: 'FILE BERHASIL DIIMPORT!',
+            message: `Total: ${data.summary.total} Baris<br>Baru: ${data.summary.inserted} | Diperbarui: ${data.summary.updated}`,
+            action: 'SUCCESS',
+            duration: 4000
+          });
+        } else {
+          alert('Upload gagal: ' + (data.message || 'Error'));
+        }
+      } catch (err) {
+        alert('Gagal mengupload file: ' + err.message);
+      }
+    }
+
+    // Commit Bulk Ingestion to Database
+    btnCommit.addEventListener('click', async () => {
+      if (parsedRows.length === 0) return;
+      btnCommit.disabled = true;
+      btnCommit.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...`;
+
+      try {
+        const res = await fetch('/api/samples/bulk-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: parsedRows })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showGiantAlert({
+            title: 'BULK IMPORT SUKSES!',
+            message: `Total Data: ${data.summary.total}<br>Data Baru Ditambahkan: ${data.summary.inserted}<br>Data Diupdate: ${data.summary.updated}`,
+            action: 'SUCCESS',
+            duration: 4000
+          });
+          previewContainer.classList.add('d-none');
+          tsvInput.value = '';
+        } else {
+          alert('Gagal import: ' + (data.message || 'Perlu Super User login'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btnCommit.disabled = false;
+        btnCommit.innerHTML = `<i class="fas fa-check-circle me-1"></i> Simpan ke Database`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Per-Model Sample - PE Solution</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .model-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: var(--transition);
+      overflow: hidden;
+    }
+    .model-card:hover {
+      border-color: var(--accent-blue);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+    }
+    .model-card-header {
+      padding: 0.6rem 0.85rem;
+      background: #141414;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .model-card-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #60a5fa;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .model-card-body {
+      padding: 0;
+      max-height: 250px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    .model-card-footer {
+      padding: 0.45rem 0.85rem;
+      background: #0d0d0d;
+      border-top: 1px solid var(--border-color);
+      font-size: 10.5px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .icon-status-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-3">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fas fa-barcode"></i>
+        <span>SAMPLE TRACKER</span>
+        <span class="live-dot ms-1" id="live-connection-dot" title="Live WebSocket Active"></span>
+      </a>
+
+      <button class="navbar-toggler py-1 px-2 border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        <i class="fas fa-bars text-secondary"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-qrcode"></i> Scan Peminjaman</a></li>
+          <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
+          <li class="nav-item"><a class="nav-link" href="/samples"><i class="fas fa-boxes"></i> Master Database</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/models"><i class="fas fa-microchip"></i> Card Per-Model</a></li>
+          <li class="nav-item"><a class="nav-link" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
+          <li class="nav-item"><a class="nav-link" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <div id="nav-user-container"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid px-3 py-3">
+    <!-- Header & Filter Bar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+      <div>
+        <h4 class="fw-bold m-0 text-light"><i class="fas fa-layer-group text-primary me-2"></i>Overview Card Masing-Masing Model</h4>
+        <p class="text-secondary m-0" style="font-size: 11px;">Tampilan seluruh device dikelompokkan per tipe model dengan tabel detail dan icon status kondisi.</p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge px-3 d-inline-flex align-items-center justify-content-center" id="total-models-badge" style="min-height: 38px; font-size: 11.5px; font-weight: 700; background: var(--bg-surface-elevated); color: var(--accent-blue) !important; border: 1.5px solid var(--accent-blue); border-radius: var(--radius-sm); letter-spacing: 0.3px;">
+          0 Model (0 Unit)
+        </span>
+        <button class="btn btn-surface" id="btn-refresh-models" title="Refresh Daftar Model">
+          <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Quick Filter -->
+    <div class="glass-panel p-2 mb-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-6 col-12">
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-search"></i></span>
+            <input type="text" id="model-search-input" class="form-control" placeholder="Cari Nama Model (misal: SM-S928B, SM-A013G), Serial, IMEI, PIC..." style="font-size: 12px;">
+          </div>
+        </div>
+
+        <div class="col-md-3 col-6">
+          <select id="filter-availability" class="form-select py-1" style="font-size: 12px;">
+            <option value="all">Status: Semua Model</option>
+            <option value="has_borrowed">Hanya yang Sedang Dipinjam</option>
+            <option value="all_available">Semua Unit Tersedia</option>
+          </select>
+        </div>
+
+        <div class="col-md-3 col-6 d-flex gap-1">
+          <button class="btn btn-primary-custom w-100 py-1" id="btn-apply-filter" style="font-size: 12px;"><i class="fas fa-filter"></i> Filter</button>
+          <button class="btn btn-surface py-1" id="btn-reset-model-filter" title="Reset"><i class="fas fa-undo"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend Icon Bar -->
+    <div class="d-flex flex-wrap align-items-center gap-3 px-2 mb-3 text-secondary" style="font-size: 11px;">
+      <span class="fw-bold text-light text-uppercase"><i class="fas fa-info-circle me-1 text-primary"></i> Legend Icon Kondisi:</span>
+      <span><i class="fas fa-check-circle text-success me-1"></i> Tersedia (KEMBALI)</span>
+      <span><i class="fas fa-user-lock text-danger me-1"></i> Dipinjam (PINJAM)</span>
+      <span><i class="fas fa-shield-alt text-success me-1"></i> Normal</span>
+      <span><i class="fas fa-exclamation-triangle text-warning me-1"></i> Defect</span>
+      <span><i class="fas fa-clipboard-check text-info me-1"></i> Sudah Diaudit</span>
+      <span><i class="fas fa-hourglass-start text-secondary me-1"></i> Reset / Belum Audit</span>
+    </div>
+
+    <!-- Model Cards Grid -->
+    <div class="row g-3" id="model-cards-grid">
+      <div class="col-12 text-center py-5 text-secondary">
+        <i class="fas fa-spinner fa-spin me-2"></i>Memuat kartu model sample...
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Sample Detail -->
+  <div class="modal fade" id="sampleDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-panel" style="background: var(--bg-surface);">
+        <div class="modal-header border-bottom border-secondary">
+          <h5 class="modal-title fw-bold" id="detailModalTitle" style="font-size: 13px;">Detail Sample</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-3" id="detailModalBody"></div>
+        <div class="modal-footer border-top border-secondary">
+          <button type="button" class="btn btn-surface" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { Auth, setupWebSocket } from '/js/app.js';
+
+    const cardsGrid = document.getElementById('model-cards-grid');
+    const searchInput = document.getElementById('model-search-input');
+    const filterAvail = document.getElementById('filter-availability');
+    const totalBadge = document.getElementById('total-models-badge');
+    const detailModal = new bootstrap.Modal(document.getElementById('sampleDetailModal'));
+    let allModels = [];
+
+    async function loadModelCards() {
+      const search = searchInput.value.trim();
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+
+      cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Memuat kartu model...</div>`;
+
+      try {
+        const res = await fetch(`/api/models-overview?${params.toString()}`);
+        const data = await res.json();
+
+        if (!data.success || !data.models) {
+          cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-muted">Tidak ada data model ditemukan.</div>`;
+          return;
+        }
+
+        allModels = data.models;
+        renderFilteredCards();
+      } catch (err) {
+        cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-danger">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderFilteredCards() {
+      const filterVal = filterAvail.value;
+      let filtered = allModels;
+
+      if (filterVal === 'has_borrowed') {
+        filtered = allModels.filter(m => m.borrowed > 0);
+      } else if (filterVal === 'all_available') {
+        filtered = allModels.filter(m => m.borrowed === 0);
+      }
+
+      totalBadge.textContent = `${filtered.length} Model (${filtered.reduce((acc, m) => acc + m.total, 0)} Unit)`;
+
+      if (filtered.length === 0) {
+        cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-muted">Tidak ada model yang cocok dengan filter.</div>`;
+        return;
+      }
+
+      cardsGrid.innerHTML = filtered.map(m => {
+        const rowsHtml = m.items.map((item, idx) => {
+          const isPinjam = item.status_pinjam === 'PINJAM';
+          const isNormal = !item.defect_status || item.defect_status === 'Normal' || item.defect_status === '';
+          const isAudited = item.status_audit === 'SUDAH';
+          const assetNo = item.nomor_asset || item.sn || '-';
+          const serial = item.sn || item.serial_no || '-';
+          const imei = item.imei || item.un || '-';
+
+          return `
+            <tr>
+              <td class="text-secondary" style="width: 28px;">${idx + 1}</td>
+              <td><span class="badge bg-dark border border-secondary">${assetNo}</span></td>
+              <td class="text-light fw-semibold">${serial}</td>
+              <td class="text-secondary">${imei}</td>
+              <td class="text-center">
+                <div class="icon-status-cell justify-content-center">
+                  ${isPinjam 
+                    ? `<i class="fas fa-user-lock text-danger" title="Dipinjam oleh: ${item.name || 'PIC'} (${item.status_pinjam})"></i>`
+                    : `<i class="fas fa-check-circle text-success" title="Tersedia (KEMBALI)"></i>`}
+                  
+                  ${isNormal 
+                    ? `<i class="fas fa-shield-alt text-success" title="Kondisi Normal"></i>`
+                    : `<i class="fas fa-exclamation-triangle text-warning" title="Kondisi: ${item.defect_status}"></i>`}
+
+                  ${isAudited 
+                    ? `<i class="fas fa-clipboard-check text-info" title="Sudah Diaudit"></i>`
+                    : `<i class="fas fa-hourglass-start text-secondary" title="Status Audit: ${item.status_audit || 'RESET'}"></i>`}
+
+                  ${item.octa_status ? `<span class="badge bg-secondary" style="font-size:9px;">${item.octa_status}</span>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        return `
+          <div class="col-xl-4 col-lg-6 col-12">
+            <div class="model-card">
+              <div class="model-card-header">
+                <div>
+                  <span class="model-card-title"><i class="fas fa-mobile-alt me-1"></i> ${m.model}</span>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-primary" title="Total Unit">${m.total} Unit</span>
+                  ${m.borrowed > 0 ? `<span class="badge bg-danger" title="Sedang Dipinjam">${m.borrowed} Pinjam</span>` : ''}
+                  <span class="badge bg-success" title="Tersedia">${m.available} Ready</span>
+                </div>
+              </div>
+
+              <div class="model-card-body">
+                <table class="dense-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>No. Asset</th>
+                      <th>Serial</th>
+                      <th>IMEI / UN</th>
+                      <th class="text-center">Kondisi & Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rowsHtml}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="model-card-footer">
+                <span><i class="fas fa-layer-group me-1"></i> ${m.items[0]?.Dept || 'PE Solution P /SEIN-P'}</span>
+                <span>Audit: <strong class="${m.audited === m.total ? 'text-success' : 'text-warning'}">${m.audited}/${m.total}</strong></span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('btn-apply-filter').addEventListener('click', loadModelCards);
+    document.getElementById('btn-refresh-models').addEventListener('click', loadModelCards);
+    filterAvail.addEventListener('change', renderFilteredCards);
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadModelCards(); });
+
+    document.getElementById('btn-reset-model-filter').addEventListener('click', () => {
+      searchInput.value = '';
+      filterAvail.value = 'all';
+      loadModelCards();
+    });
+
+    setupWebSocket(() => loadModelCards());
+    loadModelCards();
+  </script>
+</body>
+</html>

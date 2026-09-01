@@ -1,0 +1,17 @@
+{
+  "appId": "com.samsung.pesolution.sampletracker",
+  "appName": "Sample Tracker",
+  "webDir": "public",
+  "server": {
+    "url": "https://sample.endrisusanto.my.id",
+    "cleartext": true,
+    "allowNavigation": [
+      "sample.endrisusanto.my.id",
+      "*.endrisusanto.my.id",
+      "*"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

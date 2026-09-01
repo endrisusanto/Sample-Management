@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Database Sample - PE Solution</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-3">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fas fa-barcode"></i>
+        <span>SAMPLE TRACKER</span>
+        <span class="live-dot ms-1" id="live-connection-dot" title="Live WebSocket Active"></span>
+      </a>
+
+      <button class="navbar-toggler py-1 px-2 border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        <i class="fas fa-bars text-secondary"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-qrcode"></i> Scan Peminjaman</a></li>
+          <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/samples"><i class="fas fa-boxes"></i> Master Database</a></li>
+          <li class="nav-item"><a class="nav-link" href="/models"><i class="fas fa-microchip"></i> Card Per-Model</a></li>
+          <li class="nav-item"><a class="nav-link" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
+          <li class="nav-item"><a class="nav-link" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <div id="nav-user-container"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid px-3 py-3">
+    <!-- Header & Action Toolbar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+      <div>
+        <h4 class="fw-bold m-0 text-light"><i class="fas fa-database text-primary me-2"></i>Master Database Sample</h4>
+        <p class="text-secondary m-0" style="font-size: 11px;">Kelola, cari, filter, edit dan cetak QR Code seluruh sample dan asset.</p>
+      </div>
+
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="/import" class="btn btn-surface"><i class="fas fa-file-import me-1"></i> Bulk Ingestion</a>
+        <div class="btn-group">
+          <button type="button" class="btn btn-surface dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-download me-1"></i> Export Data
+          </button>
+          <ul class="dropdown-menu shadow">
+            <li><a class="dropdown-item" href="/api/export?format=xlsx"><i class="fas fa-file-excel text-success me-2"></i>Export Excel (.xlsx)</a></li>
+            <li><a class="dropdown-item" href="/api/export?format=csv"><i class="fas fa-file-csv text-primary me-2"></i>Export CSV (.csv)</a></li>
+          </ul>
+        </div>
+        <button class="btn btn-primary-custom" id="btn-add-sample">
+          <i class="fas fa-plus me-1"></i> Tambah Sample
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Search Panel -->
+    <div class="glass-panel p-3 mb-4">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary"><i class="fas fa-search"></i></span>
+            <input type="text" id="search-input" class="form-control" placeholder="Cari Model, Serial, IMEI, UN, PIC...">
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <select id="filter-pinjam" class="form-select">
+            <option value="">Status Pinjam: Semua</option>
+            <option value="PINJAM">PINJAM</option>
+            <option value="KEMBALI">KEMBALI / Tersedia</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <select id="filter-audit" class="form-select">
+            <option value="">Status Audit: Semua</option>
+            <option value="SUDAH">SUDAH Diaudit</option>
+            <option value="RESET">RESET / Belum</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <select id="filter-limit" class="form-select">
+            <option value="25">25 per halaman</option>
+            <option value="50">50 per halaman</option>
+            <option value="100">100 per halaman</option>
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-primary-custom w-100" id="btn-filter"><i class="fas fa-filter"></i> Terapkan</button>
+          <button class="btn btn-surface" id="btn-reset-filter" title="Reset Filter"><i class="fas fa-undo"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Samples Data Table -->
+    <div class="glass-panel p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+        <span class="text-secondary small" id="table-summary-text">Menampilkan data...</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table" id="sample-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Model Name</th>
+              <th>Serial / No Asset</th>
+              <th>Status Pinjam</th>
+              <th>Peminjam (PIC)</th>
+              <th>Status Audit</th>
+              <th>IMEI / UN</th>
+              <th>HW Rev.</th>
+              <th>Retention Owner</th>
+              <th>Departemen</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="sample-tbody">
+            <tr><td colspan="11" class="text-center py-5 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Memuat master database...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+        <div id="page-info" class="text-secondary small">Halaman 1 dari 1</div>
+        <div class="btn-group" id="pagination-controls">
+          <button class="btn btn-surface btn-sm" id="btn-prev-page"><i class="fas fa-chevron-left"></i> Prev</button>
+          <button class="btn btn-surface btn-sm" id="btn-next-page">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Detail & QR Code -->
+  <div class="modal fade" id="sampleDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content glass-panel" style="background: var(--bg-surface);">
+        <div class="modal-header border-bottom border-secondary">
+          <h5 class="modal-title fw-bold" id="detailModalTitle">Detail Sample</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="detailModalBody">
+          <!-- Populated by JS -->
+        </div>
+        <div class="modal-footer border-top border-secondary">
+          <button type="button" class="btn btn-surface" data-bs-dismiss="modal">Tutup</button>
+          <button type="button" class="btn btn-primary-custom" id="btn-print-qr"><i class="fas fa-print me-1"></i> Cetak QR Badge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edit / Add Sample -->
+  <div class="modal fade" id="sampleEditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content glass-panel" style="background: var(--bg-surface);">
+        <form id="sample-form">
+          <div class="modal-header border-bottom border-secondary">
+            <h5 class="modal-title fw-bold" id="formModalTitle">Tambah / Edit Sample</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit-id">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-secondary">Model Name *</label>
+                <input type="text" id="edit-model" class="form-control" required placeholder="Contoh: SM-S928B">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-secondary">Nomor Asset / Serial *</label>
+                <input type="text" id="edit-asset" class="form-control" required placeholder="Contoh: AS14986 atau WJD3587M">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">Status Pinjam</label>
+                <select id="edit-status-pinjam" class="form-select">
+                  <option value="KEMBALI">KEMBALI</option>
+                  <option value="PINJAM">PINJAM</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">Status Audit</label>
+                <select id="edit-status-audit" class="form-select">
+                  <option value="RESET">RESET</option>
+                  <option value="SUDAH">SUDAH</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">Peminjam / Holder</label>
+                <input type="text" id="edit-name" class="form-control" placeholder="Nama Peminjam">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-secondary">IMEI / IMEI2</label>
+                <input type="text" id="edit-imei" class="form-control" placeholder="IMEI Number">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-secondary">UN Code</label>
+                <input type="text" id="edit-un" class="form-control" placeholder="UN Code">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">HW Rev.</label>
+                <input type="text" id="edit-hw-rev" class="form-control" placeholder="REV0.5, PR0.300...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">Retention Owner</label>
+                <input type="text" id="edit-retention-owner" class="form-control" placeholder="PIC Owner">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-secondary">Departemen</label>
+                <input type="text" id="edit-dept" class="form-control" placeholder="PE Solution P /SEIN-P">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-secondary">
+            <button type="button" class="btn btn-surface" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save me-1"></i> Simpan Data</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { Auth, setupWebSocket } from '/js/app.js';
+
+    let currentPage = 1;
+    let totalPages = 1;
+    const sampleTbody = document.getElementById('sample-tbody');
+    const searchInput = document.getElementById('search-input');
+    const filterPinjam = document.getElementById('filter-pinjam');
+    const filterAudit = document.getElementById('filter-audit');
+    const filterLimit = document.getElementById('filter-limit');
+    const detailModal = new bootstrap.Modal(document.getElementById('sampleDetailModal'));
+    const editModal = new bootstrap.Modal(document.getElementById('sampleEditModal'));
+
+    async function loadSamples(page = 1) {
+      currentPage = page;
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: filterLimit.value,
+        search: searchInput.value.trim(),
+        status_pinjam: filterPinjam.value,
+        status_audit: filterAudit.value,
+        sortBy: 'id',
+        sortOrder: 'DESC'
+      });
+
+      sampleTbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Memuat data...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/samples?${params.toString()}`);
+        const data = await res.json();
+
+        totalPages = data.totalPages || 1;
+        document.getElementById('page-info').textContent = `Halaman ${data.page} dari ${totalPages} (Total: ${data.total} item)`;
+        document.getElementById('table-summary-text').textContent = `Menampilkan ${data.data.length} dari ${data.total} sample`;
+        document.getElementById('btn-prev-page').disabled = currentPage <= 1;
+        document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
+
+        if (!data.data || data.data.length === 0) {
+          sampleTbody.innerHTML = `<tr><td colspan="11" class="text-center py-5 text-muted">Tidak ada data sample yang cocok</td></tr>`;
+          return;
+        }
+
+        sampleTbody.innerHTML = data.data.map(s => {
+          const isPinjam = (s.status_pinjam || '').toUpperCase() === 'PINJAM';
+          const isAudited = (s.status_audit || '').toUpperCase() === 'SUDAH';
+          const serial = s.nomor_asset || s.sn || '-';
+          return `
+            <tr>
+              <td>${s.id}</td>
+              <td class="fw-bold text-primary">${s.model || s.model_name || '-'}</td>
+              <td><span class="badge bg-dark border border-secondary">${serial}</span></td>
+              <td>
+                <span class="badge-status ${isPinjam ? 'badge-pinjam' : 'badge-kembali'}">
+                  ${isPinjam ? '<i class="fas fa-hand-holding"></i>' : '<i class="fas fa-check"></i>'}
+                  ${s.status_pinjam || 'KEMBALI'}
+                </span>
+              </td>
+              <td class="fw-semibold">${s.name || '-'}</td>
+              <td>
+                <span class="badge-status ${isAudited ? 'badge-audit-sudah' : 'badge-audit-reset'}">
+                  ${s.status_audit || 'RESET'}
+                </span>
+              </td>
+              <td>
+                <div class="small">${s.imei || '-'}</div>
+                ${s.un ? `<div class="text-muted small">UN: ${s.un}</div>` : ''}
+              </td>
+              <td>${s.hw_rev || '-'}</td>
+              <td>${s.retention_owner || s.pic_sample || '-'}</td>
+              <td class="small text-secondary">${s.retention_department || s.Dept || '-'}</td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-surface btn-view" data-id="${s.id}" title="Detail & QR"><i class="fas fa-eye"></i></button>
+                  <button class="btn btn-surface btn-edit" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-surface text-danger btn-delete" data-id="${s.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Attach buttons handlers
+        document.querySelectorAll('.btn-view').forEach(b => b.addEventListener('click', () => showDetail(b.dataset.id)));
+        document.querySelectorAll('.btn-edit').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
+        document.querySelectorAll('.btn-delete').forEach(b => b.addEventListener('click', () => deleteItem(b.dataset.id)));
+      } catch (err) {
+        sampleTbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-danger">Gagal memuat data: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function showDetail(id) {
+      try {
+        const res = await fetch(`/api/samples/${id}`);
+        const { sample } = await res.json();
+        if (!sample) return;
+
+        const assetNo = sample.nomor_asset || sample.sn;
+        const qrUrl = `/api/qr?text=${encodeURIComponent(assetNo)}&width=250`;
+
+        document.getElementById('detailModalTitle').textContent = `Detail Sample: ${sample.model || ''} (${assetNo})`;
+        document.getElementById('detailModalBody').innerHTML = `
+          <div class="row">
+            <div class="col-md-5 text-center mb-3">
+              <div class="p-3 bg-white rounded shadow-sm d-inline-block">
+                <img src="${qrUrl}" alt="QR Code" class="img-fluid" style="width: 180px; height: 180px;">
+              </div>
+              <div class="mt-2 fw-bold text-light">${assetNo}</div>
+              <div class="text-secondary small">${sample.model || ''}</div>
+            </div>
+            <div class="col-md-7">
+              <table class="table table-sm table-borderless text-light">
+                <tr><th width="40%" class="text-secondary">Model</th><td>${sample.model || '-'}</td></tr>
+                <tr><th class="text-secondary">Serial / No. Asset</th><td><span class="badge bg-dark border border-secondary">${assetNo}</span></td></tr>
+                <tr><th class="text-secondary">Status Pinjam</th><td><span class="badge ${sample.status_pinjam === 'PINJAM' ? 'bg-danger' : 'bg-success'}">${sample.status_pinjam}</span></td></tr>
+                <tr><th class="text-secondary">Peminjam Terakhir</th><td>${sample.name || '-'}</td></tr>
+                <tr><th class="text-secondary">Status Audit</th><td><span class="badge ${sample.status_audit === 'SUDAH' ? 'bg-success' : 'bg-warning'}">${sample.status_audit}</span></td></tr>
+                <tr><th class="text-secondary">Tanggal Pengecekan</th><td>${sample.latest_check || '-'}</td></tr>
+                <tr><th class="text-secondary">IMEI 1</th><td>${sample.imei || '-'}</td></tr>
+                <tr><th class="text-secondary">IMEI 2</th><td>${sample.imei2 || '-'}</td></tr>
+                <tr><th class="text-secondary">UN Code</th><td>${sample.un || '-'}</td></tr>
+                <tr><th class="text-secondary">HW Rev.</th><td>${sample.hw_rev || '-'}</td></tr>
+                <tr><th class="text-secondary">Retention Owner</th><td>${sample.retention_owner || sample.pic_sample || '-'}</td></tr>
+                <tr><th class="text-secondary">Departemen</th><td>${sample.retention_department || sample.Dept || '-'}</td></tr>
+              </table>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('btn-print-qr').onclick = () => {
+          const win = window.open('', '_blank');
+          win.document.write(`
+            <html>
+              <head><title>Print QR - ${assetNo}</title></head>
+              <body style="text-align:center; padding: 20px; font-family: sans-serif;">
+                <img src="${qrUrl}" style="width:200px; height:200px;">
+                <h2>${assetNo}</h2>
+                <p><strong>${sample.model || ''}</strong></p>
+                <p>${sample.retention_owner || ''} | ${sample.retention_department || ''}</p>
+                <script>window.print();<\/script>
+              </body>
+            </html>
+          `);
+        };
+
+        detailModal.show();
+      } catch (e) {
+        alert('Gagal memuat detail sample: ' + e.message);
+      }
+    }
+
+    async function openEdit(id) {
+      document.getElementById('sample-form').reset();
+      document.getElementById('edit-id').value = '';
+      document.getElementById('formModalTitle').textContent = 'Tambah Sample Baru';
+
+      if (id) {
+        document.getElementById('formModalTitle').textContent = 'Edit Sample';
+        const res = await fetch(`/api/samples/${id}`);
+        const { sample } = await res.json();
+        if (sample) {
+          document.getElementById('edit-id').value = sample.id;
+          document.getElementById('edit-model').value = sample.model || '';
+          document.getElementById('edit-asset').value = sample.nomor_asset || sample.sn || '';
+          document.getElementById('edit-status-pinjam').value = sample.status_pinjam || 'KEMBALI';
+          document.getElementById('edit-status-audit').value = sample.status_audit || 'RESET';
+          document.getElementById('edit-name').value = sample.name || '';
+          document.getElementById('edit-imei').value = sample.imei || '';
+          document.getElementById('edit-un').value = sample.un || '';
+          document.getElementById('edit-hw-rev').value = sample.hw_rev || '';
+          document.getElementById('edit-retention-owner').value = sample.retention_owner || sample.pic_sample || '';
+          document.getElementById('edit-dept').value = sample.retention_department || sample.Dept || '';
+        }
+      }
+      editModal.show();
+    }
+
+    async function deleteItem(id) {
+      if (!confirm('Hapus sample ini dari database?')) return;
+      try {
+        const res = await fetch(`/api/samples/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          loadSamples(currentPage);
+        } else {
+          alert(data.message || 'Gagal menghapus sample (Perlu Super User)');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    document.getElementById('sample-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const payload = {
+        model: document.getElementById('edit-model').value.trim(),
+        nomor_asset: document.getElementById('edit-asset').value.trim(),
+        status_pinjam: document.getElementById('edit-status-pinjam').value,
+        status_audit: document.getElementById('edit-status-audit').value,
+        name: document.getElementById('edit-name').value.trim(),
+        imei: document.getElementById('edit-imei').value.trim(),
+        un: document.getElementById('edit-un').value.trim(),
+        hw_rev: document.getElementById('edit-hw-rev').value.trim(),
+        retention_owner: document.getElementById('edit-retention-owner').value.trim(),
+        retention_department: document.getElementById('edit-dept').value.trim()
+      };
+
+      try {
+        const url = id ? `/api/samples/${id}` : '/api/samples';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          editModal.hide();
+          loadSamples(currentPage);
+        } else {
+          alert(data.message || 'Gagal menyimpan sample');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    });
+
+    document.getElementById('btn-add-sample').addEventListener('click', () => openEdit());
+    document.getElementById('btn-filter').addEventListener('click', () => loadSamples(1));
+    document.getElementById('btn-reset-filter').addEventListener('click', () => {
+      searchInput.value = '';
+      filterPinjam.value = '';
+      filterAudit.value = '';
+      loadSamples(1);
+    });
+
+    document.getElementById('btn-prev-page').addEventListener('click', () => {
+      if (currentPage > 1) loadSamples(currentPage - 1);
+    });
+
+    document.getElementById('btn-next-page').addEventListener('click', () => {
+      if (currentPage < totalPages) loadSamples(currentPage + 1);
+    });
+
+    setupWebSocket(() => loadSamples(currentPage));
+    loadSamples();
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+services:
+  sample-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sample_management_node
+    restart: unless-stopped
+    ports:
+      - "3080:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATA_DIR=/app/data
+      - JWT_SECRET=sample-mgmt-production-jwt-key-2026
+      - TZ=Asia/Jakarta
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./public:/app/public
+      - ./src:/app/src
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/stats/dashboard"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
