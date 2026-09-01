@@ -227,6 +227,36 @@
     </div>
   </div>
 
+  <!-- Fingerprint Registration Modal -->
+  <div class="modal fade" id="registerFingerprintModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+      <div class="modal-content border-warning shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-warning fw-bold fs-6">
+            <i class="fas fa-fingerprint me-2"></i> Perekaman Sidik Jari / Passkey
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+          <h6 class="fw-bold text-light mb-1" id="reg-fingerprint-user-name">USER NAME</h6>
+          <p class="text-secondary small mb-3">Daftarkan sensor sidik jari smartphone Android / Windows Hello untuk login instan tanpa password.</p>
+          
+          <div class="my-3 text-warning">
+            <i class="fas fa-fingerprint fa-4x animate-pulse"></i>
+          </div>
+
+          <div id="reg-fingerprint-status" class="alert alert-warning py-2 px-3 small mb-3" style="font-size: 11.5px;">
+            Siap merekam sidik jari. Klik tombol di bawah lalu sentuh sensor sidik jari pada perangkat Anda.
+          </div>
+
+          <button type="button" class="btn btn-warning w-100 py-2 fw-bold text-dark" id="btn-start-fingerprint-reg">
+            <i class="fas fa-fingerprint me-1"></i> Mulai Perekaman Sidik Jari
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { Auth, showGiantAlert, setupWebSocket, SoundEffects } from '/js/app.js';
@@ -238,11 +268,13 @@
     const userModal = new bootstrap.Modal(document.getElementById('userFormModal'));
     const resetDbModal = new bootstrap.Modal(document.getElementById('resetDbModal'));
     const registerFaceModal = new bootstrap.Modal(document.getElementById('registerFaceModal'));
+    const registerFingerprintModal = new bootstrap.Modal(document.getElementById('registerFingerprintModal'));
     const faceEngine = new FaceEngine('reg-face-video');
     const userForm = document.getElementById('user-form');
     const resetDbForm = document.getElementById('reset-db-form');
     let currentUser = null;
     let targetFaceUserId = null;
+    let targetFingerprintUser = null;
 
     async function loadUsers() {
       try {
@@ -359,27 +391,20 @@
         });
 
         document.querySelectorAll('.btn-register-fingerprint').forEach(b => {
-          b.addEventListener('click', async () => {
+          b.addEventListener('click', () => {
             const { id, name, email } = b.dataset;
-            b.disabled = true;
-            b.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sentuh Sensor...';
+            targetFingerprintUser = { id, name, email };
+            document.getElementById('reg-fingerprint-user-name').textContent = name;
+            
+            const statusEl = document.getElementById('reg-fingerprint-status');
+            statusEl.className = 'alert alert-warning py-2 px-3 small mb-3';
+            statusEl.innerHTML = '<i class="fas fa-info-circle me-1"></i> Siap merekam sidik jari. Klik tombol di bawah lalu sentuh sensor biometrik perangkat Anda.';
+            
+            const btnStart = document.getElementById('btn-start-fingerprint-reg');
+            btnStart.disabled = false;
+            btnStart.innerHTML = '<i class="fas fa-fingerprint me-1"></i> Mulai Perekaman Sidik Jari';
 
-            try {
-              const res = await BiometricAuth.registerFingerprint({
-                userId: id,
-                userName: name,
-                userEmail: email
-              });
-
-              SoundEffects.play('SUCCESS');
-              alert(`✅ Berhasil! ${res.message || 'Sidik Jari berhasil didaftarkan.'}`);
-            } catch (err) {
-              SoundEffects.play('ERROR');
-              alert(`❌ Gagal merekam sidik jari: ${err.message}`);
-            } finally {
-              b.disabled = false;
-              b.innerHTML = '<i class="fas fa-fingerprint me-1"></i> Sidik Jari';
-            }
+            registerFingerprintModal.show();
           });
         });
 
@@ -402,6 +427,40 @@
         usersGrid.innerHTML = `<div class="col-12 text-center py-5 text-danger">Gagal memuat pengguna: ${e.message}</div>`;
       }
     }
+
+    document.getElementById('btn-start-fingerprint-reg').addEventListener('click', async () => {
+      if (!targetFingerprintUser) return;
+      const btn = document.getElementById('btn-start-fingerprint-reg');
+      const statusEl = document.getElementById('reg-fingerprint-status');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menunggu Sentuhan Sensor...';
+      statusEl.className = 'alert alert-primary py-2 px-3 small mb-3';
+      statusEl.innerHTML = '<i class="fas fa-hand-pointer text-warning me-1"></i> Sentuh sensor sidik jari / pemindai biometrik pada perangkat Anda sekarang.';
+
+      try {
+        const res = await BiometricAuth.registerFingerprint({
+          userId: targetFingerprintUser.id,
+          userName: targetFingerprintUser.name,
+          userEmail: targetFingerprintUser.email
+        });
+
+        SoundEffects.play('SUCCESS');
+        statusEl.className = 'alert alert-success py-2 px-3 small mb-3';
+        statusEl.innerHTML = '✅ <strong>Sidik Jari Berhasil Terdaftar!</strong>';
+
+        setTimeout(() => {
+          registerFingerprintModal.hide();
+          loadUsers();
+        }, 1200);
+      } catch (err) {
+        SoundEffects.play('ERROR');
+        statusEl.className = 'alert alert-danger py-2 px-3 small mb-3';
+        statusEl.innerHTML = '❌ ' + err.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-redo me-1"></i> Coba Rekam Ulang';
+      }
+    });
 
     document.getElementById('btn-close-reg-face').addEventListener('click', () => {
       faceEngine.stopCamera();
@@ -463,6 +522,7 @@
       document.getElementById('btn-print-badge').onclick = () => {
         const win = window.open('', '_blank');
         win.document.write(`
+          <!DOCTYPE html>
           <html>
             <head><title>Print Badge - ${user.name}</title></head>
             <body style="text-align:center; padding: 40px; font-family: sans-serif;">
@@ -472,10 +532,12 @@
                 <p>${user.email} - ${user.level.toUpperCase()}</p>
                 <img src="${qrUrl}" style="width: 220px; height: 220px;">
               </div>
-              <script>window.print();<\/script>
             </body>
           </html>
         `);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); }, 500);
       };
 
       badgeModal.show();
