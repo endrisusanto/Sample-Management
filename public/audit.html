@@ -109,6 +109,9 @@
               <div class="input-group">
                 <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-barcode text-success"></i></span>
                 <input type="text" id="audit-asset" class="form-control scan-input fs-6 py-2" placeholder="Scan No. Asset / Serial / IMEI..." required autofocus>
+                <button type="button" class="btn btn-surface border-secondary px-3 text-warning" id="btn-audit-camera-qr-scan" title="Pindai QR Code / Barcode Menggunakan Kamera">
+                  <i class="fas fa-qrcode fs-5"></i>
+                </button>
               </div>
             </div>
 
@@ -199,6 +202,7 @@
   <script type="module">
     import { Auth, showGiantAlert, setupWebSocket } from '/js/app.js';
     import { CameraProofEngine } from '/js/camera-proof.js';
+    import { QRScannerModal } from '/js/qr-scanner.js';
 
     const auditorInput = document.getElementById('auditor-name');
     const assetInput = document.getElementById('audit-asset');
@@ -209,6 +213,22 @@
     const auditProofModal = new bootstrap.Modal(document.getElementById('auditProofModal'));
     const auditProofModalImg = document.getElementById('auditProofModalImg');
     const auditProofModalSub = document.getElementById('auditProofModalSub');
+    const btnAuditCameraQr = document.getElementById('btn-audit-camera-qr-scan');
+
+    // QR & Barcode Camera Scanner Trigger for Audit
+    btnAuditCameraQr.addEventListener('click', () => {
+      QRScannerModal.open({
+        title: 'Pindai QR / Barcode Sample untuk Audit',
+        onScan: (decodedText) => {
+          assetInput.value = decodedText;
+          if (auditorInput.value.trim()) {
+            auditForm.requestSubmit();
+          } else {
+            auditorInput.focus();
+          }
+        }
+      });
+    });
 
     // Camera Proof Engine Setup
     const cameraProof = new CameraProofEngine('audit-proof-video');
