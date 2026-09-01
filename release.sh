@@ -106,5 +106,8 @@ fi
 echo "🚀 Pushing $BRANCH and $TAG to $REMOTE_URL..."
 git push -u origin "HEAD:$BRANCH" "$TAG"
 
+echo "🔄 Restarting local Docker container..."
+docker compose restart || true
+
 echo "🎉 Successfully Released $TAG to GitHub Actions!"
 echo "🌐 Live Deployment: https://sample.endrisusanto.my.id/"
