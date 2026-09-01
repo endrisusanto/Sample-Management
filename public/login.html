@@ -57,9 +57,18 @@
         <i class="fas fa-sign-in-alt me-1"></i> Masuk ke Sistem
       </button>
 
-      <button type="button" class="btn btn-surface w-100 py-2 fs-6 justify-content-center mb-3 text-info border-info" id="btn-face-login">
-        <i class="fas fa-id-badge me-2 fs-5"></i> Login via Face ID (Wajah)
-      </button>
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <button type="button" class="btn btn-surface w-100 py-2 text-info border-info d-flex align-items-center justify-content-center" id="btn-face-login" style="font-size: 12px;">
+            <i class="fas fa-id-badge me-1 fs-6"></i> Face ID
+          </button>
+        </div>
+        <div class="col-6">
+          <button type="button" class="btn btn-surface w-100 py-2 text-warning border-warning d-flex align-items-center justify-content-center" id="btn-fingerprint-login" style="font-size: 12px;">
+            <i class="fas fa-fingerprint me-1 fs-6"></i> Sidik Jari
+          </button>
+        </div>
+      </div>
 
       <div class="text-center">
         <span class="text-secondary small">Belum punya akun / Lupa password?</span>
@@ -102,6 +111,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { FaceEngine } from '/js/face-engine.js';
+    import { BiometricAuth } from '/js/biometric-auth.js';
     import { SoundEffects } from '/js/app.js';
 
     const alertBox = document.getElementById('login-alert');
@@ -110,6 +120,7 @@
     const faceEngine = new FaceEngine('face-video');
     const faceStatus = document.getElementById('face-scan-status');
     const btnCaptureFace = document.getElementById('btn-capture-face-login');
+    const btnFingerprint = document.getElementById('btn-fingerprint-login');
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -196,6 +207,30 @@
         faceStatus.innerHTML = '❌ ' + err.message;
       } finally {
         btnCaptureFace.disabled = false;
+      }
+    });
+
+    // Native Fingerprint / Passkey Login Flow
+    btnFingerprint.addEventListener('click', async () => {
+      alertBox.classList.add('d-none');
+      btnFingerprint.disabled = true;
+      btnFingerprint.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sentuh Sensor...';
+
+      try {
+        const result = await BiometricAuth.loginWithFingerprint();
+        SoundEffects.play('SUCCESS');
+        alertBox.className = 'alert alert-success py-2 px-3 small mb-3';
+        alertBox.innerHTML = `✅ <strong>${result.message}</strong>`;
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } catch (err) {
+        SoundEffects.play('ERROR');
+        alertBox.className = 'alert alert-danger py-2 px-3 small mb-3';
+        alertBox.innerHTML = `❌ ${err.message}`;
+      } finally {
+        btnFingerprint.disabled = false;
+        btnFingerprint.innerHTML = '<i class="fas fa-fingerprint me-1 fs-6"></i> Sidik Jari';
       }
     });
   </script>

@@ -133,9 +133,6 @@ authRouter.post('/register-face', authenticate, (req, res) => {
   }
 });
 
-/**
- * Biometric Face Login
- */
 authRouter.post('/face-login', async (req, res) => {
   try {
     const { faceDescriptor } = req.body;
@@ -150,5 +147,62 @@ authRouter.post('/face-login', async (req, res) => {
     res.json({ success: true, token, user, distance, message: `Face ID diverifikasi! Selamat datang, ${user.name}` });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Register Fingerprint / Passkey Credential
+ */
+authRouter.post('/fingerprint/register', authenticate, (req, res) => {
+  try {
+    const userId = req.body.userId || req.user.id;
+    const { credentialId, publicKey, deviceName } = req.body;
+
+    if (!credentialId) {
+      return res.status(400).json({ success: false, message: 'Credential ID sidik jari wajib ada' });
+    }
+
+    const result = AuthService.saveBiometricCredential({
+      userId,
+      credentialId,
+      publicKey,
+      deviceName: deviceName || 'Android / PC Biometric Key'
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Biometric Fingerprint / Passkey Login
+ */
+authRouter.post('/fingerprint/login', async (req, res) => {
+  try {
+    const { credentialId } = req.body;
+    const result = AuthService.verifyBiometricLogin({ credentialId });
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, token: result.token, user: result.user, message: result.message });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * List User Registered Fingerprint Credentials
+ */
+authRouter.get('/fingerprint/list', authenticate, (req, res) => {
+  try {
+    const credentials = AuthService.getUserBiometrics(req.user.id);
+    res.json({ success: true, credentials });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });

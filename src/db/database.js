@@ -153,6 +153,21 @@ export function initDatabase() {
   try { db.exec("ALTER TABLE flow_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
   try { db.exec("ALTER TABLE audit_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
 
+  // 5. User Biometric & Fingerprint Credentials
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_credentials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      credential_id TEXT NOT NULL UNIQUE,
+      public_key TEXT,
+      device_name TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_cred_user_id ON user_credentials(user_id);
+    CREATE INDEX IF NOT EXISTS idx_cred_id ON user_credentials(credential_id);
+  `);
+
   return db;
 }
 
