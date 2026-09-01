@@ -25,7 +25,7 @@ export function setBroadcastFn(fn) {
  */
 apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
   try {
-    const { name, nomor_asset } = req.body;
+    const { name, nomor_asset, proof_image } = req.body;
     const borrowerName = name || req.user?.name;
 
     if (!borrowerName) {
@@ -38,14 +38,16 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
 
     const result = SampleService.borrowReturnProcess({
       name: borrowerName,
-      nomor_asset
+      nomor_asset,
+      proof_image
     });
 
     if (result.success) {
       broadcastEvent('SAMPLE_UPDATED', {
         action: result.action,
         sample: result.sample,
-        message: result.message
+        message: result.message,
+        proof_image: result.proof_image
       });
     }
 
@@ -60,19 +62,21 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
  */
 apiRouter.post('/audit', optionalAuth, async (req, res) => {
   try {
-    const { name, nomor_asset } = req.body;
+    const { name, nomor_asset, proof_image } = req.body;
     const auditorName = name || req.user?.name || 'AUDITOR';
 
     const result = SampleService.auditProcess({
       name: auditorName,
-      nomor_asset
+      nomor_asset,
+      proof_image
     });
 
-    if (result.success && result.action === 'BERHASIL') {
+    if (result.success && (result.action === 'BERHASIL' || result.action === 'SUDAH')) {
       broadcastEvent('AUDIT_UPDATED', {
         action: result.action,
         sample: result.sample,
-        message: result.message
+        message: result.message,
+        proof_image: result.proof_image
       });
     }
 

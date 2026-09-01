@@ -1,11 +1,41 @@
 import db from '../db/database.js';
 import XLSX from 'xlsx';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class SampleService {
   /**
+   * Helper to decode and save base64 image
+   */
+  static saveBase64Image(base64Data, subfolder = 'proofs', prefix = 'proof') {
+    if (!base64Data || typeof base64Data !== 'string' || !base64Data.startsWith('data:image')) {
+      return null;
+    }
+    try {
+      const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) return null;
+      const ext = matches[1].includes('png') ? 'png' : 'jpg';
+      const buffer = Buffer.from(matches[2], 'base64');
+      const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+      const targetDir = path.join(__dirname, `../../uploads/${subfolder}`);
+      if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+      const filePath = path.join(targetDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      return `/uploads/${subfolder}/${filename}`;
+    } catch (err) {
+      console.error('Failed to save base64 image:', err.message);
+      return null;
+    }
+  }
+
+  /**
    * Process Borrow / Return transaction with QR or Barcode
    */
-  static borrowReturnProcess({ name, nomor_asset }) {
+  static borrowReturnProcess({ name, nomor_asset, proof_image }) {
     if (!name || !nomor_asset) {
       throw new Error('Name and Nomor Asset / Serial are required');
     }
@@ -55,6 +85,12 @@ export class SampleService {
       message = `SAMPLE: ${model} | NO. ASSET: ${targetAssetNo} PEMINJAM BERGANTI KE: ${cleanName}`;
     }
 
+    // Save proof image if provided
+    let savedProofPath = null;
+    if (proof_image) {
+      savedProofPath = this.saveBase64Image(proof_image, 'proofs', `flow_${actionType}_${targetAssetNo}`);
+    }
+
     // Execute atomic update & log
     const updateTransaction = db.transaction(() => {
       db.prepare(`
@@ -64,9 +100,9 @@ export class SampleService {
       `).run(cleanName, newStatus, now, targetAssetNo);
 
       db.prepare(`
-        INSERT INTO flow_sample (name, nomor_asset, status_pinjam, model, timestamp)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(cleanName, targetAssetNo, newStatus, model, now);
+        INSERT INTO flow_sample (name, nomor_asset, status_pinjam, model, timestamp, proof_image)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(cleanName, targetAssetNo, newStatus, model, now, savedProofPath);
     });
 
     updateTransaction();
@@ -78,14 +114,15 @@ export class SampleService {
       action: actionType,
       message,
       sample: updatedSample,
-      timestamp: now
+      timestamp: now,
+      proof_image: savedProofPath
     };
   }
 
   /**
    * Process Sample Audit checking
    */
-  static auditProcess({ name, nomor_asset }) {
+  static auditProcess({ name, nomor_asset, proof_image }) {
     if (!name || !nomor_asset) {
       throw new Error('Name and Nomor Asset / Serial are required');
     }
@@ -124,6 +161,12 @@ export class SampleService {
 
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
+    // Save proof image if provided
+    let savedProofPath = null;
+    if (proof_image) {
+      savedProofPath = this.saveBase64Image(proof_image, 'proofs', `audit_${targetAssetNo}`);
+    }
+
     const auditTransaction = db.transaction(() => {
       db.prepare(`
         UPDATE database_sample 
@@ -132,9 +175,9 @@ export class SampleService {
       `).run(now, targetAssetNo);
 
       db.prepare(`
-        INSERT INTO audit_sample (name, pic_sample, nomor_asset, status_audit, model, tanggal_pengecekan)
-        VALUES (?, ?, ?, 'SUDAH', ?, ?)
-      `).run(cleanName, picSample, targetAssetNo, model, now);
+        INSERT INTO audit_sample (name, pic_sample, nomor_asset, status_audit, model, tanggal_pengecekan, proof_image)
+        VALUES (?, ?, ?, 'SUDAH', ?, ?, ?)
+      `).run(cleanName, picSample, targetAssetNo, model, now, savedProofPath);
     });
 
     auditTransaction();
@@ -143,10 +186,11 @@ export class SampleService {
 
     return {
       success: true,
-      action: 'BERHASIL',
-      message: `BERHASIL DICHECK: ${model} (${targetAssetNo})`,
+      action: 'SUDAH',
+      message: `AUDIT BERHASIL: ${model} (${targetAssetNo})`,
       sample: updatedSample,
-      timestamp: now
+      timestamp: now,
+      proof_image: savedProofPath
     };
   }
 

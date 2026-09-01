@@ -147,6 +147,12 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_audit_name ON audit_sample(name);
   `);
 
+  // Safe migrations for Face Recognition & Photo Proof with Timestamp
+  try { db.exec("ALTER TABLE users ADD COLUMN face_descriptor TEXT;"); } catch (e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN face_photo TEXT;"); } catch (e) {}
+  try { db.exec("ALTER TABLE flow_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
+  try { db.exec("ALTER TABLE audit_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
+
   return db;
 }
 

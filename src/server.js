@@ -36,9 +36,13 @@ app.use(cookieParser());
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 
-// Ensure upload & qr directories exist
+// Ensure upload, qr, proofs & faces directories exist
 const uploadDir = path.join(__dirname, '../uploads');
+const proofsDir = path.join(uploadDir, 'proofs');
+const facesDir = path.join(uploadDir, 'faces');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(proofsDir)) fs.mkdirSync(proofsDir, { recursive: true });
+if (!fs.existsSync(facesDir)) fs.mkdirSync(facesDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
 
 // WebSocket for Real-time Dashboard & Live Broadcasts

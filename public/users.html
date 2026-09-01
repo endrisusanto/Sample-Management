@@ -196,17 +196,52 @@
     </div>
   </div>
 
+  <!-- Face Registration Modal -->
+  <div class="modal fade" id="registerFaceModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+      <div class="modal-content border-info shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-info fw-bold fs-6">
+            <i class="fas fa-camera me-2"></i> Perekaman Biometrik Wajah
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btn-close-reg-face"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+          <h6 class="fw-bold text-light mb-1" id="reg-face-user-name">USER NAME</h6>
+          <p class="text-secondary small mb-3">Tatap lurus ke kamera untuk merekam biometrik Face ID.</p>
+          
+          <div class="position-relative mx-auto mb-3" style="width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent-blue, #3b82f6); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);">
+            <video id="reg-face-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+            <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none;"></div>
+          </div>
+
+          <div id="reg-face-status" class="alert alert-info py-2 px-3 small mb-3" style="font-size: 11.5px;">
+            <i class="fas fa-spinner fa-spin me-1"></i> Mengaktifkan kamera...
+          </div>
+
+          <button type="button" class="btn btn-primary-custom w-100 py-2" id="btn-save-face-reg">
+            <i class="fas fa-save me-1"></i> Ambil & Simpan Biometrik Wajah
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { Auth, showGiantAlert, setupWebSocket } from '/js/app.js';
+    import { FaceEngine } from '/js/face-engine.js';
 
     const usersGrid = document.getElementById('users-grid');
     const badgeModal = new bootstrap.Modal(document.getElementById('qrBadgeModal'));
     const userModal = new bootstrap.Modal(document.getElementById('userFormModal'));
     const resetDbModal = new bootstrap.Modal(document.getElementById('resetDbModal'));
+    const registerFaceModal = new bootstrap.Modal(document.getElementById('registerFaceModal'));
+    const faceEngine = new FaceEngine('reg-face-video');
     const userForm = document.getElementById('user-form');
     const resetDbForm = document.getElementById('reset-db-form');
     let currentUser = null;
+    let targetFaceUserId = null;
 
     async function loadUsers() {
       try {
@@ -260,10 +295,16 @@
                 </div>
 
                 <div class="d-flex flex-column gap-2 mt-2">
-                  <button class="btn btn-surface w-100 btn-view-badge py-1" 
-                          data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" data-qr="${qrUrl}">
-                    <i class="fas fa-qrcode me-1"></i> Lihat & Print Badge
-                  </button>
+                  <div class="btn-group w-100">
+                    <button class="btn btn-surface btn-view-badge py-1" 
+                            data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" data-qr="${qrUrl}">
+                      <i class="fas fa-qrcode me-1"></i> Badge
+                    </button>
+                    <button class="btn btn-surface btn-register-face py-1 ${u.face_descriptor ? 'text-success' : 'text-info'}"
+                            data-id="${u.id}" data-name="${u.name}" title="Daftarkan Biometrik Wajah untuk Login">
+                      <i class="fas fa-camera me-1"></i> ${u.face_descriptor ? 'Face ID ✅' : 'Daftar Face ID'}
+                    </button>
+                  </div>
 
                   ${isSuper ? `
                     <div class="btn-group w-100">
@@ -291,6 +332,27 @@
           });
         });
 
+        document.querySelectorAll('.btn-register-face').forEach(b => {
+          b.addEventListener('click', async () => {
+            const { id, name } = b.dataset;
+            targetFaceUserId = id;
+            document.getElementById('reg-face-user-name').textContent = name;
+            registerFaceModal.show();
+            
+            const statusEl = document.getElementById('reg-face-status');
+            statusEl.className = 'alert alert-info py-2 px-3 small mb-3';
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengaktifkan kamera...';
+
+            try {
+              await faceEngine.startCamera('user');
+              statusEl.innerHTML = '<i class="fas fa-user-check text-success me-1"></i> Kamera aktif. Posisikan wajah di lingkaran lalu klik Simpan.';
+            } catch (err) {
+              statusEl.className = 'alert alert-danger py-2 px-3 small mb-3';
+              statusEl.innerHTML = '❌ ' + err.message;
+            }
+          });
+        });
+
         document.querySelectorAll('.btn-edit-user').forEach(b => {
           b.addEventListener('click', () => {
             const { id, name, email, level } = b.dataset;
@@ -310,6 +372,52 @@
         usersGrid.innerHTML = `<div class="col-12 text-center py-5 text-danger">Gagal memuat pengguna: ${e.message}</div>`;
       }
     }
+
+    document.getElementById('btn-close-reg-face').addEventListener('click', () => {
+      faceEngine.stopCamera();
+    });
+
+    document.getElementById('btn-save-face-reg').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-save-face-reg');
+      const statusEl = document.getElementById('reg-face-status');
+      btn.disabled = true;
+      statusEl.className = 'alert alert-primary py-2 px-3 small mb-3';
+      statusEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Merekam biometrik wajah...';
+
+      try {
+        const result = faceEngine.extractFaceDescriptor();
+        if (!result) throw new Error('Wajah tidak terdeteksi pada kamera.');
+
+        const res = await fetch('/api/auth/register-face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: targetFaceUserId,
+            faceDescriptor: result.descriptor,
+            facePhoto: result.photo
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          statusEl.className = 'alert alert-success py-2 px-3 small mb-3';
+          statusEl.innerHTML = '✅ <strong>Biometrik Wajah Berhasil Disimpan!</strong>';
+          setTimeout(() => {
+            faceEngine.stopCamera();
+            registerFaceModal.hide();
+            loadUsers();
+          }, 1200);
+        } else {
+          statusEl.className = 'alert alert-danger py-2 px-3 small mb-3';
+          statusEl.innerHTML = '❌ ' + (data.message || 'Gagal menyimpan wajah');
+        }
+      } catch (err) {
+        statusEl.className = 'alert alert-danger py-2 px-3 small mb-3';
+        statusEl.innerHTML = '❌ ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     function showBadgeModal(user, qrUrl) {
       document.getElementById('badgeModalBody').innerHTML = `

@@ -113,3 +113,42 @@ authRouter.delete('/users/:id', authenticate, requireSuperUser, (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+/**
+ * Register User Face
+ */
+authRouter.post('/register-face', authenticate, (req, res) => {
+  try {
+    const userId = req.body.userId || req.user.id;
+    const { faceDescriptor, facePhoto } = req.body;
+
+    if (!faceDescriptor && !facePhoto) {
+      return res.status(400).json({ success: false, message: 'Data foto / biometrik wajah wajib diisi' });
+    }
+
+    const updatedUser = AuthService.registerFace(userId, faceDescriptor, facePhoto);
+    res.json({ success: true, message: 'Wajah berhasil didaftarkan!', user: updatedUser });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Biometric Face Login
+ */
+authRouter.post('/face-login', async (req, res) => {
+  try {
+    const { faceDescriptor } = req.body;
+    const { token, user, distance } = AuthService.faceLogin(faceDescriptor);
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, token, user, distance, message: `Face ID diverifikasi! Selamat datang, ${user.name}` });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});

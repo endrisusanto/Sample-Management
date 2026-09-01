@@ -121,6 +121,23 @@
           </button>
         </div>
       </form>
+
+      <!-- Camera Proof Live View (Collapsible) -->
+      <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+        <button type="button" class="btn btn-surface btn-sm py-1 text-info" id="btn-toggle-camera-proof">
+          <i class="fas fa-camera me-1"></i> <span id="camera-toggle-label">Aktifkan Bukti Foto (Timestamp Watermark)</span>
+        </button>
+        <span class="text-secondary small" style="font-size: 10.5px;" id="camera-status-hint">Mode Foto Otomatis: Nonaktif</span>
+      </div>
+
+      <div class="mt-2 d-none" id="camera-proof-container">
+        <div class="position-relative mx-auto rounded overflow-hidden border border-info" style="max-width: 320px; max-height: 180px; background: #000;">
+          <video id="proof-video" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover;"></video>
+          <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 py-1 px-2 text-center text-white" style="font-size: 10px;">
+            <i class="fas fa-clock text-warning me-1"></i> Watermark Timestamp dibakar otomatis saat scan
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Borrower Cards Section (Index.php Replica with Dense 11px Layout) -->
@@ -166,12 +183,31 @@
               <th>Nomor Asset / Serial</th>
               <th>Model</th>
               <th>Status</th>
+              <th>Bukti Foto</th>
             </tr>
           </thead>
           <tbody id="footer-flow-tbody">
-            <tr><td colspan="5" class="text-center py-3 text-secondary">Memuat log aktivitas...</td></tr>
+            <tr><td colspan="6" class="text-center py-3 text-secondary">Memuat log aktivitas...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Proof Viewer Modal -->
+  <div class="modal fade" id="proofViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-info" style="background: var(--bg-surface-elevated, #0f172a);">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-info fw-bold fs-6" id="proofModalTitle">
+            <i class="fas fa-camera-retro me-2"></i> Bukti Transaksi Sample (Watermarked)
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-3">
+          <img id="proofModalImg" src="" alt="Bukti Foto" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
+          <div class="text-secondary small" id="proofModalSubtitle"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -184,12 +220,46 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { Auth, showGiantAlert, setupWebSocket } from '/js/app.js';
+    import { CameraProofEngine } from '/js/camera-proof.js';
 
     const picInput = document.getElementById('pic-name-input');
     const assetInput = document.getElementById('asset-scan-input');
     const scanForm = document.getElementById('scan-form');
     const pillsContainer = document.getElementById('quick-user-pills');
     const cardsContainer = document.getElementById('borrower-cards-container');
+    const proofModal = new bootstrap.Modal(document.getElementById('proofViewModal'));
+    const proofModalImg = document.getElementById('proofModalImg');
+    const proofModalSubtitle = document.getElementById('proofModalSubtitle');
+
+    // Camera Proof Engine Setup
+    const cameraProof = new CameraProofEngine('proof-video');
+    const btnToggleCamProof = document.getElementById('btn-toggle-camera-proof');
+    const camProofContainer = document.getElementById('camera-proof-container');
+    const camToggleLabel = document.getElementById('camera-toggle-label');
+    const camStatusHint = document.getElementById('camera-status-hint');
+    let isCameraProofActive = false;
+
+    btnToggleCamProof.addEventListener('click', async () => {
+      if (!isCameraProofActive) {
+        try {
+          await cameraProof.startCamera('environment');
+          isCameraProofActive = true;
+          camProofContainer.classList.remove('d-none');
+          camToggleLabel.textContent = 'Nonaktifkan Kamera Bukti';
+          btnToggleCamProof.className = 'btn btn-primary-custom btn-sm py-1';
+          camStatusHint.innerHTML = '<span class="text-success"><i class="fas fa-circle text-success me-1"></i>Kamera Aktif (Auto-Watermark)</span>';
+        } catch (err) {
+          alert('Gagal mengaktifkan kamera: ' + err.message);
+        }
+      } else {
+        cameraProof.stopCamera();
+        isCameraProofActive = false;
+        camProofContainer.classList.add('d-none');
+        camToggleLabel.textContent = 'Aktifkan Bukti Foto (Timestamp Watermark)';
+        btnToggleCamProof.className = 'btn btn-surface btn-sm py-1 text-info';
+        camStatusHint.textContent = 'Mode Foto Otomatis: Nonaktif';
+      }
+    });
 
     // Calculate time difference string (Lama Pinjam)
     function formatDuration(timestamp) {
@@ -243,62 +313,58 @@
     async function loadDashboard() {
       try {
         const res = await fetch('/api/stats/dashboard');
-        const { stats } = await res.json();
+        const data = await res.json();
+        if (!data.success) return;
 
-        document.getElementById('kpi-total').textContent = stats.totalSamples;
-        document.getElementById('kpi-borrowed').textContent = stats.borrowed;
-        document.getElementById('kpi-available').textContent = stats.available;
-        document.getElementById('kpi-audited').textContent = stats.audited;
+        const stats = data.stats;
+        document.getElementById('kpi-total').textContent = stats.totalSamples?.toLocaleString('id-ID') || 0;
+        document.getElementById('kpi-borrowed').textContent = stats.borrowed?.toLocaleString('id-ID') || 0;
+        document.getElementById('kpi-available').textContent = stats.available?.toLocaleString('id-ID') || 0;
+        document.getElementById('kpi-audited').textContent = stats.audited?.toLocaleString('id-ID') || 0;
 
         const userCards = stats.userCards || [];
-
         if (userCards.length === 0) {
           cardsContainer.innerHTML = `
-            <div class="col-12">
-              <div class="glass-panel text-center py-5 text-success">
-                <i class="fas fa-check-circle fs-1 mb-2"></i>
-                <h5 class="fw-bold">SEMUA SAMPLE TERSEDIA</h5>
-                <p class="text-secondary small">Tidak ada sample yang sedang dipinjam saat ini.</p>
+            <div class="col-12 text-center py-5">
+              <div class="glass-panel d-inline-block p-4">
+                <i class="fas fa-box-open text-success fs-1 mb-2"></i>
+                <h5 class="fw-bold text-light">Semua Sample Berada di Tempat</h5>
+                <p class="text-secondary small m-0">Tidak ada sample yang sedang dipinjam saat ini.</p>
               </div>
             </div>
           `;
           return;
         }
 
-        // Palette for card headers
-        const headerColors = ['#1e3a8a', '#14532d', '#701a75', '#7c2d12', '#1f2937', '#0e7490', '#312e81'];
-
-        cardsContainer.innerHTML = userCards.map((user, idx) => {
-          const bgHeader = headerColors[idx % headerColors.length];
-          const rowsHtml = user.items.map(item => {
-            const assetNo = item.nomor_asset || item.sn || '-';
-            const model = item.model || item.model_name || '-';
-            const duration = formatDuration(item.timestamp);
-            return `
-              <tr>
-                <td class="fw-bold text-light">${assetNo}</td>
-                <td class="text-secondary">${model}</td>
-                <td class="text-end"><span class="selisih-badge" data-time="${item.timestamp}">${duration}</span></td>
-              </tr>
-            `;
-          }).join('');
+        cardsContainer.innerHTML = userCards.map(user => {
+          const rowsHtml = user.items.map((it, idx) => `
+            <tr>
+              <td class="text-center text-muted" style="width: 25px;">${idx + 1}</td>
+              <td class="fw-bold text-light">${it.nomor_asset}</td>
+              <td>${it.model || it.model_name || '-'}</td>
+              <td class="text-secondary">${it.sn || '-'}</td>
+              <td class="text-secondary d-none d-md-table-cell">${it.imei || '-'}</td>
+              <td><span class="selisih-badge text-warning" data-time="${it.timestamp}">${formatDuration(it.timestamp)}</span></td>
+            </tr>
+          `).join('');
 
           return `
-            <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+            <div class="col-12 col-md-6 col-lg-4">
               <div class="user-borrow-card">
-                <div class="user-card-header" style="background: ${bgHeader};">
-                  <span class="user-card-name"><i class="fas fa-user me-1"></i> ${user.name}</span>
-                  <button type="button" class="btn btn-sm btn-dark py-0 px-2 select-this-user" data-name="${user.name}" title="Pilih PIC ini">
-                    <i class="fas fa-check"></i>
-                  </button>
+                <div class="user-card-header select-this-user" data-name="${user.name}" title="Sentuh untuk memilih ${user.name}">
+                  <span class="user-card-title"><i class="fas fa-user-circle me-1 text-danger"></i> ${user.name}</span>
+                  <span class="badge bg-danger">${user.count} Unit</span>
                 </div>
                 <div class="user-card-body">
-                  <table class="dense-table">
+                  <table class="dense-table mb-0">
                     <thead>
                       <tr>
-                        <th>No. Asset</th>
+                        <th style="width: 25px;">#</th>
+                        <th>No Asset</th>
                         <th>Model</th>
-                        <th class="text-end">Lama Pinjam</th>
+                        <th>Serial</th>
+                        <th class="d-none d-md-table-cell">IMEI</th>
+                        <th>Durasi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -306,16 +372,11 @@
                     </tbody>
                   </table>
                 </div>
-                <div class="user-card-footer">
-                  <span>SEDANG PINJAM</span>
-                  <span class="badge bg-danger">${user.count} UNIT</span>
-                </div>
               </div>
             </div>
           `;
         }).join('');
 
-        // Attach quick select on card header
         document.querySelectorAll('.select-this-user').forEach(btn => {
           btn.addEventListener('click', () => {
             picInput.value = btn.dataset.name;
@@ -335,7 +396,7 @@
       });
     }, 30000);
 
-    // Form Submit Handler
+    // Form Submit Handler with Photo Proof Watermarking
     scanForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = picInput.value.trim();
@@ -344,11 +405,22 @@
       if (!name) { picInput.focus(); return; }
       if (!nomor_asset) { assetInput.focus(); return; }
 
+      // Capture stamped photo if camera is active
+      let proof_image = null;
+      if (isCameraProofActive) {
+        proof_image = cameraProof.captureStampedPhoto({
+          action: 'TRANSAKSI',
+          model: 'DEVICE',
+          nomorAsset: nomor_asset,
+          picName: name
+        });
+      }
+
       try {
         const res = await fetch('/api/borrow-return', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, nomor_asset })
+          body: JSON.stringify({ name, nomor_asset, proof_image })
         });
         const result = await res.json();
 
@@ -410,8 +482,7 @@
     }
 
     footerHeader.addEventListener('click', (e) => {
-      // Don't toggle twice if clicking refresh button
-      if (e.target.closest('#btn-refresh-footer-log')) return;
+      if (e.target.closest('#btn-refresh-footer-log') || e.target.closest('.btn-view-proof')) return;
       toggleLogDrawer();
     });
 
@@ -432,6 +503,10 @@
         
           footerTbody.innerHTML = flows.map(f => {
             const isPinjam = f.status_pinjam === 'PINJAM';
+            const proofBtn = f.proof_image 
+              ? `<button type="button" class="btn btn-outline-info btn-sm py-0 px-2 btn-view-proof" data-img="${f.proof_image}" data-title="${f.name} - ${f.nomor_asset}" data-sub="${f.status_pinjam} pada ${f.timestamp}" style="font-size: 10px;"><i class="fas fa-camera me-1"></i>Lihat Foto</button>`
+              : '<span class="text-muted" style="font-size: 10px;">-</span>';
+
             return `
               <tr>
                 <td class="text-secondary"><i class="far fa-clock me-1"></i>${f.timestamp}</td>
@@ -444,15 +519,26 @@
                     ${f.status_pinjam}
                   </span>
                 </td>
+                <td>${proofBtn}</td>
               </tr>
             `;
           }).join('');
+
+          // Wire view proof image buttons
+          document.querySelectorAll('.btn-view-proof').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              proofModalImg.src = btn.dataset.img;
+              proofModalSubtitle.innerHTML = `<strong>${btn.dataset.title}</strong> — ${btn.dataset.sub}`;
+              proofModal.show();
+            });
+          });
         } else {
           footerTicker.textContent = '(Belum ada log transaksi)';
-          footerTbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-muted">Belum ada transaksi</td></tr>`;
+          footerTbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-muted">Belum ada transaksi</td></tr>`;
         }
       } catch (err) {
-        footerTbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-danger">Gagal memuat log</td></tr>`;
+        footerTbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-danger">Gagal memuat log</td></tr>`;
       }
     }
 
