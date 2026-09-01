@@ -103,6 +103,8 @@ if ! git rev-parse "$TAG" >/dev/null 2>&1; then
   git tag -a "$TAG" -m "$TAG"
 fi
 
-echo "✅ Ready to push to GitHub:"
-echo "👉 git push -u origin $BRANCH --tags"
+echo "🚀 Pushing $BRANCH and $TAG to $REMOTE_URL..."
+git push -u origin "HEAD:$BRANCH" "$TAG"
+
+echo "🎉 Successfully Released $TAG to GitHub Actions!"
 echo "🌐 Live Deployment: https://sample.endrisusanto.my.id/"
