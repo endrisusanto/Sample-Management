@@ -87,7 +87,7 @@ authRouter.post('/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
-authRouter.get('/users', authenticate, (req, res) => {
+authRouter.get('/users', (req, res) => {
   try {
     const users = AuthService.getAllUsers();
     res.json({ success: true, users });
@@ -117,9 +117,12 @@ authRouter.delete('/users/:id', authenticate, requireSuperUser, (req, res) => {
 /**
  * Register User Face
  */
-authRouter.post('/register-face', authenticate, (req, res) => {
+authRouter.post('/register-face', (req, res) => {
   try {
-    const userId = req.body.userId || req.user.id;
+    const userId = req.body.userId || (req.user && req.user.id);
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID wajib disertakan' });
+    }
     const { faceDescriptor, facePhoto } = req.body;
 
     if (!faceDescriptor && !facePhoto) {
@@ -153,9 +156,12 @@ authRouter.post('/face-login', async (req, res) => {
 /**
  * Register Fingerprint / Passkey Credential
  */
-authRouter.post('/fingerprint/register', authenticate, (req, res) => {
+authRouter.post('/fingerprint/register', (req, res) => {
   try {
-    const userId = req.body.userId || req.user.id;
+    const userId = req.body.userId || (req.user && req.user.id);
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID wajib disertakan' });
+    }
     const { credentialId, publicKey, deviceName } = req.body;
 
     if (!credentialId) {
