@@ -104,7 +104,35 @@ public class MainActivity extends BridgeActivity {
                     @Override
                     public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
                         super.onAuthenticationError(errorCode, errString);
-                        sendResult(callbackId, false, errString.toString());
+                        String customMsg;
+                        switch (errorCode) {
+                            case BiometricPrompt.ERROR_NO_BIOMETRICS:
+                                customMsg = "Sensor sidik jari belum didaftarkan pada perangkat ini. Silakan atur dan daftarkan Sidik Jari di menu Pengaturan Keamanan HP Anda terlebih dahulu.";
+                                break;
+                            case BiometricPrompt.ERROR_HW_NOT_PRESENT:
+                                customMsg = "Perangkat ini tidak dilengkapi sensor sidik jari.";
+                                break;
+                            case BiometricPrompt.ERROR_HW_UNAVAILABLE:
+                                customMsg = "Sensor sidik jari sedang sibuk atau tidak tersedia.";
+                                break;
+                            case BiometricPrompt.ERROR_USER_CANCELED:
+                            case BiometricPrompt.ERROR_NEGATIVE_BUTTON:
+                                customMsg = "Perekaman / verifikasi sidik jari dibatalkan oleh pengguna.";
+                                break;
+                            case BiometricPrompt.ERROR_LOCKOUT:
+                            case BiometricPrompt.ERROR_LOCKOUT_PERMANENT:
+                                customMsg = "Terlalu banyak percobaan gagal. Sensor sidik jari terkunci sementara.";
+                                break;
+                            default:
+                                String raw = errString.toString();
+                                if (raw.toLowerCase().contains("face") || raw.toLowerCase().contains("unlock")) {
+                                    customMsg = "Sensor sidik jari belum didaftarkan pada perangkat ini. Silakan atur Sidik Jari di Pengaturan HP Anda.";
+                                } else {
+                                    customMsg = raw;
+                                }
+                                break;
+                        }
+                        sendResult(callbackId, false, customMsg);
                     }
 
                     @Override
