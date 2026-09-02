@@ -137,69 +137,45 @@ export class CameraProofEngine {
     const cleanAsset = nomorAsset || '-';
     const cleanModel = model || '-';
 
-    // 3. Compact Monochrome Inline Chip Watermark
-    const fontSize = Math.max(11, Math.floor(targetHeight * 0.032));
-    ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
-
-    const singleLineText = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}   |   ${cleanPic}   |   ${dateStr}, ${timeStr}`;
-    const singleLineWidth = ctx.measureText(singleLineText).width;
+    // 3. Compact Monochrome Single-Line Pill Watermark (Auto-fit Font Scaling)
+    let fontSize = Math.max(9.5, Math.floor(targetHeight * 0.034));
     const maxAvailableWidth = targetWidth - 28;
 
-    const padX = Math.max(10, Math.floor(fontSize * 0.9));
-    const padY = Math.max(5, Math.floor(fontSize * 0.5));
-    const chipHeight = fontSize + (padY * 2);
+    const singleLineText = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}   |   ${cleanPic}   |   ${dateStr}, ${timeStr}`;
+    
+    // Dynamically auto-shrink font size if text exceeds width so it ALWAYS fits in 1 single line!
+    ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
+    let singleLineWidth = ctx.measureText(singleLineText).width;
+    let padX = Math.max(7, Math.floor(fontSize * 0.8));
+
+    while ((singleLineWidth + (padX * 2) > maxAvailableWidth) && fontSize > 7) {
+      fontSize -= 0.5;
+      ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
+      singleLineWidth = ctx.measureText(singleLineText).width;
+      padX = Math.max(6, Math.floor(fontSize * 0.75));
+    }
+
+    const padY = Math.max(4, Math.floor(fontSize * 0.45));
+    const chipHeight = Math.round(fontSize + (padY * 2));
+    const chipWidth = Math.min(maxAvailableWidth, Math.round(singleLineWidth + (padX * 2)));
     const radius = Math.floor(chipHeight / 2);
 
-    if (singleLineWidth + (padX * 2) <= maxAvailableWidth) {
-      // --- Single Line Inline Pill Chip ---
-      const chipWidth = singleLineWidth + (padX * 2);
-      const chipX = 14;
-      const chipY = targetHeight - chipHeight - 14;
+    const chipX = 14;
+    const chipY = targetHeight - chipHeight - 12;
 
-      // Draw frosted monochrome pill container
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.lineWidth = 1.2;
+    // Draw frosted monochrome single-line pill container
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1.2;
 
-      ctx.beginPath();
-      ctx.roundRect(chipX, chipY, chipWidth, chipHeight, radius);
-      ctx.fill();
-      ctx.stroke();
+    ctx.beginPath();
+    ctx.roundRect(chipX, chipY, chipWidth, chipHeight, radius);
+    ctx.fill();
+    ctx.stroke();
 
-      // Draw text
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(singleLineText, chipX + padX, chipY + padY + fontSize - 2);
-    } else {
-      // --- Dual Line Stacked Compact Monochrome Chips ---
-      const line1 = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}`;
-      const line2 = `👤 ${cleanPic}   |   🕒 ${dateStr}, ${timeStr}`;
-
-      const w1 = ctx.measureText(line1).width + (padX * 2);
-      const w2 = ctx.measureText(line2).width + (padX * 2);
-      const chipWidth = Math.min(maxAvailableWidth, Math.max(w1, w2));
-
-      const totalH = (chipHeight * 2) + 4;
-      const chipX = 14;
-      const chipY = targetHeight - totalH - 12;
-
-      // Draw frosted monochrome rounded card
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.lineWidth = 1.2;
-
-      ctx.beginPath();
-      ctx.roundRect(chipX, chipY, chipWidth, totalH, 8);
-      ctx.fill();
-      ctx.stroke();
-
-      // Line 1
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(line1, chipX + padX, chipY + padY + fontSize - 1);
-
-      // Line 2
-      ctx.fillStyle = '#cbd5e1';
-      ctx.fillText(line2, chipX + padX, chipY + chipHeight + padY + fontSize - 1);
-    }
+    // Draw single-line crisp white watermark text
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(singleLineText, chipX + padX, chipY + padY + fontSize - 1);
 
     // Return high-efficiency compressed JPEG data URL (~50KB per photo)
     return this.canvas.toDataURL('image/jpeg', 0.78);

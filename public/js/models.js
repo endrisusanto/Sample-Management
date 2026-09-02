@@ -1,5 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
-import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.89';
+import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.90';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
