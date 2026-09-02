@@ -89,6 +89,55 @@ body {
   box-shadow: var(--shadow-main);
 }
 
+/* Modal Backdrop & Nested Modal Blur */
+.modal-backdrop {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  background-color: rgba(3, 7, 18, 0.75) !important;
+}
+
+.modal.show {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Filter Chip Pill (Interactive Legend & Filter Chips) */
+.filter-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filter-chip {
+  background: var(--bg-surface-elevated, #141414);
+  border: 1px solid var(--border-color, #262626);
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  border-color: var(--accent-blue, #3b82f6);
+  color: #ffffff;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.filter-chip.active {
+  background: var(--accent-blue, #3b82f6) !important;
+  border-color: var(--accent-blue, #3b82f6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
 /* Unified Standard Navbar */
 .navbar-custom {
   background: var(--bg-surface);

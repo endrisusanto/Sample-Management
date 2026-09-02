@@ -137,15 +137,19 @@
       </div>
     </div>
 
-    <!-- Legend Icon Bar -->
-    <div class="d-flex flex-wrap align-items-center gap-3 px-2 mb-3 text-secondary" style="font-size: 11px;">
-      <span class="fw-bold text-light text-uppercase"><i class="fas fa-info-circle me-1 text-primary"></i> Legend Icon Kondisi:</span>
-      <span><i class="fas fa-check-circle text-success me-1"></i> Tersedia (KEMBALI)</span>
-      <span><i class="fas fa-user-lock text-danger me-1"></i> Dipinjam (PINJAM)</span>
-      <span><i class="fas fa-shield-alt text-success me-1"></i> Normal</span>
-      <span><i class="fas fa-exclamation-triangle text-warning me-1"></i> Defect</span>
-      <span><i class="fas fa-clipboard-check text-info me-1"></i> Sudah Diaudit</span>
-      <span><i class="fas fa-hourglass-start text-secondary me-1"></i> Reset / Belum Audit</span>
+    <!-- Interactive Filter Chips (Legend & Filter Combined) -->
+    <div class="d-flex flex-wrap align-items-center gap-2 px-1 mb-3">
+      <span class="fw-bold text-light small text-uppercase me-1" style="font-size: 11px;">
+        <i class="fas fa-filter me-1 text-primary"></i> Filter Cepat:
+      </span>
+      <div class="filter-chip-group" id="model-filter-chips">
+        <button type="button" class="filter-chip active" data-chip="all"><i class="fas fa-layer-group"></i> Semua Model</button>
+        <button type="button" class="filter-chip" data-chip="has_borrowed"><i class="fas fa-user-lock text-danger"></i> Sedang Dipinjam</button>
+        <button type="button" class="filter-chip" data-chip="all_available"><i class="fas fa-check-circle text-success"></i> Semua Tersedia</button>
+        <button type="button" class="filter-chip" data-chip="has_defects"><i class="fas fa-exclamation-triangle text-warning"></i> Ada Defect</button>
+        <button type="button" class="filter-chip" data-chip="audited"><i class="fas fa-clipboard-check text-info"></i> Sudah Diaudit</button>
+        <button type="button" class="filter-chip" data-chip="pending_audit"><i class="fas fa-hourglass-start text-secondary"></i> Belum Audit</button>
+      </div>
     </div>
 
     <!-- Model Cards Grid -->
@@ -155,6 +159,24 @@
       </div>
     </div>
   </main>
+
+  <!-- Image Proof Viewer Modal -->
+  <div class="modal fade" id="proofViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-info" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-info fw-bold fs-6" id="proofModalTitle">
+            <i class="fas fa-camera-retro me-2"></i> Bukti Transaksi Sample (Watermarked)
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-3">
+          <img id="proofModalImg" src="" alt="Bukti Foto" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
+          <div class="text-secondary small" id="proofModalSubtitle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Model Detail (Modal-XL for rich overview) -->
   <div class="modal fade" id="sampleDetailModal" tabindex="-1">

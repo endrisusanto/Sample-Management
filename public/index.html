@@ -241,7 +241,7 @@
   <!-- Image Proof Viewer Modal -->
   <div class="modal fade" id="proofViewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-info" style="background: var(--bg-surface-elevated, #0f172a);">
+      <div class="modal-content border-info" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title text-info fw-bold fs-6" id="proofModalTitle">
             <i class="fas fa-camera-retro me-2"></i> Bukti Transaksi Sample (Watermarked)
@@ -252,6 +252,19 @@
           <img id="proofModalImg" src="" alt="Bukti Foto" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
           <div class="text-secondary small" id="proofModalSubtitle"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Borrower Detail Modal (Modal-XL for rich borrower overview) -->
+  <div class="modal fade" id="borrowerDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content border-primary shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-bottom border-secondary py-2 px-3">
+          <h5 class="modal-title fw-bold text-light" id="borrowerDetailModalTitle" style="font-size: 14px;">Detail Peminjam</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3" id="borrowerDetailModalBody"></div>
       </div>
     </div>
   </div>
@@ -468,6 +481,8 @@
           return;
         }
 
+        allBorrowers = borrowers;
+
         cardsContainer.innerHTML = borrowers.map(b => {
           const rowsHtml = b.items.map((it, idx) => `
             <tr>
@@ -482,7 +497,7 @@
 
           return `
             <div class="col-xl-4 col-lg-6 col-12">
-              <div class="model-card">
+              <div class="model-card clickable-borrower-card" data-borrower="${b.name}" style="cursor: pointer;" title="Klik untuk melihat detail seluruh sample yang dipinjam">
                 <div class="model-card-header">
                   <div>
                     <span class="model-card-title"><i class="fas fa-user-tag me-1"></i> ${b.name}</span>
@@ -510,15 +525,137 @@
                 </div>
                 <div class="model-card-footer">
                   <span><i class="fas fa-layer-group me-1"></i> ${b.items[0]?.Dept || 'PE Solution P /SEIN-P'}</span>
-                  <span>Total: <strong>${b.count} Sample</strong></span>
+                  <span class="text-info"><i class="fas fa-expand me-1"></i> Klik Detail</span>
                 </div>
               </div>
             </div>
           `;
         }).join('');
+
+        // Attach click listener to each borrower card
+        document.querySelectorAll('.clickable-borrower-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const name = card.dataset.borrower;
+            openBorrowerDetailModal(name);
+          });
+        });
       } catch (err) {
         cardsContainer.innerHTML = `<div class="col-12 text-center py-4 text-danger">Gagal memuat kartu: ${err.message}</div>`;
       }
+    }
+
+    const borrowerModalEl = document.getElementById('borrowerDetailModal');
+    const borrowerModal = borrowerModalEl ? new bootstrap.Modal(borrowerModalEl) : null;
+    let allBorrowers = [];
+
+    function openBorrowerDetailModal(borrowerName) {
+      if (!borrowerModal) return;
+      const borrowerObj = allBorrowers.find(b => b.name === borrowerName);
+      if (!borrowerObj) return;
+
+      const titleEl = document.getElementById('borrowerDetailModalTitle');
+      const bodyEl = document.getElementById('borrowerDetailModalBody');
+
+      if (titleEl) {
+        titleEl.innerHTML = `
+          <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-user-tag text-danger fs-5"></i>
+            <span>${borrowerObj.name}</span>
+            <span class="badge bg-danger ms-2">${borrowerObj.count} Unit Sedang Dipinjam</span>
+          </div>
+        `;
+      }
+
+      if (bodyEl) {
+        bodyEl.innerHTML = `
+          <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="input-group" style="max-width: 320px;">
+              <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-search"></i></span>
+              <input type="text" id="modal-borrower-search" class="form-control form-control-sm" placeholder="Cari Asset, Serial, Model..." style="font-size: 11.5px;">
+            </div>
+            <div class="text-secondary small">
+              <i class="fas fa-building me-1"></i> Departemen: <strong>${borrowerObj.items[0]?.Dept || 'PE Solution P /SEIN-P'}</strong>
+            </div>
+          </div>
+
+          <div class="table-responsive rounded border border-secondary" style="max-height: 60vh; overflow-y: auto;">
+            <table class="custom-table table-sm mb-0">
+              <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
+                <tr>
+                  <th style="width: 30px;">#</th>
+                  <th>No. Asset</th>
+                  <th>Model</th>
+                  <th>Serial No</th>
+                  <th>Bukti Foto</th>
+                  <th>IMEI</th>
+                  <th>HW Rev</th>
+                  <th>Durasi Pinjam</th>
+                  <th>Waktu Pinjam</th>
+                </tr>
+              </thead>
+              <tbody id="modal-borrower-tbody">
+                ${renderBorrowerModalRows(borrowerObj.items)}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        // Live Search inside Borrower Modal
+        const searchInModal = document.getElementById('modal-borrower-search');
+        const tbodyInModal = document.getElementById('modal-borrower-tbody');
+        if (searchInModal && tbodyInModal) {
+          searchInModal.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            const filtered = borrowerObj.items.filter(it => {
+              const text = `${it.nomor_asset || ''} ${it.sn || ''} ${it.model || ''} ${it.imei || ''}`.toLowerCase();
+              return text.includes(q);
+            });
+            tbodyInModal.innerHTML = renderBorrowerModalRows(filtered);
+            attachBorrowerModalProofEvents();
+          });
+        }
+
+        attachBorrowerModalProofEvents();
+      }
+
+      borrowerModal.show();
+    }
+
+    function renderBorrowerModalRows(items) {
+      if (!items || items.length === 0) {
+        return `<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada sample yang cocok.</td></tr>`;
+      }
+
+      return items.map((it, i) => {
+        const proofThumb = it.proof_image
+          ? `<img src="${it.proof_image}" class="img-thumbnail btn-view-borrow-proof" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti" data-img="${it.proof_image}" data-title="${it.nomor_asset || ''} (${it.model || ''})" data-sub="Peminjam: ${it.name || '-'} pada ${it.timestamp}">`
+          : `<span class="text-muted small">-</span>`;
+
+        return `
+          <tr>
+            <td class="text-secondary font-monospace">${i + 1}</td>
+            <td><strong class="text-primary font-monospace">${it.nomor_asset || it.sn || '-'}</strong></td>
+            <td class="fw-bold text-light">${it.model || it.model_name || '-'}</td>
+            <td class="text-light fw-semibold">${it.sn || it.serial_no || '-'}</td>
+            <td class="text-center">${proofThumb}</td>
+            <td class="small font-monospace">${it.imei || '-'}</td>
+            <td><span class="badge bg-dark border border-secondary">${it.hw_rev || '-'}</span></td>
+            <td><span class="badge bg-warning bg-opacity-25 text-warning border border-warning font-monospace">${formatDuration(it.timestamp)}</span></td>
+            <td class="small text-secondary font-monospace">${it.timestamp || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function attachBorrowerModalProofEvents() {
+      document.querySelectorAll('.btn-view-borrow-proof').forEach(img => {
+        img.addEventListener('click', (e) => {
+          e.stopPropagation();
+          proofModalImg.src = img.dataset.img;
+          proofModalSubtitle.innerHTML = `<strong>${img.dataset.title}</strong> — ${img.dataset.sub}`;
+          proofModal.show();
+        });
+      });
     }
 
     // Live update duration timers every 30 seconds

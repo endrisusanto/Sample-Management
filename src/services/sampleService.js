@@ -111,9 +111,9 @@ export class SampleService {
     const updateTransaction = db.transaction(() => {
       db.prepare(`
         UPDATE database_sample 
-        SET name = ?, status_pinjam = ?, timestamp = ?, updated_at = CURRENT_TIMESTAMP
+        SET name = ?, status_pinjam = ?, timestamp = ?, proof_image = COALESCE(?, proof_image), updated_at = CURRENT_TIMESTAMP
         WHERE nomor_asset = ?
-      `).run(cleanName, newStatus, now, targetAssetNo);
+      `).run(cleanName, newStatus, now, savedProofPath, targetAssetNo);
 
       db.prepare(`
         INSERT INTO flow_sample (name, nomor_asset, status_pinjam, model, timestamp, proof_image)
@@ -502,7 +502,7 @@ export class SampleService {
 
     // Active Borrowers list & their individual borrowed items (for index.php card view)
     const borrowedItems = db.prepare(`
-      SELECT id, name, nomor_asset, sn, model, model_name, timestamp, imei, hw_rev, pic_sample, Dept
+      SELECT id, name, nomor_asset, sn, model, model_name, timestamp, imei, hw_rev, pic_sample, Dept, proof_image
       FROM database_sample 
       WHERE status_pinjam = 'PINJAM' AND name != ''
       ORDER BY timestamp DESC
@@ -556,7 +556,7 @@ export class SampleService {
   static getModelCards(search = '') {
     let query = `
       SELECT id, model, model_name, nomor_asset, sn, serial_no, imei, imei2, un,
-             status_pinjam, status_audit, defect_status, octa_status, hw_rev, name, retention_owner, Dept
+             status_pinjam, status_audit, defect_status, defect, octa_status, hw_rev, name, retention_owner, Dept, timestamp, proof_image
       FROM database_sample
       WHERE 1=1
     `;

@@ -7,11 +7,14 @@ const totalBadge = document.getElementById('total-models-badge');
 const detailModalEl = document.getElementById('sampleDetailModal');
 const editModalEl = document.getElementById('sampleEditModal');
 const editFormEl = document.getElementById('sample-edit-form');
+const proofModalEl = document.getElementById('proofViewModal');
 
 let detailModal = null;
 let editModal = null;
+let proofModal = null;
 let allModels = [];
 let currentSelectedModel = null;
+let currentChipFilter = 'all';
 
 export async function initModelsPage() {
   if (detailModalEl) {
@@ -20,6 +23,9 @@ export async function initModelsPage() {
   if (editModalEl) {
     editModal = new bootstrap.Modal(editModalEl);
   }
+  if (proofModalEl) {
+    proofModal = new bootstrap.Modal(proofModalEl);
+  }
 
   const btnApply = document.getElementById('btn-apply-filter');
   const btnRefresh = document.getElementById('btn-refresh-models');
@@ -27,13 +33,36 @@ export async function initModelsPage() {
 
   if (btnApply) btnApply.addEventListener('click', loadModelCards);
   if (btnRefresh) btnRefresh.addEventListener('click', loadModelCards);
-  if (filterAvail) filterAvail.addEventListener('change', renderFilteredCards);
+  if (filterAvail) filterAvail.addEventListener('change', () => {
+    currentChipFilter = filterAvail.value;
+    syncChipButtons();
+    renderFilteredCards();
+  });
   if (searchInput) searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadModelCards(); });
+
+  // Interactive Filter Chips
+  document.querySelectorAll('#model-filter-chips .filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#model-filter-chips .filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentChipFilter = chip.dataset.chip;
+      if (filterAvail) {
+        if (['all', 'has_borrowed', 'all_available'].includes(currentChipFilter)) {
+          filterAvail.value = currentChipFilter;
+        } else {
+          filterAvail.value = 'all';
+        }
+      }
+      renderFilteredCards();
+    });
+  });
 
   if (btnReset) {
     btnReset.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
       if (filterAvail) filterAvail.value = 'all';
+      currentChipFilter = 'all';
+      syncChipButtons();
       loadModelCards();
     });
   }
@@ -91,6 +120,12 @@ export async function initModelsPage() {
   await loadModelCards();
 }
 
+function syncChipButtons() {
+  document.querySelectorAll('#model-filter-chips .filter-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.chip === currentChipFilter);
+  });
+}
+
 async function loadModelCards() {
   const search = searchInput ? searchInput.value.trim() : '';
   const params = new URLSearchParams();
@@ -118,13 +153,18 @@ async function loadModelCards() {
 
 function renderFilteredCards() {
   if (!cardsGrid) return;
-  const filterVal = filterAvail ? filterAvail.value : 'all';
   let filtered = allModels;
 
-  if (filterVal === 'has_borrowed') {
+  if (currentChipFilter === 'has_borrowed') {
     filtered = allModels.filter(m => m.borrowed > 0);
-  } else if (filterVal === 'all_available') {
+  } else if (currentChipFilter === 'all_available') {
     filtered = allModels.filter(m => m.borrowed === 0);
+  } else if (currentChipFilter === 'has_defects') {
+    filtered = allModels.filter(m => (m.defects && m.defects > 0) || m.items.some(u => u.defect_status && u.defect_status !== 'Normal' && u.defect_status !== ''));
+  } else if (currentChipFilter === 'audited') {
+    filtered = allModels.filter(m => m.audited > 0);
+  } else if (currentChipFilter === 'pending_audit') {
+    filtered = allModels.filter(m => m.audited < m.total);
   }
 
   if (totalBadge) {
@@ -269,6 +309,7 @@ function openModelDetailModal(modelName) {
               <th>No. Asset</th>
               <th>Serial No</th>
               <th>Status Pinjam</th>
+              <th>Bukti Foto</th>
               <th>PIC / Peminjam</th>
               <th>Status Audit</th>
               <th>UN Code</th>
@@ -298,11 +339,11 @@ function openModelDetailModal(modelName) {
           return text.includes(q);
         });
         modalTbody.innerHTML = renderModalTableRows(filteredUnits);
-        attachRowEditListeners();
+        attachRowInteractions();
       });
     }
 
-    attachRowEditListeners();
+    attachRowInteractions();
   }
 
   if (detailModal) {
@@ -312,13 +353,17 @@ function openModelDetailModal(modelName) {
 
 function renderModalTableRows(items) {
   if (items.length === 0) {
-    return `<tr><td colspan="13" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
+    return `<tr><td colspan="14" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
   }
 
   return items.map((u, i) => {
     const isPinjam = u.status_pinjam === 'PINJAM';
     const isAudited = u.status_audit === 'SUDAH';
     const isNormal = !u.defect_status || u.defect_status === 'Normal' || u.defect_status === '';
+
+    const proofThumbnail = u.proof_image 
+      ? `<img src="${u.proof_image}" class="img-thumbnail btn-view-proof-img" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti transaksi" data-img="${u.proof_image}" data-title="${u.nomor_asset || ''} (${u.model || ''})" data-sub="${u.status_pinjam || ''} • PIC: ${u.name || '-'}">`
+      : `<span class="text-muted small">-</span>`;
 
     return `
       <tr>
@@ -330,6 +375,7 @@ function renderModalTableRows(items) {
             <i class="fas ${isPinjam ? 'fa-user-lock' : 'fa-check-circle'} me-1"></i>${u.status_pinjam || 'KEMBALI'}
           </span>
         </td>
+        <td class="text-center">${proofThumbnail}</td>
         <td>
           ${isPinjam ? `<span class="fw-bold text-warning">${u.name || '-'}</span>` : `<span class="text-secondary">${u.pic_sample || u.retention_owner || '-'}</span>`}
         </td>
@@ -359,13 +405,27 @@ function renderModalTableRows(items) {
   }).join('');
 }
 
-function attachRowEditListeners() {
+function attachRowInteractions() {
+  // Row Edit button
   document.querySelectorAll('.btn-open-sample-edit').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
       if (!id) return;
       await openSampleEditModal(id);
+    });
+  });
+
+  // Proof Image Thumbnail Click -> Preview
+  document.querySelectorAll('.btn-view-proof-img').forEach(img => {
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!proofModal) return;
+      const modalImg = document.getElementById('proofModalImg');
+      const modalSub = document.getElementById('proofModalSubtitle');
+      if (modalImg) modalImg.src = img.dataset.img;
+      if (modalSub) modalSub.innerHTML = `<strong>${img.dataset.title}</strong> — ${img.dataset.sub}`;
+      proofModal.show();
     });
   });
 }

@@ -152,6 +152,7 @@ export function initDatabase() {
   try { db.exec("ALTER TABLE users ADD COLUMN face_photo TEXT;"); } catch (e) {}
   try { db.exec("ALTER TABLE flow_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
   try { db.exec("ALTER TABLE audit_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
+  try { db.exec("ALTER TABLE database_sample ADD COLUMN proof_image TEXT;"); } catch (e) {}
 
   // 5. User Biometric & Fingerprint Credentials
   db.exec(`
