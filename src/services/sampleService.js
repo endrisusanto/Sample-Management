@@ -28,9 +28,9 @@ export class SampleService {
    * Helper to decode and save base64 image
    */
   static saveBase64Image(base64Data, subfolder = 'proofs', prefix = 'proof') {
-    if (!base64Data || typeof base64Data !== 'string' || !base64Data.startsWith('data:image')) {
-      return null;
-    }
+    if (!base64Data || typeof base64Data !== 'string') return null;
+    if (base64Data.startsWith('/uploads/')) return base64Data;
+    if (!base64Data.startsWith('data:image')) return null;
     try {
       const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
       if (!matches || matches.length !== 3) return null;

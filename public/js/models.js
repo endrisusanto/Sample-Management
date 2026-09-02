@@ -1,4 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
+import { CameraProofEngine } from '/js/camera-proof.js';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -8,10 +9,17 @@ const detailModalEl = document.getElementById('sampleDetailModal');
 const editModalEl = document.getElementById('sampleEditModal');
 const editFormEl = document.getElementById('sample-edit-form');
 const proofModalEl = document.getElementById('proofViewModal');
+const bulkProofModalEl = document.getElementById('bulkProofModal');
 
 let detailModal = null;
 let editModal = null;
 let proofModal = null;
+let bulkProofModal = null;
+let cameraProof = null;
+let currentFacingMode = 'user';
+let pendingBulkAssets = [];
+let pendingBulkModelName = '';
+
 let allModels = [];
 let currentSelectedModel = null;
 let currentChipFilter = 'all';
@@ -25,6 +33,54 @@ export async function initModelsPage() {
   }
   if (proofModalEl) {
     proofModal = new bootstrap.Modal(proofModalEl);
+  }
+  if (bulkProofModalEl) {
+    bulkProofModal = new bootstrap.Modal(bulkProofModalEl);
+    cameraProof = new CameraProofEngine('bulk-proof-video');
+
+    bulkProofModalEl.addEventListener('hidden.bs.modal', () => {
+      if (cameraProof) cameraProof.stopCamera();
+    });
+
+    const btnSwitchCamera = document.getElementById('btn-switch-camera-bulk');
+    if (btnSwitchCamera) {
+      btnSwitchCamera.addEventListener('click', async () => {
+        currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+        try {
+          await cameraProof.startCamera(currentFacingMode);
+        } catch (e) {
+          console.warn('Switch camera error:', e.message);
+        }
+      });
+    }
+
+    const btnCaptureConfirm = document.getElementById('btn-capture-confirm-bulk');
+    if (btnCaptureConfirm) {
+      btnCaptureConfirm.addEventListener('click', async () => {
+        const user = Auth.getUser();
+        const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
+        
+        let photoBase64 = null;
+        if (cameraProof) {
+          photoBase64 = cameraProof.captureStampedPhoto({
+            action: 'BULK PINJAM',
+            model: pendingBulkModelName,
+            nomorAsset: `${pendingBulkAssets.length} UNIT BULK`,
+            picName: currentUserName
+          });
+        }
+        await processBulkBorrowExecution(photoBase64, currentUserName);
+      });
+    }
+
+    const btnSkipPhoto = document.getElementById('btn-skip-photo-bulk');
+    if (btnSkipPhoto) {
+      btnSkipPhoto.addEventListener('click', async () => {
+        const user = Auth.getUser();
+        const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
+        await processBulkBorrowExecution(null, currentUserName);
+      });
+    }
   }
 
   const btnApply = document.getElementById('btn-apply-filter');
@@ -354,7 +410,7 @@ function openModelDetailModal(modelName) {
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-sm btn-surface py-1 px-2" id="btn-uncheck-all-units">Batal</button>
           <button type="button" class="btn btn-sm btn-primary-custom fw-bold py-1 px-3" id="btn-execute-bulk-borrow">
-            <i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih
+            <i class="fas fa-camera me-1"></i> Pinjam Unit Terpilih
           </button>
         </div>
       </div>
@@ -397,7 +453,7 @@ function openModelDetailModal(modelName) {
       });
     }
 
-    // Execute Bulk Borrow Button
+    // Execute Bulk Borrow Button -> Open Photo Proof Confirmation Modal
     const btnBulkBorrow = document.getElementById('btn-execute-bulk-borrow');
     if (btnBulkBorrow) {
       btnBulkBorrow.addEventListener('click', async () => {
@@ -407,56 +463,23 @@ function openModelDetailModal(modelName) {
 
         if (selectedAssets.length === 0) return;
 
-        const ok = await showCustomConfirm({
-          title: 'Konfirmasi Bulk Pinjam',
-          message: `Apakah Anda yakin ingin meminjam <strong>${selectedAssets.length} unit</strong> sample untuk <strong>${currentUserName}</strong>?`,
-          type: 'warning',
-          confirmText: '⚡ Ya, Pinjam Unit',
-          cancelText: 'Batal'
-        });
+        pendingBulkAssets = selectedAssets;
+        pendingBulkModelName = modelName;
 
-        if (!ok) return;
+        const summaryEl = document.getElementById('bulk-proof-summary-text');
+        if (summaryEl) {
+          summaryEl.innerHTML = `Peminjaman <strong>${selectedAssets.length} Unit</strong> (${modelName}) untuk PIC: <strong class="text-warning">${currentUserName}</strong>`;
+        }
 
-        btnBulkBorrow.disabled = true;
-        btnBulkBorrow.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memproses...';
-
-        try {
-          const res = await fetch('/api/borrow-return-batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: currentUserName, assets: selectedAssets })
-          });
-          const result = await res.json();
-
-          if (result.success) {
-            SoundEffects.play('PINJAM');
-            showGiantAlert({
-              title: 'PEMINJAMAN BULK BERHASIL',
-              message: `Berhasil meminjam <strong>${result.count} Unit</strong> untuk <strong>${currentUserName}</strong>!`,
-              action: 'PINJAM'
-            });
-
-            await loadModelCards();
-            const updated = allModels.find(m => m.model === modelName);
-            if (updated) {
-              openModelDetailModal(updated.model);
+        if (bulkProofModal) {
+          bulkProofModal.show();
+          try {
+            if (cameraProof) {
+              await cameraProof.startCamera(currentFacingMode);
             }
-          } else {
-            await showCustomAlert({
-              title: 'Gagal Bulk Pinjam',
-              message: result.message || 'Gagal memproses peminjaman massal',
-              type: 'danger'
-            });
+          } catch (err) {
+            console.warn('Camera auto-start warning:', err.message);
           }
-        } catch (err) {
-          await showCustomAlert({
-            title: 'Error',
-            message: err.message,
-            type: 'danger'
-          });
-        } finally {
-          btnBulkBorrow.disabled = false;
-          btnBulkBorrow.innerHTML = '<i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih';
         }
       });
     }
@@ -467,6 +490,67 @@ function openModelDetailModal(modelName) {
 
   if (detailModal) {
     detailModal.show();
+  }
+}
+
+async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
+  if (!pendingBulkAssets || pendingBulkAssets.length === 0) return;
+
+  const btnCapture = document.getElementById('btn-capture-confirm-bulk');
+  const btnSkip = document.getElementById('btn-skip-photo-bulk');
+  if (btnCapture) {
+    btnCapture.disabled = true;
+    btnCapture.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses Peminjaman...';
+  }
+  if (btnSkip) btnSkip.disabled = true;
+
+  try {
+    const res = await fetch('/api/borrow-return-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: currentUserName,
+        assets: pendingBulkAssets,
+        proof_image: proofImageBase64
+      })
+    });
+    const result = await res.json();
+
+    if (bulkProofModal) bulkProofModal.hide();
+    if (cameraProof) cameraProof.stopCamera();
+
+    if (result.success) {
+      SoundEffects.play('PINJAM');
+      showGiantAlert({
+        title: 'PEMINJAMAN BULK BERHASIL',
+        message: `Berhasil meminjam <strong>${result.count} Unit</strong> untuk <strong>${currentUserName}</strong>!`,
+        action: 'PINJAM'
+      });
+
+      await loadModelCards();
+      const updated = allModels.find(m => m.model === pendingBulkModelName);
+      if (updated) {
+        openModelDetailModal(updated.model);
+      }
+    } else {
+      await showCustomAlert({
+        title: 'Gagal Bulk Pinjam',
+        message: result.message || 'Gagal memproses peminjaman massal',
+        type: 'danger'
+      });
+    }
+  } catch (err) {
+    await showCustomAlert({
+      title: 'Error',
+      message: err.message,
+      type: 'danger'
+    });
+  } finally {
+    if (btnCapture) {
+      btnCapture.disabled = false;
+      btnCapture.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Pinjam';
+    }
+    if (btnSkip) btnSkip.disabled = false;
   }
 }
 

@@ -62,7 +62,7 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
  */
 apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
   try {
-    const { name, assets } = req.body;
+    const { name, assets, proof_image } = req.body;
     const borrowerName = name || req.user?.name;
 
     if (!borrowerName) {
@@ -72,12 +72,17 @@ apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Daftar nomor asset kosong' });
     }
 
+    let savedProofPath = null;
+    if (proof_image) {
+      savedProofPath = SampleService.saveBase64Image(proof_image, 'proofs', `batch_borrow_${Date.now()}`);
+    }
+
     const results = [];
     for (const nomor_asset of assets) {
       const resItem = SampleService.borrowReturnProcess({
         name: borrowerName,
         nomor_asset,
-        proof_image: null
+        proof_image: savedProofPath
       });
       results.push(resItem);
     }
@@ -85,10 +90,11 @@ apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
     broadcastEvent('SAMPLE_UPDATED', {
       action: 'BATCH_BORROW',
       count: results.length,
-      borrower: borrowerName
+      borrower: borrowerName,
+      proof_image: savedProofPath
     });
 
-    res.json({ success: true, count: results.length, results });
+    res.json({ success: true, count: results.length, results, proof_image: savedProofPath });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
