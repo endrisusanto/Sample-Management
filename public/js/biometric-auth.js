@@ -67,32 +67,56 @@ function promptNativeAndroidBiometric(title, subtitle) {
 
 export class BiometricAuth {
   /**
-   * Get all users registered with biometrics on this device
+   * Get the single locked user profile registered on this device
    */
-  static getRegisteredUsers() {
+  static getRegisteredUser() {
     try {
-      const raw = localStorage.getItem('device_biometric_users');
-      return raw ? JSON.parse(raw) : [];
+      const raw = localStorage.getItem('device_biometric_user');
+      if (raw) return JSON.parse(raw);
+      
+      // Fallback/migration from legacy multi-user list
+      const legacyRaw = localStorage.getItem('device_biometric_users');
+      if (legacyRaw) {
+        const list = JSON.parse(legacyRaw);
+        if (Array.isArray(list) && list.length > 0) {
+          const first = list[list.length - 1];
+          BiometricAuth.saveRegisteredUser(first);
+          return first;
+        }
+      }
+      return null;
     } catch (e) {
-      return [];
+      return null;
     }
   }
 
+  /**
+   * Lock this device's fingerprint exclusively to 1 user profile
+   */
   static saveRegisteredUser(userObj) {
     try {
-      const list = BiometricAuth.getRegisteredUsers().filter(u => u.userId != userObj.userId);
-      list.push({
+      const lockedProfile = {
         userId: userObj.userId,
         userName: userObj.userName,
         userEmail: userObj.userEmail,
         credentialId: userObj.credentialId,
         registeredAt: new Date().toISOString()
-      });
-      localStorage.setItem('device_biometric_users', JSON.stringify(list));
+      };
+      localStorage.setItem('device_biometric_user', JSON.stringify(lockedProfile));
       localStorage.setItem('last_biometric_cred_id', userObj.credentialId);
+      localStorage.removeItem('device_biometric_users'); // Remove legacy multi-user list
     } catch (e) {
-      console.error('Failed to save biometric user locally:', e);
+      console.error('Failed to save locked biometric user locally:', e);
     }
+  }
+
+  /**
+   * Clear biometric lock on this device
+   */
+  static clearRegisteredUser() {
+    localStorage.removeItem('device_biometric_user');
+    localStorage.removeItem('device_biometric_users');
+    localStorage.removeItem('last_biometric_cred_id');
   }
 
   /**
@@ -207,20 +231,22 @@ export class BiometricAuth {
   }
 
   /**
-   * Trigger Native Fingerprint / Passkey Login
+   * Trigger Native Fingerprint / Passkey Login (Strict 1-to-1 Profile Lock)
    * @param {string} [specificCredentialId] Optional specific user credentialId
    */
   static async loginWithFingerprint(specificCredentialId = null) {
     try {
-      const targetCredId = specificCredentialId || localStorage.getItem('last_biometric_cred_id');
+      const lockedUser = BiometricAuth.getRegisteredUser();
+      const targetCredId = specificCredentialId || lockedUser?.credentialId || localStorage.getItem('last_biometric_cred_id');
+
+      if (!targetCredId || !lockedUser) {
+        throw new Error('Belum ada akun yang dikunci dengan sidik jari pada perangkat ini. Silakan login dengan password dan kunci sidik jari di menu Pengguna.');
+      }
 
       // 1. Android APK Native BiometricPrompt
       if (window.AndroidNativeBiometric) {
-        if (!targetCredId) {
-          throw new Error('Belum ada sidik jari yang didaftarkan pada perangkat ini. Silakan daftarkan di menu Pengguna.');
-        }
-
-        await promptNativeAndroidBiometric('Login Sample Tracker', 'Sentuh sensor sidik jari Anda');
+        const userName = lockedUser?.userName || 'Pengguna Terkunci';
+        await promptNativeAndroidBiometric('Verifikasi Sidik Jari', `Sentuh sensor sidik jari untuk masuk sebagai: ${userName}`);
 
         const res = await fetch('/api/auth/fingerprint/login', {
           method: 'POST',
