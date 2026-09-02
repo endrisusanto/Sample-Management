@@ -169,6 +169,7 @@
         const data = await res.json();
 
         if (data.success) {
+          if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
           redirectAfterLogin();
         } else {
           alertBox.textContent = data.message || 'Login gagal: Periksa kembali email dan password Anda.';
@@ -219,6 +220,7 @@
         const data = await res.json();
 
         if (data.success) {
+          if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
           SoundEffects.play('SUCCESS');
           faceStatus.className = 'alert alert-success py-2 px-3 small mb-3';
           faceStatus.innerHTML = `✅ <strong>${data.message}</strong>`;
@@ -246,6 +248,7 @@
 
       try {
         const result = await BiometricAuth.loginWithFingerprint(credId);
+        if (result.user) localStorage.setItem('user', JSON.stringify(result.user));
         SoundEffects.play('SUCCESS');
         alertBox.className = 'alert alert-success py-2 px-3 small mb-3';
         alertBox.innerHTML = `✅ <strong>${result.message}</strong>`;

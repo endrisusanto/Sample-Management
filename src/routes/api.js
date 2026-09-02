@@ -26,7 +26,8 @@ export function setBroadcastFn(fn) {
 apiRouter.post('/borrow-return', authenticate, async (req, res) => {
   try {
     const { name, nomor_asset, proof_image } = req.body;
-    const borrowerName = name || req.user?.name;
+    const isSuper = req.user?.level === 'super user' || req.user?.level === 'admin';
+    const borrowerName = (isSuper && name?.trim()) ? name.trim() : (req.user?.name || name?.trim());
 
     if (!borrowerName) {
       return res.status(400).json({
@@ -63,7 +64,10 @@ apiRouter.post('/borrow-return', authenticate, async (req, res) => {
 apiRouter.post('/borrow-return-batch', authenticate, async (req, res) => {
   try {
     const { name, assets, proof_image, action } = req.body;
-    const borrowerName = name || req.user?.name;
+    const isSuper = req.user?.level === 'super user' || req.user?.level === 'admin';
+    const borrowerName = (action === 'KEMBALI' && name?.trim())
+      ? name.trim()
+      : ((isSuper && name?.trim()) ? name.trim() : (req.user?.name || name?.trim()));
 
     if (!borrowerName) {
       return res.status(400).json({ success: false, message: 'Nama peminjam wajib diisi' });
@@ -107,7 +111,8 @@ apiRouter.post('/borrow-return-batch', authenticate, async (req, res) => {
 apiRouter.post('/audit', authenticate, async (req, res) => {
   try {
     const { name, nomor_asset, proof_image } = req.body;
-    const auditorName = name || req.user?.name || 'AUDITOR';
+    const isSuper = req.user?.level === 'super user' || req.user?.level === 'admin';
+    const auditorName = (isSuper && name?.trim()) ? name.trim() : (req.user?.name || name?.trim() || 'AUDITOR');
 
     const result = SampleService.auditProcess({
       name: auditorName,

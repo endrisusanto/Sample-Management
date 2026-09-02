@@ -438,7 +438,8 @@
         }
 
         // Single Transaction Flow
-        const name = picInput.value.trim();
+        const activeUser = Auth.getCurrentUser();
+        const name = (picInput.value.trim() || activeUser?.name || '').toUpperCase();
         const nomor_asset = assetInput.value.trim();
 
         const res = await fetch('/api/borrow-return', {
@@ -457,9 +458,10 @@
           if (result.action === 'KEMBALI') title = 'SAMPLE SUDAH KEMBALI';
           else if (result.action === 'BERGANTI') title = 'PIC PEMINJAM SAMPLE BERGANTI';
 
+          const recordedPic = (result.sample && result.sample.name) ? result.sample.name : (name || activeUser?.name || '');
           showGiantAlert({
             title,
-            message: `<span class="text-nowrap me-2"><strong>SAMPLE:</strong> <span class="text-info">${result.sample?.model || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap mx-2"><strong>NO. ASSET:</strong> <span class="text-warning font-monospace">${result.sample?.nomor_asset || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap ms-2"><strong>PIC:</strong> <span class="text-primary fw-bold">${name}</span></span>`,
+            message: `<span class="text-nowrap me-2"><strong>SAMPLE:</strong> <span class="text-info">${result.sample?.model || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap mx-2"><strong>NO. ASSET:</strong> <span class="text-warning font-monospace">${result.sample?.nomor_asset || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap ms-2"><strong>PIC:</strong> <span class="text-primary fw-bold">${recordedPic}</span></span>`,
             action: result.action
           });
 
