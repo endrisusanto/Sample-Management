@@ -9,6 +9,22 @@ const __dirname = path.dirname(__filename);
 
 export class SampleService {
   /**
+   * Return standardized Asia/Jakarta timestamp (YYYY-MM-DD HH:mm:ss)
+   */
+  static getJakartaTimestamp() {
+    return new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(new Date()).replace('T', ' ');
+  }
+
+  /**
    * Helper to decode and save base64 image
    */
   static saveBase64Image(base64Data, subfolder = 'proofs', prefix = 'proof') {
@@ -59,7 +75,7 @@ export class SampleService {
       };
     }
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = this.getJakartaTimestamp();
     const prevName = (sample.name || '').trim().toUpperCase();
     const prevStatus = (sample.status_pinjam || '').trim().toUpperCase();
     const model = sample.model || sample.model_name || 'UNKNOWN';
@@ -159,7 +175,7 @@ export class SampleService {
       };
     }
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = this.getJakartaTimestamp();
 
     // Save proof image if provided
     let savedProofPath = null;
@@ -346,7 +362,7 @@ export class SampleService {
         data.retention_department || 'PE Solution P /SEIN-P', data.Location || 'Dynamics Building',
         data.un || '', data.imei || '', data.imei2 || '', data.hw_rev || '',
         data.sample_separation_status || 'Dev.', data.octa_status || '', data.defect_status || 'Normal',
-        `qr/qr_${assetNo}.png`, new Date().toISOString().replace('T', ' ').substring(0, 19)
+        `qr/qr_${assetNo}.png`, this.getJakartaTimestamp()
       );
       return { id: result.lastInsertRowid, created: true };
     }
@@ -444,7 +460,7 @@ export class SampleService {
           hw_rev: row['HW Rev.'] || row.hw_rev || '',
           pre_result: row['Pre result'] || row.pre_result || 'N',
           qr: `qr/qr_${effectiveAsset}.png`,
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+          timestamp: this.getJakartaTimestamp()
         });
 
         if (exists) {

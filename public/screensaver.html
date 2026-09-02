@@ -167,16 +167,21 @@
 
     function formatDuration(timestamp) {
       if (!timestamp) return '-';
-      const start = new Date(timestamp.replace(' ', 'T')).getTime();
+      const str = String(timestamp).trim().replace(' ', 'T');
+      const start = new Date(str).getTime();
+      if (isNaN(start)) return '-';
+
       const now = Date.now();
       const diffSec = Math.max(0, Math.floor((now - start) / 1000));
+
       const days = Math.floor(diffSec / 86400);
       const hours = Math.floor((diffSec % 86400) / 3600);
       const minutes = Math.floor((diffSec % 3600) / 60);
 
       if (days > 0) return `${days}h ${hours}j`;
       if (hours > 0) return `${hours}j ${minutes}m`;
-      return `${minutes} mnt`;
+      if (minutes > 0) return `${minutes} mnt`;
+      return `< 1 mnt`;
     }
 
     // Drawer Expand / Collapse
