@@ -225,6 +225,20 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-3" id="detailModalBody"></div>
+        <div class="modal-footer p-2 border-top border-secondary d-none" id="bulk-borrow-bar" style="background: var(--bg-surface, #0f172a);">
+          <div class="w-100 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary fs-6 py-1 px-2" id="selected-units-badge"><i class="fas fa-check-square me-1"></i>0 Unit Dipilih</span>
+              <span class="text-secondary small">Peminjam: <strong class="text-warning font-monospace" id="bulk-borrow-pic-label">PIC</strong></span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-surface py-1 px-2" id="btn-uncheck-all-units">Batal</button>
+              <button type="button" class="btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow" id="btn-execute-bulk-borrow">
+                <i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
