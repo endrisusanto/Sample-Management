@@ -89,8 +89,17 @@ authRouter.post('/logout', (req, res) => {
 
 authRouter.get('/users', authenticate, (req, res) => {
   try {
-    const users = AuthService.getAllUsers();
-    return res.json({ success: true, users });
+    const isSuper = req.user && (req.user.level === 'super user' || req.user.level === 'admin');
+    if (isSuper) {
+      const users = AuthService.getAllUsers();
+      return res.json({ success: true, users });
+    } else {
+      let user = AuthService.getUserById(req.user.id);
+      if (!user && req.user.email) {
+        user = AuthService.getUserByEmail(req.user.email);
+      }
+      return res.json({ success: true, users: user ? [user] : [] });
+    }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

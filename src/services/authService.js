@@ -82,6 +82,10 @@ export class AuthService {
     return db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor FROM users WHERE id = ?').get(id);
   }
 
+  static getUserByEmail(email) {
+    return db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+  }
+
   static deleteUser(id) {
     return db.prepare('DELETE FROM users WHERE id = ?').run(id);
   }
