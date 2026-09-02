@@ -102,28 +102,61 @@
     </div>
   </div>
 
-  <!-- Animated Login Success Celebration Overlay -->
-  <div id="login-celebration-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" style="z-index: 9999; background: rgba(10, 15, 29, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);">
-    <div class="glass-panel p-4 p-md-5 text-center shadow-lg border border-primary animate-pop-in" style="max-width: 440px; width: 90%; border-radius: 24px; box-shadow: 0 0 60px rgba(59, 130, 246, 0.5) !important;">
-      <div class="position-relative d-inline-block mb-3">
-        <div class="rounded-circle p-3 d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-20 text-primary border border-primary pulse-glow" style="width: 84px; height: 84px;">
-          <i class="fas fa-check-circle fs-1 text-success"></i>
-        </div>
+  <!-- Minimalist Animated Login Success Overlay -->
+  <div id="login-celebration-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center" style="z-index: 9999; background: #000000;">
+    <div class="success-circle-wrapper mb-3">
+      <div class="success-circle">
+        <svg class="checkmark-svg" viewBox="0 0 52 52">
+          <path class="checkmark-path" fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" d="M14 27 l9 9 l17 -17"/>
+        </svg>
       </div>
-      <div class="text-uppercase tracking-wider text-primary fw-bold small mb-1" style="letter-spacing: 2px; font-size: 11px;">Autentikasi Berhasil</div>
-      <h3 class="fw-black text-light mb-2" id="celebrate-user-name" style="font-size: 22px;">SELAMAT DATANG!</h3>
-      <div id="celebrate-badge-container" class="mb-3">
-        <span class="badge bg-success bg-opacity-25 text-success border border-success px-3 py-1 text-uppercase" id="celebrate-user-level"><i class="fas fa-user-check me-1"></i> Member Aktif</span>
-      </div>
-      <p class="text-secondary small mb-4" id="celebrate-message" style="font-size: 12px;">Memuat profil dan mengarahkan ke dashboard...</p>
-      <div class="progress bg-dark border border-secondary" style="height: 6px; border-radius: 999px; overflow: hidden;">
-        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="celebrate-progress" style="width: 0%; transition: width 1.2s ease-in-out;"></div>
-      </div>
+    </div>
+    <div class="text-white fw-bold fs-4 tracking-tight" id="login-success-title" style="letter-spacing: -0.01em; animation: title-fade 0.35s ease 0.25s both;">
+      Login Successful
+    </div>
+    <div class="text-secondary small mt-1" id="login-success-subtitle" style="font-size: 13px; animation: title-fade 0.35s ease 0.35s both;">
+      PE Solution P / SEIN-P
     </div>
   </div>
 
+  <style>
+    /* Minimalist Animated Success Checkmark */
+    .success-circle {
+      width: 96px;
+      height: 96px;
+      background: #00c853;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(0, 200, 83, 0.45);
+      animation: circle-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes circle-pop {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.12); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .checkmark-svg {
+      width: 52px;
+      height: 52px;
+    }
+    .checkmark-path {
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      animation: checkmark-draw 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.22s forwards;
+    }
+    @keyframes checkmark-draw {
+      0% { stroke-dashoffset: 48; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes title-fade {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script type="module">
     import { FaceEngine } from '/js/face-engine.js';
     import { SoundEffects } from '/js/app.js';
@@ -142,55 +175,23 @@
       window.location.href = safeTarget;
     }
 
-    function playCelebration(user, customMsg = 'Selamat datang kembali di Sample Management!') {
+    function showMinimalSuccess(user) {
       SoundEffects.play('SUCCESS');
       
       const overlay = document.getElementById('login-celebration-overlay');
-      const nameEl = document.getElementById('celebrate-user-name');
-      const levelEl = document.getElementById('celebrate-user-level');
-      const msgEl = document.getElementById('celebrate-message');
-      const progressEl = document.getElementById('celebrate-progress');
-      
-      if (nameEl) nameEl.textContent = user?.name ? user.name.toUpperCase() : 'PENGGUNA';
-      if (levelEl) {
-        const isSuper = user?.level === 'super user' || user?.level === 'admin';
-        levelEl.className = isSuper 
-          ? 'badge bg-danger bg-opacity-25 text-danger border border-danger px-3 py-1 text-uppercase' 
-          : 'badge bg-success bg-opacity-25 text-success border border-success px-3 py-1 text-uppercase';
-        levelEl.innerHTML = isSuper 
-          ? '<i class="fas fa-shield-alt me-1"></i> Super User' 
-          : '<i class="fas fa-user-check me-1"></i> Member Aktif';
+      const subtitleEl = document.getElementById('login-success-subtitle');
+      if (subtitleEl && user && user.name) {
+        subtitleEl.innerHTML = `<span class="text-light fw-semibold">${user.name}</span> &bull; PE Solution`;
       }
-      if (msgEl) msgEl.textContent = customMsg;
       
       if (overlay) {
         overlay.classList.remove('d-none');
         overlay.classList.add('d-flex');
       }
 
-      // Spectacular confetti cannon burst
-      if (window.confetti) {
-        const count = 180;
-        const defaults = { origin: { y: 0.7 } };
-        function fire(particleRatio, opts) {
-          window.confetti(Object.assign({}, defaults, opts, {
-            particleCount: Math.floor(count * particleRatio)
-          }));
-        }
-        fire(0.25, { spread: 30, startVelocity: 60 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-        fire(0.1, { spread: 120, startVelocity: 45 });
-      }
-
-      setTimeout(() => {
-        if (progressEl) progressEl.style.width = '100%';
-      }, 50);
-
       setTimeout(() => {
         redirectAfterLogin();
-      }, 1500);
+      }, 1200);
     }
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -212,7 +213,7 @@
 
         if (data.success) {
           if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
-          playCelebration(data.user, `Login berhasil! Senang melihat Anda kembali.`);
+          showMinimalSuccess(data.user);
         } else {
           alertBox.textContent = data.message || 'Login gagal: Periksa kembali email dan password Anda.';
           alertBox.classList.remove('d-none');
@@ -266,7 +267,7 @@
           if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
           faceEngine.stopCamera();
           faceLoginModal.hide();
-          playCelebration(data.user, `Face ID terverifikasi! Selamat bekerja.`);
+          showMinimalSuccess(data.user);
         } else {
           SoundEffects.play('ERROR');
           faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3';
