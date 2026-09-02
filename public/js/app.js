@@ -121,6 +121,19 @@ if ('serviceWorker' in navigator && window.location.protocol.startsWith('http'))
 // Auth State
 export const Auth = {
   currentUser: null,
+
+  getCurrentUser() {
+    if (this.currentUser) return this.currentUser;
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        this.currentUser = JSON.parse(raw);
+        return this.currentUser;
+      }
+    } catch (e) {}
+    return null;
+  },
+
   async getUser() {
     try {
       const res = await fetch('/api/auth/me');
@@ -128,12 +141,14 @@ export const Auth = {
         const data = await res.json();
         if (data.success && data.user) {
           this.currentUser = data.user;
+          localStorage.setItem('user', JSON.stringify(data.user));
           this.renderNavbarUser(data.user);
           return data.user;
         }
       }
     } catch (e) {}
     this.currentUser = null;
+    localStorage.removeItem('user');
     this.renderNavbarUser(null);
     return null;
   },

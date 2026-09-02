@@ -275,12 +275,12 @@
     const cameraProof = new CameraProofEngine('audit-proof-video');
 
     // Auto-fill Auditor name from logged-in user
-    function initAuditorUser() {
-      const user = Auth.getUser();
+    async function initAuditorUser() {
+      const user = await Auth.getUser() || Auth.getCurrentUser();
       if (user && user.name) {
         auditorInput.value = user.name.toUpperCase();
       } else {
-        auditorInput.value = 'ENDRI SUSANTO';
+        auditorInput.value = '';
       }
     }
 

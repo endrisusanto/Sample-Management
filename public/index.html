@@ -315,13 +315,14 @@
     const cameraProof = new CameraProofEngine('proof-modal-video');
 
     // Auto-fill PIC name from logged-in user
-    function initUserPIC() {
-      const user = Auth.getUser();
+    async function initUserPIC() {
+      const user = await Auth.getUser() || Auth.getCurrentUser();
       if (user && user.name) {
         picInput.value = user.name.toUpperCase();
-        document.getElementById('logged-user-status-badge').innerHTML = `<i class="fas fa-user-circle me-1"></i> ${user.name}`;
+        const badge = document.getElementById('logged-user-status-badge');
+        if (badge) badge.innerHTML = `<i class="fas fa-user-circle me-1"></i> ${user.name}`;
       } else {
-        picInput.value = 'ENDRI SUSANTO';
+        picInput.value = '';
       }
     }
 

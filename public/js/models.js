@@ -58,8 +58,8 @@ export async function initModelsPage() {
     const btnCaptureConfirm = document.getElementById('btn-capture-confirm-bulk');
     if (btnCaptureConfirm) {
       btnCaptureConfirm.addEventListener('click', async () => {
-        const user = Auth.getUser();
-        const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
+        const user = await Auth.getUser() || Auth.getCurrentUser();
+        const currentUserName = (user && user.name) ? user.name.toUpperCase() : '';
         
         let photoBase64 = null;
         if (cameraProof) {
@@ -77,8 +77,8 @@ export async function initModelsPage() {
     const btnSkipPhoto = document.getElementById('btn-skip-photo-bulk');
     if (btnSkipPhoto) {
       btnSkipPhoto.addEventListener('click', async () => {
-        const user = Auth.getUser();
-        const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
+        const user = await Auth.getUser() || Auth.getCurrentUser();
+        const currentUserName = (user && user.name) ? user.name.toUpperCase() : '';
         await processBulkBorrowExecution(null, currentUserName);
       });
     }
@@ -344,9 +344,8 @@ function openModelDetailModal(modelName) {
 
   currentSelectedModel = modelObj;
   const modalTitle = document.getElementById('detailModalTitle');
-  const modalBody = document.getElementById('detailModalBody');
-  const user = Auth.getUser();
-  const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
+  const user = Auth.getCurrentUser();
+  const currentUserName = (user && user.name) ? user.name.toUpperCase() : '';
 
   if (modalTitle) {
     modalTitle.innerHTML = `
