@@ -81,15 +81,6 @@ export async function initModelsPage() {
         await processBulkBorrowExecution(photoBase64, currentUserName);
       });
     }
-
-    const btnSkipPhoto = document.getElementById('btn-skip-photo-bulk');
-    if (btnSkipPhoto) {
-      btnSkipPhoto.addEventListener('click', async () => {
-        const user = await Auth.getUser() || Auth.getCurrentUser();
-        const currentUserName = (user && user.name) ? user.name.toUpperCase() : '';
-        await processBulkBorrowExecution(null, currentUserName);
-      });
-    }
   }
 
   const btnApply = document.getElementById('btn-apply-filter');
@@ -514,14 +505,12 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
   if (!pendingBulkAssets || pendingBulkAssets.length === 0) return;
 
   const btnCapture = document.getElementById('btn-capture-confirm-bulk');
-  const btnSkip = document.getElementById('btn-skip-photo-bulk');
   const actionLabel = pendingBulkTargetAction === 'KEMBALI' ? 'Pengembalian' : 'Peminjaman';
   
   if (btnCapture) {
     btnCapture.disabled = true;
     btnCapture.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Memproses ${actionLabel}...`;
   }
-  if (btnSkip) btnSkip.disabled = true;
 
   try {
     const res = await fetch('/api/borrow-return-batch', {

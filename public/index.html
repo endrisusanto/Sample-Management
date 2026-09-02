@@ -275,9 +275,6 @@
             <button type="button" class="btn btn-primary-custom w-100 py-2 fw-bold fs-6 justify-content-center" id="btn-capture-confirm-transaction">
               <i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Transaksi
             </button>
-            <button type="button" class="btn btn-surface w-100 py-1 text-secondary small" id="btn-skip-photo-transaction">
-              <i class="fas fa-forward me-1"></i> Simpan Tanpa Foto
-            </button>
           </div>
         </div>
       </div>
@@ -314,7 +311,6 @@
     const btnSwitchProofCam = document.getElementById('btn-switch-proof-cam');
     const labelProofCamFacing = document.getElementById('label-proof-cam-facing');
     const btnCaptureConfirm = document.getElementById('btn-capture-confirm-transaction');
-    const btnSkipPhoto = document.getElementById('btn-skip-photo-transaction');
     const proofHudTime = document.getElementById('proof-hud-time');
 
     let proofFacingMode = 'user'; // default front camera mirror
@@ -401,7 +397,6 @@
     async function executeTransaction(proofImageBase64 = null) {
       btnCaptureConfirm.disabled = true;
       btnCaptureConfirm.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan Transaksi...';
-      btnSkipPhoto.disabled = true;
 
       try {
         if (pendingTransactionPayload && pendingTransactionPayload.isBulkReturn) {
@@ -494,7 +489,6 @@
       } finally {
         btnCaptureConfirm.disabled = false;
         btnCaptureConfirm.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Transaksi';
-        btnSkipPhoto.disabled = false;
       }
     }
 
@@ -518,11 +512,6 @@
         picName: picName
       });
       executeTransaction(proof_image);
-    });
-
-    // Button: Skip Photo & Save
-    btnSkipPhoto.addEventListener('click', () => {
-      executeTransaction(null);
     });
 
     // Load Borrower Dashboard Cards

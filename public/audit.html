@@ -222,9 +222,6 @@
             <button type="button" class="btn btn-warning w-100 py-2 fw-bold fs-6 justify-content-center" id="btn-capture-confirm-audit">
               <i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Audit
             </button>
-            <button type="button" class="btn btn-surface w-100 py-1 text-secondary small" id="btn-skip-photo-audit">
-              <i class="fas fa-forward me-1"></i> Simpan Tanpa Foto
-            </button>
           </div>
         </div>
       </div>
@@ -274,7 +271,6 @@
     const btnSwitchAuditCam = document.getElementById('btn-switch-audit-cam');
     const labelAuditCamFacing = document.getElementById('label-audit-cam-facing');
     const btnCaptureConfirmAudit = document.getElementById('btn-capture-confirm-audit');
-    const btnSkipPhotoAudit = document.getElementById('btn-skip-photo-audit');
     const auditHudTime = document.getElementById('audit-hud-time');
 
     let auditFacingMode = 'user'; // default front camera mirror
@@ -411,7 +407,6 @@
       } finally {
         btnCaptureConfirmAudit.disabled = false;
         btnCaptureConfirmAudit.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Audit';
-        btnSkipPhotoAudit.disabled = false;
       }
     }
 
@@ -426,11 +421,6 @@
         picName: name
       });
       executeAudit(proof_image);
-    });
-
-    // Button: Skip Photo & Save Audit
-    btnSkipPhotoAudit.addEventListener('click', () => {
-      executeAudit(null);
     });
 
     async function loadAuditStats() {
