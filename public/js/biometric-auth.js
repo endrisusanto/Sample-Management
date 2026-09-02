@@ -1,6 +1,8 @@
 /**
- * 🖐️ Biometric Fingerprint / Passkey Engine (WebAuthn / FIDO2)
- * Supports Native Android Fingerprint Sensor, Samsung Pass, Touch ID, & Windows Hello
+ * 🖐️ Biometric Fingerprint Engine
+ * Dual-Mode:
+ * 1. Native Android BiometricPrompt (via AndroidNativeBiometric bridge in Android APK)
+ * 2. WebAuthn / FIDO2 Passkey (for Desktop/Mobile Web Chrome, Edge, Safari)
  */
 
 // Helper to convert Base64URL to ArrayBuffer and vice versa
@@ -24,11 +26,42 @@ function base64urlToBuffer(base64url) {
   return bytes.buffer;
 }
 
+// Native Android Biometric Promise Wrapper
+function promptNativeAndroidBiometric(title, subtitle) {
+  return new Promise((resolve, reject) => {
+    if (!window.AndroidNativeBiometric) {
+      return reject(new Error('AndroidNativeBiometric tidak tersedia.'));
+    }
+
+    const callbackId = 'bio_' + Math.random().toString(36).substr(2, 9);
+    
+    window.__onNativeBiometricResult = (id, success, msg) => {
+      if (id === callbackId) {
+        if (success) {
+          resolve(true);
+        } else {
+          reject(new Error(msg || 'Autentikasi sidik jari dibatalkan atau gagal.'));
+        }
+      }
+    };
+
+    window.AndroidNativeBiometric.authenticate(title, subtitle, callbackId);
+  });
+}
+
 export class BiometricAuth {
   /**
-   * Check if device has biometric hardware (Fingerprint, TouchID, FaceID)
+   * Check if device has biometric hardware (Fingerprint / Face ID)
    */
   static async isAvailable() {
+    if (window.AndroidNativeBiometric) {
+      try {
+        return window.AndroidNativeBiometric.isBiometricAvailable();
+      } catch (e) {
+        return true;
+      }
+    }
+
     if (window.PublicKeyCredential && 
         typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
       try {
@@ -44,6 +77,29 @@ export class BiometricAuth {
    * Trigger Native Fingerprint / Passkey Registration
    */
   static async registerFingerprint({ userId, userName, userEmail }) {
+    // 1. Android APK Native BiometricPrompt
+    if (window.AndroidNativeBiometric) {
+      await promptNativeAndroidBiometric('Registrasi Sidik Jari', `Daftarkan ${userName}`);
+      
+      const androidCredId = `android_bio_${userId}_${btoa(userName || 'user')}`;
+      localStorage.setItem('last_biometric_cred_id', androidCredId);
+
+      const res = await fetch('/api/auth/fingerprint/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          credentialId: androidCredId,
+          deviceName: 'Android Hardware Fingerprint Sensor'
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Gagal menyimpan kredensial sidik jari');
+      return data;
+    }
+
+    // 2. Web Browser WebAuthn / FIDO2
     if (!window.PublicKeyCredential) {
       throw new Error('Sensor Biometrik / WebAuthn tidak didukung pada browser ini.');
     }
@@ -83,8 +139,6 @@ export class BiometricAuth {
     if (!credential) throw new Error('Perekaman sidik jari dibatalkan.');
 
     const credentialId = bufferToBase64url(credential.rawId);
-    
-    // Save to local storage for quick fallback passkey identification
     localStorage.setItem('last_biometric_cred_id', credentialId);
 
     // Save to Server
@@ -107,6 +161,27 @@ export class BiometricAuth {
    * Trigger Native Fingerprint / Passkey Login
    */
   static async loginWithFingerprint() {
+    // 1. Android APK Native BiometricPrompt
+    if (window.AndroidNativeBiometric) {
+      const storedCredId = localStorage.getItem('last_biometric_cred_id');
+      if (!storedCredId) {
+        throw new Error('Sidik jari belum didaftarkan pada perangkat ini. Silakan daftarkan di menu Pengguna.');
+      }
+
+      await promptNativeAndroidBiometric('Login Sample Tracker', 'Sentuh sensor sidik jari Anda');
+
+      const res = await fetch('/api/auth/fingerprint/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentialId: storedCredId })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Sidik jari tidak cocok.');
+      return data;
+    }
+
+    // 2. Web Browser WebAuthn / FIDO2
     if (!window.PublicKeyCredential) {
       throw new Error('Sensor Biometrik tidak didukung pada browser ini.');
     }
