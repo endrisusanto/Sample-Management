@@ -114,7 +114,7 @@
     <div class="text-white fw-bold fs-4 tracking-tight" id="login-success-title" style="letter-spacing: -0.01em; animation: title-fade 0.35s ease 0.25s both;">
       Login Successful
     </div>
-    <div class="text-secondary small mt-1" id="login-success-subtitle" style="font-size: 13px; animation: title-fade 0.35s ease 0.35s both;">
+    <div class="small mt-1 text-center" id="login-success-subtitle" style="font-size: 13px; color: #94a3b8; animation: title-fade 0.35s ease 0.35s both;">
       PE Solution P / SEIN-P
     </div>
   </div>
@@ -181,7 +181,7 @@
       const overlay = document.getElementById('login-celebration-overlay');
       const subtitleEl = document.getElementById('login-success-subtitle');
       if (subtitleEl && user && user.name) {
-        subtitleEl.innerHTML = `<span class="text-light fw-semibold">${user.name}</span> &bull; PE Solution`;
+        subtitleEl.textContent = `${user.name} • PE Solution`;
       }
       
       if (overlay) {
