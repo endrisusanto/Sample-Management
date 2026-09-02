@@ -101,8 +101,8 @@ export const Theme = {
     const modalThemeBtn = document.getElementById('modal-nav-theme-toggle');
     if (modalThemeBtn) {
       modalThemeBtn.innerHTML = theme === 'dark'
-        ? '<i class="fas fa-sun text-warning"></i>'
-        : '<i class="fas fa-moon text-primary"></i>';
+        ? '<i class="fas fa-sun text-warning me-1"></i><span>Light Mode</span>'
+        : '<i class="fas fa-moon text-primary me-1"></i><span>Dark Mode</span>';
       modalThemeBtn.title = theme === 'dark' ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode';
     }
   }
@@ -596,26 +596,13 @@ export function initAppNavModal() {
       <div class="modal fade" id="appNavModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
           <div class="modal-content border-primary shadow-2xl glass-panel" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 20px; overflow: hidden;">
-            <div class="modal-header border-bottom border-secondary py-2 px-3 d-flex justify-content-end align-items-center gap-2">
-              <!-- Keep Awake Toggle Checkbox -->
-              <div class="keep-awake-container form-check form-switch d-flex align-items-center" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
-                <input class="form-check-input keep-awake-switch" type="checkbox" id="modal-keep-awake-toggle" ${KeepAwakeManager.enabled ? 'checked' : ''}>
-                <label class="form-check-label user-select-none" for="modal-keep-awake-toggle" style="font-size: 10.5px;">
-                  <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
-                </label>
-              </div>
-
-              <!-- Theme Toggle Button -->
-              <button type="button" class="btn nav-action-pill" id="modal-nav-theme-toggle" title="Ganti Tema">
-                <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
-              </button>
-
+            <div class="modal-header border-0 pb-0 px-3 pt-3 d-flex justify-content-end align-items-center">
               <!-- Close Modal Button -->
-              <button type="button" class="btn-close btn-close-white ms-1" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body p-3 p-sm-4">
-              <div class="nav-modal-grid">
+            <div class="modal-body p-3 p-sm-4 pt-1">
+              <div class="nav-modal-grid mb-3">
                 <a href="/" class="nav-grid-tile ${currentPath === '/' || currentPath === '/index.html' ? 'active' : ''}">
                   <div class="nav-tile-icon text-primary"><i class="fas fa-qrcode"></i></div>
                   <div class="nav-tile-title">Scan Pinjam</div>
@@ -646,6 +633,24 @@ export function initAppNavModal() {
                   <div class="nav-tile-title">Screensaver</div>
                   <div class="nav-tile-desc">Display Standby Mode</div>
                 </a>
+              </div>
+
+              <!-- 50:50 Keep Awake & Darkmode Toggle Below Grid -->
+              <div class="row g-2 pt-3 border-top border-secondary">
+                <div class="col-6">
+                  <div class="keep-awake-container form-check form-switch d-flex align-items-center justify-content-center w-100 py-2 px-2 rounded border border-secondary" style="min-height: 40px; background: var(--bg-surface, #1e293b);" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
+                    <input class="form-check-input keep-awake-switch me-2" type="checkbox" id="modal-keep-awake-toggle" ${KeepAwakeManager.enabled ? 'checked' : ''}>
+                    <label class="form-check-label user-select-none small fw-bold text-nowrap" for="modal-keep-awake-toggle" style="font-size: 11px;">
+                      <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
+                    </label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <button type="button" class="btn btn-surface w-100 py-2 d-flex align-items-center justify-content-center gap-1 border border-secondary fw-bold" id="modal-nav-theme-toggle" style="min-height: 40px; font-size: 11px;" title="Ganti Tema">
+                    <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'} me-1"></i>
+                    <span>${document.documentElement.getAttribute('data-theme') === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

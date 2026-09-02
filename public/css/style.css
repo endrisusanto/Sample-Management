@@ -1361,6 +1361,22 @@ body {
     font-size: 12px;
   }
 
+  /* 50:50 Button Split Utilities on Mobile */
+  .mobile-50-50-split {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  .mobile-50-50-split > * {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: 50% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
   /* 50:50 Button Split on Modal & Action Bars */
   .modal-footer:not(.d-none),
   #bulk-borrow-bar:not(.d-none),

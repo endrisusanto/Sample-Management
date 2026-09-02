@@ -1,5 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
-import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.97';
+import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.98';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -584,6 +584,8 @@ function updateBulkBarState() {
   const checkedItems = Array.from(document.querySelectorAll('.unit-check-item:checked'));
   const allCheckboxes = Array.from(document.querySelectorAll('.unit-check-item'));
 
+  const user = Auth.getCurrentUser();
+  const currentUserName = (user && user.name) ? user.name.toUpperCase() : 'PIC';
   const count = checkedItems.length;
 
   if (count === 0) {
@@ -671,7 +673,7 @@ function updateBulkBarState() {
 
   if (bulkBar) {
     bulkBar.classList.remove('d-none');
-    bulkBar.style.display = '';
+    bulkBar.style.display = 'flex';
   }
 
   const validSameStatusItems = allCheckboxes.filter(c => c.dataset.noAccess !== 'true' && (c.dataset.status || 'KEMBALI') === activeStatus);
