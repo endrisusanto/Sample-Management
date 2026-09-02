@@ -62,7 +62,7 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
  */
 apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
   try {
-    const { name, assets, proof_image } = req.body;
+    const { name, assets, proof_image, action } = req.body;
     const borrowerName = name || req.user?.name;
 
     if (!borrowerName) {
@@ -74,7 +74,7 @@ apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
 
     let savedProofPath = null;
     if (proof_image) {
-      savedProofPath = SampleService.saveBase64Image(proof_image, 'proofs', `batch_borrow_${Date.now()}`);
+      savedProofPath = SampleService.saveBase64Image(proof_image, 'proofs', `batch_${action || 'flow'}_${Date.now()}`);
     }
 
     const results = [];
@@ -82,13 +82,14 @@ apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
       const resItem = SampleService.borrowReturnProcess({
         name: borrowerName,
         nomor_asset,
-        proof_image: savedProofPath
+        proof_image: savedProofPath,
+        forcedAction: action || null
       });
       results.push(resItem);
     }
 
     broadcastEvent('SAMPLE_UPDATED', {
-      action: 'BATCH_BORROW',
+      action: action === 'KEMBALI' ? 'BATCH_KEMBALI' : 'BATCH_PINJAM',
       count: results.length,
       borrower: borrowerName,
       proof_image: savedProofPath

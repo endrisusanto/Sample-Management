@@ -51,7 +51,7 @@ export class SampleService {
   /**
    * Process Borrow / Return transaction with QR or Barcode
    */
-  static borrowReturnProcess({ name, nomor_asset, proof_image }) {
+  static borrowReturnProcess({ name, nomor_asset, proof_image, forcedAction = null }) {
     if (!name || !nomor_asset) {
       throw new Error('Name and Nomor Asset / Serial are required');
     }
@@ -59,7 +59,7 @@ export class SampleService {
     const cleanAsset = nomor_asset.trim();
     const cleanName = name.trim().toUpperCase();
 
-    // Find sample by nomor_asset, sn, imei, or un
+    // Query sample from database
     const sample = db.prepare(`
       SELECT * FROM database_sample 
       WHERE nomor_asset = ? OR sn = ? OR imei = ? OR un = ?
@@ -85,7 +85,15 @@ export class SampleService {
     let actionType = 'PINJAM';
     let message = '';
 
-    if (cleanName === prevName) {
+    if (forcedAction === 'KEMBALI') {
+      newStatus = 'KEMBALI';
+      actionType = 'KEMBALI';
+      message = `SAMPLE: ${model} | NO. ASSET: ${targetAssetNo} BERHASIL DIKEMBALIKAN (PIC: ${cleanName})`;
+    } else if (forcedAction === 'PINJAM') {
+      newStatus = 'PINJAM';
+      actionType = (cleanName !== prevName && prevStatus === 'PINJAM') ? 'BERGANTI' : 'PINJAM';
+      message = `SAMPLE: ${model} | NO. ASSET: ${targetAssetNo} BERHASIL DIPINJAM (PIC: ${cleanName})`;
+    } else if (cleanName === prevName) {
       if (prevStatus === 'PINJAM') {
         newStatus = 'KEMBALI';
         actionType = 'KEMBALI';

@@ -377,16 +377,58 @@
       cameraProof.stopCamera();
     });
 
+    let pendingTransactionPayload = null;
+
     // Execute Borrow / Return API Call
     async function executeTransaction(proofImageBase64 = null) {
-      const name = picInput.value.trim();
-      const nomor_asset = assetInput.value.trim();
-
       btnCaptureConfirm.disabled = true;
       btnCaptureConfirm.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan Transaksi...';
       btnSkipPhoto.disabled = true;
 
       try {
+        if (pendingTransactionPayload && pendingTransactionPayload.isBulkReturn) {
+          // Bulk Return Flow
+          const res = await fetch('/api/borrow-return-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: pendingTransactionPayload.name,
+              assets: pendingTransactionPayload.assets,
+              proof_image: proofImageBase64,
+              action: 'KEMBALI'
+            })
+          });
+          const result = await res.json();
+
+          txProofModal.hide();
+          cameraProof.stopCamera();
+          if (borrowerModal) borrowerModal.hide();
+
+          if (result.success) {
+            SoundEffects.play('KEMBALI');
+            showGiantAlert({
+              title: 'PENGEMBALIAN MASSAL BERHASIL',
+              message: `Berhasil mengembalikan <strong>${result.count} Unit</strong> untuk <strong>${pendingTransactionPayload.name}</strong>!`,
+              action: 'KEMBALI'
+            });
+            loadDashboard();
+            loadFooterLogs();
+          } else {
+            SoundEffects.play('ERROR');
+            showGiantAlert({
+              title: 'GAGAL PENGEMBALIAN',
+              message: result.message || 'Gagal memproses pengembalian massal',
+              action: 'TIDAK_TERSEDIA'
+            });
+          }
+          pendingTransactionPayload = null;
+          return;
+        }
+
+        // Single Transaction Flow
+        const name = picInput.value.trim();
+        const nomor_asset = assetInput.value.trim();
+
         const res = await fetch('/api/borrow-return', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -438,13 +480,22 @@
 
     // Button: Capture Photo & Confirm
     btnCaptureConfirm.addEventListener('click', () => {
-      const name = picInput.value.trim();
-      const nomor_asset = assetInput.value.trim();
+      let actionName = 'TRANSAKSI';
+      let assetLabel = assetInput.value.trim();
+      let picName = picInput.value.trim();
+      let modelName = 'DEVICE';
+
+      if (pendingTransactionPayload && pendingTransactionPayload.isBulkReturn) {
+        actionName = 'BULK KEMBALI';
+        assetLabel = `${pendingTransactionPayload.assets.length} UNIT`;
+        picName = pendingTransactionPayload.name;
+      }
+
       const proof_image = cameraProof.captureStampedPhoto({
-        action: 'TRANSAKSI',
-        model: 'DEVICE',
-        nomorAsset: nomor_asset,
-        picName: name
+        action: actionName,
+        model: modelName,
+        nomorAsset: assetLabel,
+        picName: picName
       });
       executeTransaction(proof_image);
     });
@@ -548,11 +599,15 @@
     const borrowerModal = borrowerModalEl ? new bootstrap.Modal(borrowerModalEl) : null;
     let allBorrowers = [];
 
+    let pendingBorrowerBulkAssets = [];
+    let pendingBorrowerName = '';
+
     function openBorrowerDetailModal(borrowerName) {
       if (!borrowerModal) return;
       const borrowerObj = allBorrowers.find(b => b.name === borrowerName);
       if (!borrowerObj) return;
 
+      pendingBorrowerName = borrowerObj.name;
       const titleEl = document.getElementById('borrowerDetailModalTitle');
       const bodyEl = document.getElementById('borrowerDetailModalBody');
 
@@ -578,10 +633,13 @@
             </div>
           </div>
 
-          <div class="table-responsive rounded border border-secondary" style="max-height: 60vh; overflow-y: auto;">
+          <div class="table-responsive rounded border border-secondary" style="max-height: 56vh; overflow-y: auto;">
             <table class="custom-table table-sm mb-0">
               <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
                 <tr>
+                  <th style="width: 35px;" class="text-center">
+                    <input type="checkbox" class="custom-check-lg" id="check-all-borrower-units" title="Pilih / Batalkan Semua">
+                  </th>
                   <th style="width: 30px;">#</th>
                   <th>No. Asset</th>
                   <th>Model</th>
@@ -598,6 +656,20 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Bulk Return Action Bar -->
+          <div id="borrower-bulk-bar" class="d-none mt-3 p-2 rounded bg-success bg-opacity-10 border border-success d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success fs-6 py-1 px-2" id="borrower-selected-badge"><i class="fas fa-check-square me-1"></i>0 Unit (Pengembalian)</span>
+              <span class="text-light small">PIC Peminjam: <strong class="text-warning font-monospace">${borrowerObj.name}</strong></span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-surface py-1 px-2" id="btn-uncheck-borrower-units">Batal</button>
+              <button type="button" class="btn btn-sm btn-success fw-bold py-1 px-3 shadow" id="btn-execute-borrower-return">
+                <i class="fas fa-undo me-1"></i> Kembalikan Unit Terpilih
+              </button>
+            </div>
+          </div>
         `;
 
         // Live Search inside Borrower Modal
@@ -611,19 +683,88 @@
               return text.includes(q);
             });
             tbodyInModal.innerHTML = renderBorrowerModalRows(filtered);
-            attachBorrowerModalProofEvents();
+            attachBorrowerModalEvents();
+            updateBorrowerBulkBar();
           });
         }
 
-        attachBorrowerModalProofEvents();
+        // Select All Checkbox
+        const checkAll = document.getElementById('check-all-borrower-units');
+        if (checkAll) {
+          checkAll.addEventListener('change', (e) => {
+            document.querySelectorAll('.borrower-unit-check').forEach(c => { c.checked = e.target.checked; });
+            updateBorrowerBulkBar();
+          });
+        }
+
+        const btnUncheck = document.getElementById('btn-uncheck-borrower-units');
+        if (btnUncheck) {
+          btnUncheck.addEventListener('click', () => {
+            if (checkAll) checkAll.checked = false;
+            document.querySelectorAll('.borrower-unit-check').forEach(c => { c.checked = false; });
+            updateBorrowerBulkBar();
+          });
+        }
+
+        const btnExecReturn = document.getElementById('btn-execute-borrower-return');
+        if (btnExecReturn) {
+          btnExecReturn.addEventListener('click', async () => {
+            const selected = Array.from(document.querySelectorAll('.borrower-unit-check:checked'))
+              .map(c => c.dataset.asset)
+              .filter(Boolean);
+
+            if (selected.length === 0) return;
+
+            pendingBorrowerBulkAssets = selected;
+
+            // Trigger Photo Proof Modal for Bulk Return
+            proofPicLabel.textContent = borrowerObj.name;
+            proofAssetLabel.textContent = `${selected.length} UNIT BULK KEMBALI`;
+            
+            pendingTransactionPayload = {
+              name: borrowerObj.name,
+              assets: selected,
+              isBulkReturn: true
+            };
+
+            txProofModal.show();
+            await startProofCamera();
+          });
+        }
+
+        attachBorrowerModalEvents();
+        updateBorrowerBulkBar();
       }
 
       borrowerModal.show();
     }
 
+    function updateBorrowerBulkBar() {
+      const bar = document.getElementById('borrower-bulk-bar');
+      const badge = document.getElementById('borrower-selected-badge');
+      const btn = document.getElementById('btn-execute-borrower-return');
+      const checkAll = document.getElementById('check-all-borrower-units');
+      const checkedBoxes = document.querySelectorAll('.borrower-unit-check:checked');
+      const allBoxes = document.querySelectorAll('.borrower-unit-check');
+      const count = checkedBoxes.length;
+
+      if (badge) badge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit (Pengembalian)`;
+      if (btn) btn.innerHTML = `<i class="fas fa-undo me-1"></i> Kembalikan ${count} Unit Terpilih`;
+
+      if (bar) {
+        if (count > 0) bar.classList.remove('d-none');
+        else bar.classList.add('d-none');
+      }
+
+      if (checkAll && allBoxes.length > 0) {
+        checkAll.checked = count === allBoxes.length;
+        checkAll.indeterminate = count > 0 && count < allBoxes.length;
+      }
+    }
+
     function renderBorrowerModalRows(items) {
       if (!items || items.length === 0) {
-        return `<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada sample yang cocok.</td></tr>`;
+        return `<tr><td colspan="10" class="text-center py-4 text-muted">Tidak ada sample yang cocok.</td></tr>`;
       }
 
       return items.map((it, i) => {
@@ -633,6 +774,9 @@
 
         return `
           <tr>
+            <td class="text-center">
+              <input type="checkbox" class="custom-check-lg borrower-unit-check" data-asset="${it.nomor_asset || it.sn || ''}" data-model="${it.model || ''}">
+            </td>
             <td class="text-secondary font-monospace">${i + 1}</td>
             <td><strong class="text-primary font-monospace">${it.nomor_asset || it.sn || '-'}</strong></td>
             <td class="fw-bold text-light">${it.model || it.model_name || '-'}</td>
@@ -647,7 +791,20 @@
       }).join('');
     }
 
-    function attachBorrowerModalProofEvents() {
+    function attachBorrowerModalEvents() {
+      document.querySelectorAll('.borrower-unit-check').forEach(chk => {
+        chk.addEventListener('change', () => updateBorrowerBulkBar());
+      });
+
+      document.querySelectorAll('.btn-view-borrow-proof').forEach(img => {
+        img.addEventListener('click', (e) => {
+          e.stopPropagation();
+          proofModalImg.src = img.dataset.img;
+          proofModalSubtitle.innerHTML = `<strong>${img.dataset.title}</strong> — ${img.dataset.sub}`;
+          proofModal.show();
+        });
+      });
+    }
       document.querySelectorAll('.btn-view-borrow-proof').forEach(img => {
         img.addEventListener('click', (e) => {
           e.stopPropagation();

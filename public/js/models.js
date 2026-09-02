@@ -54,6 +54,8 @@ export async function initModelsPage() {
       });
     }
 
+let pendingBulkTargetAction = 'PINJAM';
+
     const btnCaptureConfirm = document.getElementById('btn-capture-confirm-bulk');
     if (btnCaptureConfirm) {
       btnCaptureConfirm.addEventListener('click', async () => {
@@ -63,9 +65,9 @@ export async function initModelsPage() {
         let photoBase64 = null;
         if (cameraProof) {
           photoBase64 = cameraProof.captureStampedPhoto({
-            action: 'BULK PINJAM',
+            action: `BULK ${pendingBulkTargetAction}`,
             model: pendingBulkModelName,
-            nomorAsset: `${pendingBulkAssets.length} UNIT BULK`,
+            nomorAsset: `${pendingBulkAssets.length} UNIT`,
             picName: currentUserName
           });
         }
@@ -432,13 +434,26 @@ function openModelDetailModal(modelName) {
       });
     }
 
-    // Select All Checkbox
+    // Select All Checkbox - selects only units that match the current active status
     const checkAll = document.getElementById('check-all-model-units');
     if (checkAll) {
       checkAll.addEventListener('change', (e) => {
-        document.querySelectorAll('.unit-check-item').forEach(chk => {
-          chk.checked = e.target.checked;
-        });
+        const isChecked = e.target.checked;
+        const allBoxes = Array.from(document.querySelectorAll('.unit-check-item'));
+        if (isChecked) {
+          // If already some selected, use active status; otherwise pick first visible item's status
+          const checked = allBoxes.find(c => c.checked);
+          const targetStatus = checked ? (checked.dataset.status || 'KEMBALI') : (allBoxes[0]?.dataset.status || 'KEMBALI');
+          allBoxes.forEach(chk => {
+            if ((chk.dataset.status || 'KEMBALI') === targetStatus) {
+              chk.checked = true;
+            } else {
+              chk.checked = false;
+            }
+          });
+        } else {
+          allBoxes.forEach(chk => { chk.checked = false; });
+        }
         updateBulkBarState();
       });
     }
@@ -453,7 +468,7 @@ function openModelDetailModal(modelName) {
       });
     }
 
-    // Execute Bulk Borrow Button -> Open Photo Proof Confirmation Modal
+    // Execute Bulk Action Button -> Open Photo Proof Confirmation Modal
     const btnBulkBorrow = document.getElementById('btn-execute-bulk-borrow');
     if (btnBulkBorrow) {
       btnBulkBorrow.addEventListener('click', async () => {
@@ -467,8 +482,9 @@ function openModelDetailModal(modelName) {
         pendingBulkModelName = modelName;
 
         const summaryEl = document.getElementById('bulk-proof-summary-text');
+        const actionLabel = pendingBulkTargetAction === 'KEMBALI' ? 'Pengembalian' : 'Peminjaman';
         if (summaryEl) {
-          summaryEl.innerHTML = `Peminjaman <strong>${selectedAssets.length} Unit</strong> (${modelName}) untuk PIC: <strong class="text-warning">${currentUserName}</strong>`;
+          summaryEl.innerHTML = `${actionLabel} <strong>${selectedAssets.length} Unit</strong> (${modelName}) oleh PIC: <strong class="text-warning">${currentUserName}</strong>`;
         }
 
         if (bulkProofModal) {
@@ -498,9 +514,11 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
 
   const btnCapture = document.getElementById('btn-capture-confirm-bulk');
   const btnSkip = document.getElementById('btn-skip-photo-bulk');
+  const actionLabel = pendingBulkTargetAction === 'KEMBALI' ? 'Pengembalian' : 'Peminjaman';
+  
   if (btnCapture) {
     btnCapture.disabled = true;
-    btnCapture.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses Peminjaman...';
+    btnCapture.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Memproses ${actionLabel}...`;
   }
   if (btnSkip) btnSkip.disabled = true;
 
@@ -511,7 +529,8 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
       body: JSON.stringify({
         name: currentUserName,
         assets: pendingBulkAssets,
-        proof_image: proofImageBase64
+        proof_image: proofImageBase64,
+        action: pendingBulkTargetAction
       })
     });
     const result = await res.json();
@@ -520,11 +539,11 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
     if (cameraProof) cameraProof.stopCamera();
 
     if (result.success) {
-      SoundEffects.play('PINJAM');
+      SoundEffects.play(pendingBulkTargetAction === 'KEMBALI' ? 'KEMBALI' : 'PINJAM');
       showGiantAlert({
-        title: 'PEMINJAMAN BULK BERHASIL',
-        message: `Berhasil meminjam <strong>${result.count} Unit</strong> untuk <strong>${currentUserName}</strong>!`,
-        action: 'PINJAM'
+        title: `${actionLabel.toUpperCase()} MASSAL BERHASIL`,
+        message: `Berhasil memproses ${actionLabel.toLowerCase()} <strong>${result.count} Unit</strong> (${pendingBulkModelName}) untuk <strong>${currentUserName}</strong>!`,
+        action: pendingBulkTargetAction === 'KEMBALI' ? 'KEMBALI' : 'PINJAM'
       });
 
       await loadModelCards();
@@ -534,8 +553,8 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
       }
     } else {
       await showCustomAlert({
-        title: 'Gagal Bulk Pinjam',
-        message: result.message || 'Gagal memproses peminjaman massal',
+        title: `Gagal ${actionLabel} Massal`,
+        message: result.message || `Gagal memproses ${actionLabel.toLowerCase()} massal`,
         type: 'danger'
       });
     }
@@ -548,7 +567,7 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
   } finally {
     if (btnCapture) {
       btnCapture.disabled = false;
-      btnCapture.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Pinjam';
+      btnCapture.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi';
     }
     if (btnSkip) btnSkip.disabled = false;
   }
@@ -558,26 +577,79 @@ function updateBulkBarState() {
   const bulkBar = document.getElementById('bulk-borrow-bar');
   const selectedBadge = document.getElementById('selected-units-badge');
   const checkAll = document.getElementById('check-all-model-units');
-  const checkedItems = document.querySelectorAll('.unit-check-item:checked');
-  const totalItems = document.querySelectorAll('.unit-check-item');
+  const btnExecute = document.getElementById('btn-execute-bulk-borrow');
+  const checkedItems = Array.from(document.querySelectorAll('.unit-check-item:checked'));
+  const allCheckboxes = Array.from(document.querySelectorAll('.unit-check-item'));
 
   const count = checkedItems.length;
 
-  if (selectedBadge) {
-    selectedBadge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit Dipilih`;
+  if (count === 0) {
+    if (bulkBar) bulkBar.classList.add('d-none');
+    // Re-enable all checkboxes
+    allCheckboxes.forEach(chk => {
+      chk.disabled = false;
+      const tr = chk.closest('tr');
+      if (tr) {
+        tr.style.opacity = '1';
+        tr.removeAttribute('title');
+      }
+    });
+    if (checkAll) {
+      checkAll.checked = false;
+      checkAll.indeterminate = false;
+    }
+    return;
   }
 
-  if (bulkBar) {
-    if (count > 0) {
-      bulkBar.classList.remove('d-none');
+  // Determine active status from the first checked item ('PINJAM' vs 'KEMBALI')
+  const activeStatus = checkedItems[0].dataset.status || 'KEMBALI';
+  pendingBulkTargetAction = (activeStatus === 'PINJAM') ? 'KEMBALI' : 'PINJAM';
+
+  // Conflict Prevention: Lock and disable checkboxes that have a different status
+  allCheckboxes.forEach(chk => {
+    const itemStatus = chk.dataset.status || 'KEMBALI';
+    const tr = chk.closest('tr');
+    if (itemStatus !== activeStatus) {
+      chk.disabled = true;
+      chk.checked = false;
+      if (tr) {
+        tr.style.opacity = '0.35';
+        tr.setAttribute('title', `Tidak dapat dipilih bersamaan (Status berbeda: ${itemStatus})`);
+      }
     } else {
-      bulkBar.classList.add('d-none');
+      chk.disabled = false;
+      if (tr) {
+        tr.style.opacity = '1';
+        tr.removeAttribute('title');
+      }
+    }
+  });
+
+  // Dynamic button label & styling
+  if (btnExecute) {
+    if (pendingBulkTargetAction === 'KEMBALI') {
+      btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow';
+      btnExecute.innerHTML = `<i class="fas fa-undo me-1"></i> Kembalikan ${count} Unit Terpilih`;
+    } else {
+      btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow';
+      btnExecute.innerHTML = `<i class="fas fa-hand-holding me-1"></i> Pinjam ${count} Unit Terpilih`;
     }
   }
 
-  if (checkAll && totalItems.length > 0) {
-    checkAll.checked = count === totalItems.length;
-    checkAll.indeterminate = count > 0 && count < totalItems.length;
+  if (selectedBadge) {
+    const actionText = pendingBulkTargetAction === 'KEMBALI' ? 'Pengembalian' : 'Peminjaman';
+    selectedBadge.className = `badge ${pendingBulkTargetAction === 'KEMBALI' ? 'bg-success' : 'bg-primary'} fs-6 py-1 px-2`;
+    selectedBadge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit (${actionText})`;
+  }
+
+  if (bulkBar) {
+    bulkBar.classList.remove('d-none');
+  }
+
+  const validSameStatusItems = allCheckboxes.filter(c => (c.dataset.status || 'KEMBALI') === activeStatus);
+  if (checkAll && validSameStatusItems.length > 0) {
+    checkAll.checked = count === validSameStatusItems.length;
+    checkAll.indeterminate = count > 0 && count < validSameStatusItems.length;
   }
 }
 
