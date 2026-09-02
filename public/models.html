@@ -156,163 +156,25 @@
     </div>
   </main>
 
-  <!-- Modal Sample Detail -->
+  <!-- Modal Model Detail (Modal-XL for rich overview) -->
   <div class="modal fade" id="sampleDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content glass-panel" style="background: var(--bg-surface);">
-        <div class="modal-header border-bottom border-secondary">
-          <h5 class="modal-title fw-bold" id="detailModalTitle" style="font-size: 13px;">Detail Sample</h5>
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content border-primary shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-bottom border-secondary py-2 px-3">
+          <h5 class="modal-title fw-bold text-light" id="detailModalTitle" style="font-size: 14px;">Detail Model</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body text-center p-3" id="detailModalBody"></div>
-        <div class="modal-footer border-top border-secondary">
-          <button type="button" class="btn btn-surface" data-bs-dismiss="modal">Tutup</button>
+        <div class="modal-body p-3" id="detailModalBody"></div>
+        <div class="modal-footer border-top border-secondary py-2">
+          <button type="button" class="btn btn-surface" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i> Tutup
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module">
-    import { Auth, setupWebSocket } from '/js/app.js';
-
-    const cardsGrid = document.getElementById('model-cards-grid');
-    const searchInput = document.getElementById('model-search-input');
-    const filterAvail = document.getElementById('filter-availability');
-    const totalBadge = document.getElementById('total-models-badge');
-    const detailModal = new bootstrap.Modal(document.getElementById('sampleDetailModal'));
-    let allModels = [];
-
-    async function loadModelCards() {
-      const search = searchInput.value.trim();
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-
-      cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Memuat kartu model...</div>`;
-
-      try {
-        const res = await fetch(`/api/models-overview?${params.toString()}`);
-        const data = await res.json();
-
-        if (!data.success || !data.models) {
-          cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-muted">Tidak ada data model ditemukan.</div>`;
-          return;
-        }
-
-        allModels = data.models;
-        renderFilteredCards();
-      } catch (err) {
-        cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-danger">Error: ${err.message}</div>`;
-      }
-    }
-
-    function renderFilteredCards() {
-      const filterVal = filterAvail.value;
-      let filtered = allModels;
-
-      if (filterVal === 'has_borrowed') {
-        filtered = allModels.filter(m => m.borrowed > 0);
-      } else if (filterVal === 'all_available') {
-        filtered = allModels.filter(m => m.borrowed === 0);
-      }
-
-      totalBadge.textContent = `${filtered.length} Model (${filtered.reduce((acc, m) => acc + m.total, 0)} Unit)`;
-
-      if (filtered.length === 0) {
-        cardsGrid.innerHTML = `<div class="col-12 text-center py-5 text-muted">Tidak ada model yang cocok dengan filter.</div>`;
-        return;
-      }
-
-      cardsGrid.innerHTML = filtered.map(m => {
-        const rowsHtml = m.items.map((item, idx) => {
-          const isPinjam = item.status_pinjam === 'PINJAM';
-          const isNormal = !item.defect_status || item.defect_status === 'Normal' || item.defect_status === '';
-          const isAudited = item.status_audit === 'SUDAH';
-          const assetNo = item.nomor_asset || item.sn || '-';
-          const serial = item.sn || item.serial_no || '-';
-          const imei = item.imei || item.un || '-';
-
-          return `
-            <tr>
-              <td class="text-secondary" style="width: 28px;">${idx + 1}</td>
-              <td><span class="badge bg-dark border border-secondary">${assetNo}</span></td>
-              <td class="text-light fw-semibold">${serial}</td>
-              <td class="text-secondary">${imei}</td>
-              <td class="text-center">
-                <div class="icon-status-cell justify-content-center">
-                  ${isPinjam 
-                    ? `<i class="fas fa-user-lock text-danger" title="Dipinjam oleh: ${item.name || 'PIC'} (${item.status_pinjam})"></i>`
-                    : `<i class="fas fa-check-circle text-success" title="Tersedia (KEMBALI)"></i>`}
-                  
-                  ${isNormal 
-                    ? `<i class="fas fa-shield-alt text-success" title="Kondisi Normal"></i>`
-                    : `<i class="fas fa-exclamation-triangle text-warning" title="Kondisi: ${item.defect_status}"></i>`}
-
-                  ${isAudited 
-                    ? `<i class="fas fa-clipboard-check text-info" title="Sudah Diaudit"></i>`
-                    : `<i class="fas fa-hourglass-start text-secondary" title="Status Audit: ${item.status_audit || 'RESET'}"></i>`}
-
-                  ${item.octa_status ? `<span class="badge bg-secondary" style="font-size:9px;">${item.octa_status}</span>` : ''}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        return `
-          <div class="col-xl-4 col-lg-6 col-12">
-            <div class="model-card">
-              <div class="model-card-header">
-                <div>
-                  <span class="model-card-title"><i class="fas fa-mobile-alt me-1"></i> ${m.model}</span>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                  <span class="badge bg-primary" title="Total Unit">${m.total} Unit</span>
-                  ${m.borrowed > 0 ? `<span class="badge bg-danger" title="Sedang Dipinjam">${m.borrowed} Pinjam</span>` : ''}
-                  <span class="badge bg-success" title="Tersedia">${m.available} Ready</span>
-                </div>
-              </div>
-
-              <div class="model-card-body">
-                <table class="dense-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>No. Asset</th>
-                      <th>Serial</th>
-                      <th>IMEI / UN</th>
-                      <th class="text-center">Kondisi & Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rowsHtml}
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="model-card-footer">
-                <span><i class="fas fa-layer-group me-1"></i> ${m.items[0]?.Dept || 'PE Solution P /SEIN-P'}</span>
-                <span>Audit: <strong class="${m.audited === m.total ? 'text-success' : 'text-warning'}">${m.audited}/${m.total}</strong></span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    document.getElementById('btn-apply-filter').addEventListener('click', loadModelCards);
-    document.getElementById('btn-refresh-models').addEventListener('click', loadModelCards);
-    filterAvail.addEventListener('change', renderFilteredCards);
-    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadModelCards(); });
-
-    document.getElementById('btn-reset-model-filter').addEventListener('click', () => {
-      searchInput.value = '';
-      filterAvail.value = 'all';
-      loadModelCards();
-    });
-
-    setupWebSocket(() => loadModelCards());
-    loadModelCards();
-  </script>
+  <script type="module" src="/js/models.js"></script>
 </body>
 </html>
