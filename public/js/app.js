@@ -334,6 +334,41 @@ export function showCustomConfirm({ title = 'Konfirmasi', message = '', type = '
   });
 }
 
+// Inactivity Timeout & Screensaver Transition (5 Minutes = 300,000 ms)
+export const InactivityManager = {
+  timeoutMs: 5 * 60 * 1000, // 5 minutes (300 seconds)
+  timer: null,
+
+  init() {
+    const path = window.location.pathname;
+    // Do not run timer on screensaver or login page
+    if (path === '/screensaver' || path === '/screensaver.html' || path === '/login' || path === '/login.html') {
+      return;
+    }
+
+    const resetTimer = () => {
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.triggerScreensaver(), this.timeoutMs);
+    };
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    events.forEach(evt => {
+      window.addEventListener(evt, resetTimer, { passive: true });
+    });
+
+    resetTimer();
+  },
+
+  async triggerScreensaver() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/screensaver';
+  }
+};
+
 if (typeof window !== 'undefined') {
   window.customAlert = showCustomAlert;
   window.customConfirm = showCustomConfirm;
@@ -342,6 +377,7 @@ if (typeof window !== 'undefined') {
 function bindGlobalEvents() {
   Theme.init();
   Auth.getUser();
+  InactivityManager.init();
   const themeBtn = document.getElementById('theme-toggle-btn');
   if (themeBtn) {
     themeBtn.onclick = () => Theme.toggle();

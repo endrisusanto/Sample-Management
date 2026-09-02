@@ -44,6 +44,9 @@
         </ul>
 
         <div class="d-flex align-items-center gap-3">
+          <a href="/login" class="badge bg-primary bg-opacity-25 border border-primary text-info px-3 py-2 text-decoration-none shadow d-none d-sm-inline-block" style="font-size: 11px;">
+            <i class="fas fa-hand-pointer me-1"></i> Sentuh / Klik untuk Login
+          </a>
           <div class="text-end d-none d-md-block">
             <div class="clock-display" id="live-clock">00:00:00</div>
             <div class="text-secondary" id="live-date" style="font-size: 10px;">-</div>
@@ -306,12 +309,31 @@
       }
     }
 
-    document.getElementById('btn-screen-fs').addEventListener('click', () => {
+    document.getElementById('btn-screen-fs').addEventListener('click', (e) => {
+      e.stopPropagation();
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
       } else {
         if (document.exitFullscreen) document.exitFullscreen();
       }
+    });
+
+    // Touch / Click / Keypress anywhere on Screensaver redirects immediately to /login
+    let isRedirecting = false;
+    function handleScreensaverInteraction(e) {
+      if (e.target.closest('#btn-screen-fs') || e.target.closest('#theme-toggle-btn') || e.target.closest('.dropdown')) {
+        return;
+      }
+      if (isRedirecting) return;
+      isRedirecting = true;
+      window.location.href = '/login';
+    }
+
+    document.addEventListener('click', handleScreensaverInteraction);
+    document.addEventListener('touchstart', handleScreensaverInteraction, { passive: true });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F11') return; // Allow F11 fullscreen key
+      handleScreensaverInteraction(e);
     });
 
     setupWebSocket(() => refreshDashboard());
