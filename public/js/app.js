@@ -369,6 +369,109 @@ export const InactivityManager = {
   }
 };
 
+// Global App Navigation Grid Modal (App Launcher)
+export function initAppNavModal() {
+  if (!document.getElementById('appNavModal')) {
+    const currentPath = window.location.pathname;
+    const modalHtml = `
+      <div class="modal fade" id="appNavModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+          <div class="modal-content border-primary shadow-2xl glass-panel" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-bottom border-secondary py-3 px-3 px-sm-4 d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <div class="p-2 rounded bg-primary bg-opacity-15 text-primary">
+                  <i class="fas fa-th-large fs-5"></i>
+                </div>
+                <div>
+                  <h5 class="modal-title fw-bold text-light m-0" style="font-size: 15px;">Menu Navigasi</h5>
+                  <span class="text-secondary" style="font-size: 10.5px;">Sample Management & Tracking System</span>
+                </div>
+              </div>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-3 p-sm-4">
+              <div class="nav-modal-grid">
+                <a href="/" class="nav-grid-tile ${currentPath === '/' || currentPath === '/index.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon text-primary"><i class="fas fa-qrcode"></i></div>
+                  <div class="nav-tile-title">Scan Pinjam</div>
+                  <div class="nav-tile-desc">Scan Barcode / Transaksi</div>
+                </a>
+                <a href="/audit" class="nav-grid-tile ${currentPath === '/audit' || currentPath === '/audit.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon text-info"><i class="fas fa-clipboard-check"></i></div>
+                  <div class="nav-tile-title">Audit Sample</div>
+                  <div class="nav-tile-desc">Verifikasi Fisik & Kondisi</div>
+                </a>
+                <a href="/samples" class="nav-grid-tile ${currentPath === '/samples' || currentPath === '/samples.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon text-warning"><i class="fas fa-boxes"></i></div>
+                  <div class="nav-tile-title">Database Unit</div>
+                  <div class="nav-tile-desc">Master Data Inventaris</div>
+                </a>
+                <a href="/models" class="nav-grid-tile ${currentPath === '/models' || currentPath === '/models.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon text-success"><i class="fas fa-layer-group"></i></div>
+                  <div class="nav-tile-title">Card Per-Model</div>
+                  <div class="nav-tile-desc">Ringkasan Tiap Tipe Model</div>
+                </a>
+                <a href="/import" class="nav-grid-tile ${currentPath === '/import' || currentPath === '/import.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon text-danger"><i class="fas fa-file-import"></i></div>
+                  <div class="nav-tile-title">Bulk Ingestion</div>
+                  <div class="nav-tile-desc">Import Data Excel / CSV</div>
+                </a>
+                <a href="/screensaver" class="nav-grid-tile ${currentPath === '/screensaver' || currentPath === '/screensaver.html' ? 'active' : ''}">
+                  <div class="nav-tile-icon" style="color: #c084fc;"><i class="fas fa-tv"></i></div>
+                  <div class="nav-tile-title">Screensaver</div>
+                  <div class="nav-tile-desc">Display Standby Mode</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-secondary p-3 d-flex flex-row justify-content-between align-items-center" style="background: rgba(0,0,0,0.25);">
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap" id="modal-nav-theme-toggle">
+                  <i class="fas fa-sun text-warning me-1"></i> Mode
+                </button>
+                <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap" id="modal-nav-fullscreen">
+                  <i class="fas fa-expand me-1"></i> Layar Penuh
+                </button>
+              </div>
+              <button type="button" class="btn btn-sm btn-surface py-2 px-3" data-bs-dismiss="modal">
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    document.getElementById('modal-nav-theme-toggle')?.addEventListener('click', () => {
+      Theme.toggle();
+    });
+    document.getElementById('modal-nav-fullscreen')?.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+  }
+
+  // Intercept navbar toggler click on mobile/tablet or dedicated launcher buttons
+  document.querySelectorAll('.navbar-toggler, [data-bs-target="#mainNavbar"], #btn-app-launcher').forEach(btn => {
+    btn.removeAttribute('data-bs-toggle');
+    btn.removeAttribute('data-bs-target');
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const modalEl = document.getElementById('appNavModal');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    };
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.customAlert = showCustomAlert;
   window.customConfirm = showCustomConfirm;
@@ -378,6 +481,7 @@ function bindGlobalEvents() {
   Theme.init();
   Auth.getUser();
   InactivityManager.init();
+  initAppNavModal();
   const themeBtn = document.getElementById('theme-toggle-btn');
   if (themeBtn) {
     themeBtn.onclick = () => Theme.toggle();

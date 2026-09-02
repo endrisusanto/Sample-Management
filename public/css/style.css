@@ -838,6 +838,72 @@ body {
    📱 Mobile & Tablet Responsive Optimizations
    ========================================================================== */
 
+/* Navigation Grid Modal (App Launcher) */
+.nav-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .nav-modal-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.nav-grid-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem 0.6rem;
+  background: var(--bg-surface, #1e293b);
+  border: 1.5px solid var(--border-color);
+  border-radius: 16px;
+  text-decoration: none !important;
+  color: var(--text-primary) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 105px;
+}
+
+.nav-grid-tile:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-blue, #2563eb);
+  background: rgba(37, 99, 235, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.nav-grid-tile.active {
+  background: rgba(37, 99, 235, 0.22) !important;
+  border-color: var(--accent-blue, #2563eb) !important;
+  box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+}
+
+.nav-tile-icon {
+  font-size: 1.85rem;
+  margin-bottom: 0.45rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-grid-tile:hover .nav-tile-icon {
+  transform: scale(1.15);
+}
+
+.nav-tile-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+.nav-tile-desc {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
 /* Tablets (768px to 1024px) */
 @media (min-width: 768px) and (max-width: 1024px) {
   .container-fluid {

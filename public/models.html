@@ -72,11 +72,12 @@
         <span class="live-dot ms-1" id="live-connection-dot" title="Live WebSocket Active"></span>
       </a>
 
-      <button class="navbar-toggler py-1 px-2 border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-        <i class="fas fa-bars text-secondary"></i>
+      <!-- Mobile / Tablet App Launcher Modal Trigger -->
+      <button class="btn btn-surface py-1 px-2 d-lg-none border border-secondary" type="button" id="btn-open-nav-modal" title="Buka Menu Navigasi">
+        <i class="fas fa-th-large text-primary fs-6"></i>
       </button>
 
-      <div class="collapse navbar-collapse" id="mainNavbar">
+      <div class="collapse navbar-collapse d-none d-lg-flex" id="mainNavbar">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-qrcode"></i> Scan Peminjaman</a></li>
           <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
