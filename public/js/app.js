@@ -394,15 +394,17 @@ if (typeof document !== 'undefined') {
   document.addEventListener('show.bs.modal', (event) => {
     const openModals = Array.from(document.querySelectorAll('.modal.show')).filter(m => m !== event.target);
     const zIndex = 1060 + (20 * openModals.length);
-    event.target.style.zIndex = zIndex;
+    event.target.style.setProperty('z-index', zIndex, 'important');
     setTimeout(() => {
-      const backdrops = document.querySelectorAll('.modal-backdrop:not(.modal-stack)');
+      const backdrops = document.querySelectorAll('.modal-backdrop');
       if (backdrops.length > 0) {
         const lastBackdrop = backdrops[backdrops.length - 1];
-        lastBackdrop.style.zIndex = zIndex - 5;
-        lastBackdrop.classList.add('modal-stack');
+        lastBackdrop.style.setProperty('z-index', zIndex - 5, 'important');
+        if (openModals.length > 0) {
+          lastBackdrop.classList.add('modal-stack');
+        }
       }
-    }, 0);
+    }, 10);
   });
 
   document.addEventListener('hidden.bs.modal', () => {
