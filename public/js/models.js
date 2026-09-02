@@ -19,6 +19,7 @@ let cameraProof = null;
 let currentFacingMode = 'user';
 let pendingBulkAssets = [];
 let pendingBulkModelName = '';
+let pendingBulkTargetAction = 'PINJAM';
 
 let allModels = [];
 let currentSelectedModel = null;
@@ -53,8 +54,6 @@ export async function initModelsPage() {
         }
       });
     }
-
-let pendingBulkTargetAction = 'PINJAM';
 
     const btnCaptureConfirm = document.getElementById('btn-capture-confirm-bulk');
     if (btnCaptureConfirm) {
