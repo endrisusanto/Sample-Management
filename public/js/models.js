@@ -1,4 +1,4 @@
-import { Auth, setupWebSocket } from '/js/app.js';
+import { Auth, setupWebSocket, showGiantAlert, SoundEffects } from '/js/app.js';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -275,6 +275,8 @@ function openModelDetailModal(modelName) {
   currentSelectedModel = modelObj;
   const modalTitle = document.getElementById('detailModalTitle');
   const modalBody = document.getElementById('detailModalBody');
+  const user = Auth.getUser();
+  const currentUserName = user && user.name ? user.name.toUpperCase() : 'ENDRI SUSANTO';
 
   if (modalTitle) {
     modalTitle.innerHTML = `
@@ -301,11 +303,14 @@ function openModelDetailModal(modelName) {
         </div>
       </div>
 
-      <div class="table-responsive rounded border border-secondary" style="max-height: 60vh; overflow-y: auto;">
+      <div class="table-responsive rounded border border-secondary" style="max-height: 56vh; overflow-y: auto;">
         <table class="custom-table table-sm mb-0">
           <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
             <tr>
-              <th style="width: 30px;">#</th>
+              <th style="width: 35px;" class="text-center">
+                <input type="checkbox" class="form-check-input" id="check-all-model-units" title="Pilih / Batalkan Semua">
+              </th>
+              <th style="width: 25px;">#</th>
               <th>No. Asset</th>
               <th>Serial No</th>
               <th>Status Pinjam</th>
@@ -326,6 +331,20 @@ function openModelDetailModal(modelName) {
           </tbody>
         </table>
       </div>
+
+      <!-- Bulk Borrow Action Bar (Revealed when at least 1 checkbox is checked) -->
+      <div id="bulk-borrow-bar" class="d-none mt-3 p-2 rounded bg-primary bg-opacity-10 border border-primary d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary fs-6 py-1 px-2" id="selected-units-badge"><i class="fas fa-check-square me-1"></i>0 Unit Dipilih</span>
+          <span class="text-light small">Peminjam: <strong class="text-warning font-monospace" id="bulk-borrow-pic-label">${currentUserName}</strong></span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-surface py-1 px-2" id="btn-uncheck-all-units">Batal</button>
+          <button type="button" class="btn btn-sm btn-primary-custom fw-bold py-1 px-3" id="btn-execute-bulk-borrow">
+            <i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih
+          </button>
+        </div>
+      </div>
     `;
 
     // Live search inside modal
@@ -340,10 +359,83 @@ function openModelDetailModal(modelName) {
         });
         modalTbody.innerHTML = renderModalTableRows(filteredUnits);
         attachRowInteractions();
+        updateBulkBarState();
+      });
+    }
+
+    // Select All Checkbox
+    const checkAll = document.getElementById('check-all-model-units');
+    if (checkAll) {
+      checkAll.addEventListener('change', (e) => {
+        document.querySelectorAll('.unit-check-item').forEach(chk => {
+          chk.checked = e.target.checked;
+        });
+        updateBulkBarState();
+      });
+    }
+
+    // Uncheck button
+    const btnUncheck = document.getElementById('btn-uncheck-all-units');
+    if (btnUncheck) {
+      btnUncheck.addEventListener('click', () => {
+        if (checkAll) checkAll.checked = false;
+        document.querySelectorAll('.unit-check-item').forEach(chk => { chk.checked = false; });
+        updateBulkBarState();
+      });
+    }
+
+    // Execute Bulk Borrow Button
+    const btnBulkBorrow = document.getElementById('btn-execute-bulk-borrow');
+    if (btnBulkBorrow) {
+      btnBulkBorrow.addEventListener('click', async () => {
+        const selectedAssets = Array.from(document.querySelectorAll('.unit-check-item:checked'))
+          .map(chk => chk.dataset.asset)
+          .filter(Boolean);
+
+        if (selectedAssets.length === 0) return;
+
+        if (!confirm(`Konfirmasi peminjaman ${selectedAssets.length} unit untuk ${currentUserName}?`)) {
+          return;
+        }
+
+        btnBulkBorrow.disabled = true;
+        btnBulkBorrow.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memproses...';
+
+        try {
+          const res = await fetch('/api/borrow-return-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: currentUserName, assets: selectedAssets })
+          });
+          const result = await res.json();
+
+          if (result.success) {
+            SoundEffects.play('PINJAM');
+            showGiantAlert({
+              title: 'PEMINJAMAN BULK BERHASIL',
+              message: `Berhasil meminjam <strong>${result.count} Unit</strong> untuk <strong>${currentUserName}</strong>!`,
+              action: 'PINJAM'
+            });
+
+            await loadModelCards();
+            const updated = allModels.find(m => m.model === modelName);
+            if (updated) {
+              openModelDetailModal(updated.model);
+            }
+          } else {
+            alert(result.message || 'Gagal memproses peminjaman massal');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        } finally {
+          btnBulkBorrow.disabled = false;
+          btnBulkBorrow.innerHTML = '<i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih';
+        }
       });
     }
 
     attachRowInteractions();
+    updateBulkBarState();
   }
 
   if (detailModal) {
@@ -351,24 +443,55 @@ function openModelDetailModal(modelName) {
   }
 }
 
+function updateBulkBarState() {
+  const bulkBar = document.getElementById('bulk-borrow-bar');
+  const selectedBadge = document.getElementById('selected-units-badge');
+  const checkAll = document.getElementById('check-all-model-units');
+  const checkedItems = document.querySelectorAll('.unit-check-item:checked');
+  const totalItems = document.querySelectorAll('.unit-check-item');
+
+  const count = checkedItems.length;
+
+  if (selectedBadge) {
+    selectedBadge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit Dipilih`;
+  }
+
+  if (bulkBar) {
+    if (count > 0) {
+      bulkBar.classList.remove('d-none');
+    } else {
+      bulkBar.classList.add('d-none');
+    }
+  }
+
+  if (checkAll && totalItems.length > 0) {
+    checkAll.checked = count === totalItems.length;
+    checkAll.indeterminate = count > 0 && count < totalItems.length;
+  }
+}
+
 function renderModalTableRows(items) {
   if (items.length === 0) {
-    return `<tr><td colspan="14" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
+    return `<tr><td colspan="15" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
   }
 
   return items.map((u, i) => {
     const isPinjam = u.status_pinjam === 'PINJAM';
     const isAudited = u.status_audit === 'SUDAH';
     const isNormal = !u.defect_status || u.defect_status === 'Normal' || u.defect_status === '';
+    const assetNo = u.nomor_asset || u.sn || '-';
 
     const proofThumbnail = u.proof_image 
-      ? `<img src="${u.proof_image}" class="img-thumbnail btn-view-proof-img" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti transaksi" data-img="${u.proof_image}" data-title="${u.nomor_asset || ''} (${u.model || ''})" data-sub="${u.status_pinjam || ''} • PIC: ${u.name || '-'}">`
+      ? `<img src="${u.proof_image}" class="img-thumbnail btn-view-proof-img" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti transaksi" data-img="${u.proof_image}" data-title="${assetNo} (${u.model || ''})" data-sub="${u.status_pinjam || ''} • PIC: ${u.name || '-'}">`
       : `<span class="text-muted small">-</span>`;
 
     return `
       <tr>
+        <td class="text-center">
+          <input type="checkbox" class="form-check-input unit-check-item" data-asset="${assetNo}" data-status="${u.status_pinjam || 'KEMBALI'}">
+        </td>
         <td class="text-secondary font-monospace">${i + 1}</td>
-        <td><strong class="text-primary font-monospace">${u.nomor_asset || u.sn || '-'}</strong></td>
+        <td><strong class="text-primary font-monospace">${assetNo}</strong></td>
         <td class="text-light fw-semibold">${u.sn || u.serial_no || '-'}</td>
         <td>
           <span class="badge ${isPinjam ? 'bg-danger' : 'bg-success'}">
@@ -406,6 +529,13 @@ function renderModalTableRows(items) {
 }
 
 function attachRowInteractions() {
+  // Checkbox state change listener
+  document.querySelectorAll('.unit-check-item').forEach(chk => {
+    chk.addEventListener('change', () => {
+      updateBulkBarState();
+    });
+  });
+
   // Row Edit button
   document.querySelectorAll('.btn-open-sample-edit').forEach(btn => {
     btn.addEventListener('click', async (e) => {

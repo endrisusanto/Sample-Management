@@ -52,6 +52,38 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
     }
 
     res.json(result);
+/**
+ * 1b. Batch Borrow / Return
+ */
+apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
+  try {
+    const { name, assets } = req.body;
+    const borrowerName = name || req.user?.name;
+
+    if (!borrowerName) {
+      return res.status(400).json({ success: false, message: 'Nama peminjam wajib diisi' });
+    }
+    if (!Array.isArray(assets) || assets.length === 0) {
+      return res.status(400).json({ success: false, message: 'Daftar nomor asset kosong' });
+    }
+
+    const results = [];
+    for (const nomor_asset of assets) {
+      const resItem = SampleService.borrowReturnProcess({
+        name: borrowerName,
+        nomor_asset,
+        proof_image: null
+      });
+      results.push(resItem);
+    }
+
+    broadcastEvent('SAMPLE_UPDATED', {
+      action: 'BATCH_BORROW',
+      count: results.length,
+      borrower: borrowerName
+    });
+
+    res.json({ success: true, count: results.length, results });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
