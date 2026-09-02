@@ -456,11 +456,6 @@ export const InactivityManager = {
   },
 
   tick() {
-    if (KeepAwakeManager.enabled) {
-      this.updateUI();
-      return;
-    }
-
     const remainingMs = this.expireAt - Date.now();
     if (remainingMs <= 0) {
       this.triggerScreensaver();
@@ -474,16 +469,6 @@ export const InactivityManager = {
     const textEl = document.getElementById('session-countdown-text');
     const iconEl = document.getElementById('session-countdown-icon');
     if (!textEl && !pill) return;
-
-    if (KeepAwakeManager.enabled) {
-      if (textEl) textEl.textContent = 'Awake';
-      if (iconEl) iconEl.className = 'fas fa-infinity text-warning';
-      if (pill) {
-        pill.className = 'badge bg-surface border border-warning text-warning d-none d-sm-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill';
-        pill.title = 'Keep Awake aktif: Sesi dan layar tetap aktif';
-      }
-      return;
-    }
 
     const remainingSec = Math.max(0, Math.ceil((this.expireAt - Date.now()) / 1000));
     const mins = Math.floor(remainingSec / 60).toString().padStart(2, '0');
@@ -504,9 +489,6 @@ export const InactivityManager = {
   },
 
   async triggerScreensaver() {
-    if (KeepAwakeManager.enabled) {
-      return;
-    }
     if (this.intervalId) clearInterval(this.intervalId);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
