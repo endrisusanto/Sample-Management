@@ -596,33 +596,22 @@ export function initAppNavModal() {
       <div class="modal fade" id="appNavModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
           <div class="modal-content border-primary shadow-2xl glass-panel" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 20px; overflow: hidden;">
-            <div class="modal-header border-bottom border-secondary py-3 px-3 px-sm-4 d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <div class="p-2 rounded bg-primary bg-opacity-15 text-primary">
-                  <i class="fas fa-th-large fs-5"></i>
-                </div>
-                <div>
-                  <h5 class="modal-title fw-bold text-light m-0" style="font-size: 15px;">Menu Navigasi</h5>
-                  <span class="text-secondary" style="font-size: 10.5px;">Sample Management & Tracking System</span>
-                </div>
+            <div class="modal-header border-bottom border-secondary py-2 px-3 d-flex justify-content-end align-items-center gap-2">
+              <!-- Keep Awake Toggle Checkbox -->
+              <div class="keep-awake-container form-check form-switch d-flex align-items-center" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
+                <input class="form-check-input keep-awake-switch" type="checkbox" id="modal-keep-awake-toggle" ${KeepAwakeManager.enabled ? 'checked' : ''}>
+                <label class="form-check-label user-select-none" for="modal-keep-awake-toggle" style="font-size: 10.5px;">
+                  <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
+                </label>
               </div>
-              <div class="d-flex align-items-center gap-2">
-                <!-- Keep Awake Toggle Checkbox -->
-                <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
-                  <input class="form-check-input ms-0 me-1 keep-awake-switch" type="checkbox" id="modal-keep-awake-toggle" style="cursor: pointer;" ${KeepAwakeManager.enabled ? 'checked' : ''}>
-                  <label class="form-check-label text-secondary fw-semibold small pe-1 user-select-none" for="modal-keep-awake-toggle" style="font-size: 10.5px; cursor: pointer;">
-                    <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
-                  </label>
-                </div>
 
-                <!-- Theme Toggle Button -->
-                <button type="button" class="btn btn-surface btn-circle border-secondary shadow-sm" id="modal-nav-theme-toggle" title="Ganti Tema">
-                  <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
-                </button>
+              <!-- Theme Toggle Button -->
+              <button type="button" class="btn nav-action-pill" id="modal-nav-theme-toggle" title="Ganti Tema">
+                <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
+              </button>
 
-                <!-- Close Modal Button -->
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
+              <!-- Close Modal Button -->
+              <button type="button" class="btn-close btn-close-white ms-1" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-3 p-sm-4">

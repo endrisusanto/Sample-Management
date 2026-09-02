@@ -97,11 +97,6 @@ export class QRScannerModal {
 
               <div id="qr-scanner-result-hint" class="text-start small text-warning py-1 font-monospace" style="font-size: 12px; min-height: 22px;"></div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-              <button type="button" class="btn btn-surface w-100 py-2" data-bs-dismiss="modal">
-                <i class="fas fa-times me-1"></i> Tutup Scanner
-              </button>
-            </div>
           </div>
         </div>
       `;

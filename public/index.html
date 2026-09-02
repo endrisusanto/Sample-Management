@@ -284,7 +284,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { Auth, showGiantAlert, setupWebSocket, formatDuration, SoundEffects } from '/js/app.js';
-    import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.91';
+    import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.97';
     import { QRScannerModal } from '/js/qr-scanner.js';
 
     const picInput = document.getElementById('pic-name-input');
@@ -340,10 +340,18 @@
     btnCameraQr.addEventListener('click', () => {
       QRScannerModal.open({
         title: 'Pindai QR / Barcode Nomor Asset',
-        onScan: (decodedText) => {
+        onScan: async (decodedText) => {
           assetInput.value = decodedText;
+          if (!picInput.value.trim()) {
+            const curUser = await Auth.getUser() || Auth.getCurrentUser();
+            if (curUser && curUser.name) {
+              picInput.value = curUser.name.toUpperCase();
+            }
+          }
           if (picInput.value.trim()) {
-            openTransactionProofModal();
+            setTimeout(() => {
+              openTransactionProofModal();
+            }, 120);
           } else {
             picInput.focus();
           }

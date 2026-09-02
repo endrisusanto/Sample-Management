@@ -1,5 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
-import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.91';
+import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.97';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -346,6 +346,13 @@ function openModelDetailModal(modelName) {
   if (!modelObj) return;
 
   currentSelectedModel = modelObj;
+  pendingBulkAssets = [];
+  const bulkBar = document.getElementById('bulk-borrow-bar');
+  if (bulkBar) {
+    bulkBar.classList.add('d-none');
+    bulkBar.style.display = 'none';
+  }
+
   const modalTitle = document.getElementById('detailModalTitle');
   const modalBody = document.getElementById('detailModalBody');
   const user = Auth.getCurrentUser();
@@ -582,6 +589,7 @@ function updateBulkBarState() {
   if (count === 0) {
     if (bulkBar) {
       bulkBar.classList.add('d-none');
+      bulkBar.style.display = 'none';
     }
     // Re-enable all valid checkboxes, keeping unauthorized ones locked
     allCheckboxes.forEach(chk => {
@@ -627,8 +635,8 @@ function updateBulkBarState() {
       chk.disabled = true;
       chk.checked = false;
       if (tr) {
-        tr.style.opacity = '0.35';
-        tr.setAttribute('title', `Tidak dapat dipilih bersamaan (Status berbeda: ${itemStatus})`);
+        tr.style.opacity = '0.4';
+        tr.setAttribute('title', `Hanya bisa memilih unit berstatus sama (${activeStatus})`);
       }
     } else {
       chk.disabled = false;
@@ -639,13 +647,18 @@ function updateBulkBarState() {
     }
   });
 
+  const borrowerPicLabel = document.getElementById('bulk-borrow-pic-label');
+  if (borrowerPicLabel) {
+    borrowerPicLabel.textContent = currentUserName || 'PIC';
+  }
+
   // Dynamic button label & styling
   if (btnExecute) {
     if (pendingBulkTargetAction === 'KEMBALI') {
-      btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow text-nowrap';
-      btnExecute.innerHTML = `<i class="fas fa-undo me-1"></i> Kembalikan ${count} Unit Terpilih`;
+      btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow';
+      btnExecute.innerHTML = `<i class="fas fa-undo-alt me-1"></i> Kembalikan ${count} Unit Terpilih`;
     } else {
-      btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow text-nowrap';
+      btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow';
       btnExecute.innerHTML = `<i class="fas fa-hand-holding me-1"></i> Pinjam ${count} Unit Terpilih`;
     }
   }
@@ -658,6 +671,7 @@ function updateBulkBarState() {
 
   if (bulkBar) {
     bulkBar.classList.remove('d-none');
+    bulkBar.style.display = '';
   }
 
   const validSameStatusItems = allCheckboxes.filter(c => c.dataset.noAccess !== 'true' && (c.dataset.status || 'KEMBALI') === activeStatus);
@@ -743,6 +757,22 @@ function renderModalTableRows(items) {
 }
 
 function attachRowInteractions() {
+  // Whole row click to toggle checkbox
+  document.querySelectorAll('#detailModalBody table tbody tr').forEach(tr => {
+    tr.style.cursor = 'pointer';
+    tr.addEventListener('click', (e) => {
+      // Don't toggle if user clicked on button, image, or checkbox directly
+      if (e.target.closest('.btn-open-sample-edit') || e.target.closest('.btn-view-proof-img') || e.target.closest('input[type="checkbox"]')) {
+        return;
+      }
+      const chk = tr.querySelector('.unit-check-item');
+      if (chk && !chk.disabled) {
+        chk.checked = !chk.checked;
+        updateBulkBarState();
+      }
+    });
+  });
+
   // Checkbox state change listener
   document.querySelectorAll('.unit-check-item').forEach(chk => {
     chk.addEventListener('change', () => {
