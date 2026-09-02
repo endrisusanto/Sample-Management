@@ -348,7 +348,11 @@
     });
 
     checkScreensaverNavbar();
-    setupWebSocket(() => refreshDashboard());
+    setupWebSocket((event) => {
+      if (event.type === 'SAMPLE_UPDATED' || event.type === 'BULK_IMPORT_COMPLETED' || event.type === 'DATABASE_RESET') {
+        refreshDashboard();
+      }
+    });
     refreshDashboard();
     setInterval(refreshDashboard, 15000);
   </script>

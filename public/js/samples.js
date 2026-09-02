@@ -316,5 +316,9 @@ document.getElementById('btn-next-page').addEventListener('click', () => {
   if (currentPage < totalPages) loadSamples(currentPage + 1);
 });
 
-setupWebSocket(() => loadSamples(currentPage));
+setupWebSocket((event) => {
+  if (event.type === 'SAMPLE_UPDATED' || event.type === 'BULK_IMPORT_COMPLETED' || event.type === 'DATABASE_RESET') {
+    loadSamples(currentPage);
+  }
+});
 loadSamples();

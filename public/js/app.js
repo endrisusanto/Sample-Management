@@ -282,6 +282,7 @@ export function setupWebSocket(onEvent) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === 'CONNECTED') return; // Ignore handshake to prevent double-refresh glitch
         if (onEvent) onEvent(data);
       } catch (e) {}
     };

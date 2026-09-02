@@ -186,7 +186,11 @@ export async function initModelsPage() {
     });
   }
 
-  setupWebSocket(() => loadModelCards());
+  setupWebSocket((event) => {
+    if (event.type === 'SAMPLE_UPDATED' || event.type === 'BULK_IMPORT_COMPLETED' || event.type === 'DATABASE_RESET') {
+      loadModelCards();
+    }
+  });
   await loadModelCards();
 }
 
