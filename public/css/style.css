@@ -856,8 +856,70 @@ body {
   }
 }
 
-/* Mobile Phones (up to 767px) */
-@media (max-width: 767px) {
+/* Responsive Tablet & Smartphone (up to 991px) */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    background: var(--bg-surface-elevated, #0f172a);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 12px);
+    padding: 0.75rem;
+    margin-top: 0.65rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Navbar transforms into a sleek app icon button grid */
+  .navbar-nav {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  @media (max-width: 480px) {
+    .navbar-nav {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  .navbar-nav .nav-item {
+    width: 100%;
+  }
+
+  .navbar-nav .nav-link {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0.65rem 0.4rem !important;
+    background: var(--bg-surface, #1e293b);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 8px);
+    font-size: 11px !important;
+    font-weight: 600;
+    gap: 0.35rem;
+    min-height: 60px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: normal !important;
+  }
+
+  .navbar-nav .nav-link i {
+    font-size: 1.25rem;
+    margin: 0 !important;
+  }
+
+  .navbar-nav .nav-link:hover,
+  .navbar-nav .nav-link.active {
+    background: rgba(37, 99, 235, 0.2) !important;
+    border-color: var(--accent-blue, #2563eb) !important;
+    color: #60a5fa !important;
+    box-shadow: 0 0 14px rgba(37, 99, 235, 0.35);
+  }
+}
+
+/* Mobile Phones & Portrait Tablet (up to 768px) */
+@media (max-width: 768px) {
   body {
     padding-bottom: 75px;
   }
@@ -868,6 +930,62 @@ body {
 
   .navbar-brand {
     font-size: 12px;
+  }
+
+  /* 50:50 Button Split on Modal & Action Bars */
+  .modal-footer,
+  #bulk-borrow-bar,
+  #borrower-bulk-bar,
+  .modal-action-bar,
+  form .modal-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+    padding: 0.65rem !important;
+  }
+
+  .modal-footer > div,
+  #bulk-borrow-bar > div,
+  #borrower-bulk-bar > div {
+    width: 100% !important;
+  }
+
+  .modal-footer .d-flex:has(button),
+  #bulk-borrow-bar .d-flex:has(button),
+  #borrower-bulk-bar .d-flex:has(button),
+  .modal-footer > .d-flex:last-child,
+  form .modal-footer {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  .modal-footer button,
+  .modal-footer .btn,
+  #bulk-borrow-bar button,
+  #bulk-borrow-bar .btn,
+  #borrower-bulk-bar button,
+  #borrower-bulk-bar .btn,
+  form .modal-footer .btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: 50% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 0.55rem 0.4rem !important;
+    font-size: 11.5px !important;
+    min-height: 42px;
+  }
+
+  .modal-dialog {
+    margin: 0.5rem !important;
+    max-width: calc(100% - 1rem) !important;
+  }
+
+  .modal-body {
+    padding: 0.75rem !important;
   }
 
   .stat-widget {
