@@ -170,5 +170,4 @@ export class CameraProofEngine {
     // Return high-efficiency compressed JPEG data URL (~50KB per photo)
     return this.canvas.toDataURL('image/jpeg', 0.78);
   }
-  }
 }
