@@ -425,17 +425,9 @@ export function initAppNavModal() {
               </div>
             </div>
 
-            <div class="modal-footer border-top border-secondary p-3 d-flex flex-row justify-content-between align-items-center" style="background: rgba(0,0,0,0.25);">
-              <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap" id="modal-nav-theme-toggle">
-                  <i class="fas fa-sun text-warning me-1"></i> Mode
-                </button>
-                <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap" id="modal-nav-fullscreen">
-                  <i class="fas fa-expand me-1"></i> Layar Penuh
-                </button>
-              </div>
-              <button type="button" class="btn btn-sm btn-surface py-2 px-3" data-bs-dismiss="modal">
-                Tutup
+            <div class="modal-footer border-top border-secondary p-2 d-flex justify-content-center" style="background: rgba(0,0,0,0.25);">
+              <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap w-100 fw-semibold" id="modal-nav-theme-toggle">
+                <i class="fas fa-sun text-warning me-1"></i> Ganti Tema (Dark / Light Mode)
               </button>
             </div>
           </div>
@@ -446,13 +438,6 @@ export function initAppNavModal() {
 
     document.getElementById('modal-nav-theme-toggle')?.addEventListener('click', () => {
       Theme.toggle();
-    });
-    document.getElementById('modal-nav-fullscreen')?.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-      }
     });
   }
 
