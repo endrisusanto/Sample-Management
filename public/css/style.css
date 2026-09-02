@@ -101,6 +101,30 @@ body {
   -webkit-backdrop-filter: blur(6px);
 }
 
+/* Stacked Modal Z-Index Hierarchy (Preview on top of Detail) */
+#proofViewModal, 
+#auditProofModal {
+  z-index: 1095 !important;
+}
+
+#sampleEditModal {
+  z-index: 1080 !important;
+}
+
+/* Ensure modal tables stay transparent dark themed */
+.modal-content table, 
+.modal-content .table,
+.modal-content .table tr,
+.modal-content .table td,
+.modal-content .table th {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-hover-bg: transparent !important;
+}
+
 /* Filter Chip Pill (Interactive Legend & Filter Chips) */
 .filter-chip-group {
   display: flex;
