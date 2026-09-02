@@ -124,17 +124,41 @@ export const Auth = {
   async getUser() {
     try {
       const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.success && data.user) {
-        this.currentUser = data.user;
-        this.renderNavbarUser(data.user);
-        return data.user;
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          this.currentUser = data.user;
+          this.renderNavbarUser(data.user);
+          return data.user;
+        }
       }
     } catch (e) {}
     this.currentUser = null;
     this.renderNavbarUser(null);
     return null;
   },
+
+  async checkAuth() {
+    const path = window.location.pathname;
+    const publicPages = ['/login', '/login.html', '/register', '/register.html', '/screensaver', '/screensaver.html'];
+    const isPublic = publicPages.some(p => path === p || path.endsWith(p));
+
+    const user = await this.getUser();
+    if (!user && !isPublic) {
+      const target = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`/login?redirect=${target}`);
+      return null;
+    }
+    if (user && (path === '/login' || path === '/login.html' || path === '/register' || path === '/register.html')) {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || '/';
+      const safeTarget = (redirect.startsWith('/') && !redirect.startsWith('//')) ? redirect : '/';
+      window.location.replace(safeTarget);
+      return user;
+    }
+    return user;
+  },
+
   renderNavbarUser(user) {
     const userContainer = document.getElementById('nav-user-container');
     if (!userContainer) return;
@@ -591,7 +615,7 @@ if (typeof window !== 'undefined') {
 
 function bindGlobalEvents() {
   Theme.init();
-  Auth.getUser();
+  Auth.checkAuth();
   InactivityManager.init();
   KeepAwakeManager.init();
   initAppNavModal();

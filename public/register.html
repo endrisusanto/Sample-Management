@@ -131,8 +131,11 @@
         const data = await res.json();
 
         if (data.success) {
+          const params = new URLSearchParams(window.location.search);
+          const target = params.get('redirect') || '/';
+          const safeTarget = (target.startsWith('/') && !target.startsWith('//')) ? target : '/';
           alert(`Registrasi Berhasil!\nSelamat datang, ${data.user.name} (${data.user.level.toUpperCase()}).`);
-          window.location.href = '/';
+          window.location.href = safeTarget;
         } else {
           alert('Registrasi Gagal: ' + (data.message || 'Terjadi kesalahan saat registrasi.'));
         }

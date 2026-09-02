@@ -144,6 +144,13 @@
     const btnFingerprint = document.getElementById('btn-fingerprint-login');
     const fpUserList = document.getElementById('fingerprint-user-list');
 
+    function redirectAfterLogin() {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('redirect') || '/';
+      const safeTarget = (target.startsWith('/') && !target.startsWith('//')) ? target : '/';
+      window.location.href = safeTarget;
+    }
+
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       alertBox.classList.add('d-none');
@@ -162,7 +169,7 @@
         const data = await res.json();
 
         if (data.success) {
-          window.location.href = '/';
+          redirectAfterLogin();
         } else {
           alertBox.textContent = data.message || 'Login gagal: Periksa kembali email dan password Anda.';
           alertBox.classList.remove('d-none');
@@ -217,7 +224,7 @@
           faceStatus.innerHTML = `✅ <strong>${data.message}</strong>`;
           setTimeout(() => {
             faceEngine.stopCamera();
-            window.location.href = '/';
+            redirectAfterLogin();
           }, 1200);
         } else {
           SoundEffects.play('ERROR');
@@ -243,7 +250,7 @@
         alertBox.className = 'alert alert-success py-2 px-3 small mb-3';
         alertBox.innerHTML = `✅ <strong>${result.message}</strong>`;
         setTimeout(() => {
-          window.location.href = '/';
+          redirectAfterLogin();
         }, 1000);
       } catch (err) {
         SoundEffects.play('ERROR');

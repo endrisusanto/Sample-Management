@@ -23,7 +23,7 @@ export function setBroadcastFn(fn) {
 /**
  * 1. Borrow / Return Scan
  */
-apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
+apiRouter.post('/borrow-return', authenticate, async (req, res) => {
   try {
     const { name, nomor_asset, proof_image } = req.body;
     const borrowerName = name || req.user?.name;
@@ -60,7 +60,7 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
 /**
  * 1b. Batch Borrow / Return
  */
-apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
+apiRouter.post('/borrow-return-batch', authenticate, async (req, res) => {
   try {
     const { name, assets, proof_image, action } = req.body;
     const borrowerName = name || req.user?.name;
@@ -104,7 +104,7 @@ apiRouter.post('/borrow-return-batch', optionalAuth, async (req, res) => {
 /**
  * 2. Audit Scan
  */
-apiRouter.post('/audit', optionalAuth, async (req, res) => {
+apiRouter.post('/audit', authenticate, async (req, res) => {
   try {
     const { name, nomor_asset, proof_image } = req.body;
     const auditorName = name || req.user?.name || 'AUDITOR';
@@ -197,7 +197,7 @@ apiRouter.get('/samples/:id', async (req, res) => {
 /**
  * 6. Create / Update Sample
  */
-apiRouter.post('/samples', optionalAuth, async (req, res) => {
+apiRouter.post('/samples', authenticate, async (req, res) => {
   try {
     const result = SampleService.saveSample(req.body);
     broadcastEvent('SAMPLE_UPDATED', { action: 'SAVE', sample: req.body });
@@ -207,7 +207,7 @@ apiRouter.post('/samples', optionalAuth, async (req, res) => {
   }
 });
 
-apiRouter.put('/samples/:id', optionalAuth, async (req, res) => {
+apiRouter.put('/samples/:id', authenticate, async (req, res) => {
   try {
     const sampleData = { ...req.body, id: req.params.id };
     const result = SampleService.saveSample(sampleData);
