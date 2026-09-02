@@ -5,13 +5,20 @@ const searchInput = document.getElementById('model-search-input');
 const filterAvail = document.getElementById('filter-availability');
 const totalBadge = document.getElementById('total-models-badge');
 const detailModalEl = document.getElementById('sampleDetailModal');
+const editModalEl = document.getElementById('sampleEditModal');
+const editFormEl = document.getElementById('sample-edit-form');
+
 let detailModal = null;
+let editModal = null;
 let allModels = [];
 let currentSelectedModel = null;
 
 export async function initModelsPage() {
   if (detailModalEl) {
     detailModal = new bootstrap.Modal(detailModalEl);
+  }
+  if (editModalEl) {
+    editModal = new bootstrap.Modal(editModalEl);
   }
 
   const btnApply = document.getElementById('btn-apply-filter');
@@ -28,6 +35,55 @@ export async function initModelsPage() {
       if (searchInput) searchInput.value = '';
       if (filterAvail) filterAvail.value = 'all';
       loadModelCards();
+    });
+  }
+
+  // Handle Edit Form Submission
+  if (editFormEl) {
+    editFormEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-sample-id').value;
+      const payload = {
+        model: document.getElementById('edit-sample-model').value.trim(),
+        nomor_asset: document.getElementById('edit-sample-asset').value.trim(),
+        status_pinjam: document.getElementById('edit-sample-status-pinjam').value,
+        status_audit: document.getElementById('edit-sample-status-audit').value,
+        defect_status: document.getElementById('edit-sample-defect-status').value,
+        defect: document.getElementById('edit-sample-defect-detail').value.trim(),
+        octa_status: document.getElementById('edit-sample-octa-status').value,
+        name: document.getElementById('edit-sample-name').value.trim(),
+        imei: document.getElementById('edit-sample-imei').value.trim(),
+        un: document.getElementById('edit-sample-un').value.trim(),
+        hw_rev: document.getElementById('edit-sample-hw-rev').value.trim(),
+        retention_owner: document.getElementById('edit-sample-retention-owner').value.trim(),
+        retention_department: document.getElementById('edit-sample-dept').value.trim()
+      };
+
+      try {
+        const url = id ? `/api/samples/${id}` : '/api/samples';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (editModal) editModal.hide();
+          await loadModelCards();
+          // If modal was open, refresh it
+          if (currentSelectedModel) {
+            const updated = allModels.find(m => m.model === currentSelectedModel.model);
+            if (updated) {
+              openModelDetailModal(updated.model);
+            }
+          }
+        } else {
+          alert(data.message || 'Gagal menyimpan perubahan sample');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
     });
   }
 
@@ -221,6 +277,7 @@ function openModelDetailModal(modelName) {
               <th>Kondisi / Defect</th>
               <th>OCTA</th>
               <th>Waktu Update</th>
+              <th class="text-center" style="width: 70px;">Aksi</th>
             </tr>
           </thead>
           <tbody id="modal-units-tbody">
@@ -241,8 +298,11 @@ function openModelDetailModal(modelName) {
           return text.includes(q);
         });
         modalTbody.innerHTML = renderModalTableRows(filteredUnits);
+        attachRowEditListeners();
       });
     }
+
+    attachRowEditListeners();
   }
 
   if (detailModal) {
@@ -252,7 +312,7 @@ function openModelDetailModal(modelName) {
 
 function renderModalTableRows(items) {
   if (items.length === 0) {
-    return `<tr><td colspan="12" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
+    return `<tr><td colspan="13" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
   }
 
   return items.map((u, i) => {
@@ -282,15 +342,61 @@ function renderModalTableRows(items) {
         <td class="small font-monospace">${u.imei || '-'}${u.imei2 ? `<br><span class="text-muted">${u.imei2}</span>` : ''}</td>
         <td><span class="badge bg-dark border border-secondary">${u.hw_rev || '-'}</span></td>
         <td>
-          <span class="badge ${isNormal ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'}">
+          <span class="badge ${isNormal ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'}" title="${u.defect || ''}">
             ${u.defect_status || 'Normal'}
           </span>
+          ${u.defect ? `<div class="text-muted small text-truncate" style="max-width: 140px; font-size: 10px;">${u.defect}</div>` : ''}
         </td>
         <td>${u.octa_status ? `<span class="badge bg-secondary">${u.octa_status}</span>` : '-'}</td>
         <td class="small text-secondary font-monospace">${u.timestamp || '-'}</td>
+        <td class="text-center">
+          <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2 btn-open-sample-edit" data-id="${u.id}" title="Edit Sample & Kondisi">
+            <i class="fas fa-edit me-1"></i>Edit
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
+}
+
+function attachRowEditListeners() {
+  document.querySelectorAll('.btn-open-sample-edit').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!id) return;
+      await openSampleEditModal(id);
+    });
+  });
+}
+
+async function openSampleEditModal(id) {
+  if (!editModal) return;
+
+  try {
+    const res = await fetch(`/api/samples/${id}`);
+    const { sample } = await res.json();
+    if (!sample) return alert('Sample tidak ditemukan');
+
+    document.getElementById('edit-sample-id').value = sample.id || '';
+    document.getElementById('edit-sample-model').value = sample.model || '';
+    document.getElementById('edit-sample-asset').value = sample.nomor_asset || sample.sn || '';
+    document.getElementById('edit-sample-defect-status').value = sample.defect_status || 'Normal';
+    document.getElementById('edit-sample-defect-detail').value = sample.defect || '';
+    document.getElementById('edit-sample-octa-status').value = sample.octa_status || '';
+    document.getElementById('edit-sample-status-pinjam').value = sample.status_pinjam || 'KEMBALI';
+    document.getElementById('edit-sample-status-audit').value = sample.status_audit || 'RESET';
+    document.getElementById('edit-sample-name').value = sample.name || '';
+    document.getElementById('edit-sample-imei').value = sample.imei || '';
+    document.getElementById('edit-sample-un').value = sample.un || '';
+    document.getElementById('edit-sample-hw-rev').value = sample.hw_rev || '';
+    document.getElementById('edit-sample-retention-owner').value = sample.retention_owner || sample.pic_sample || '';
+    document.getElementById('edit-sample-dept').value = sample.retention_department || sample.Dept || '';
+
+    editModal.show();
+  } catch (err) {
+    alert('Gagal memuat detail sample: ' + err.message);
+  }
 }
 
 // Auto-run if loaded as page module

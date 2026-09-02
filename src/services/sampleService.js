@@ -332,15 +332,16 @@ export class SampleService {
           sample_separation_status = COALESCE(?, sample_separation_status),
           octa_status = COALESCE(?, octa_status),
           defect_status = COALESCE(?, defect_status),
+          defect = COALESCE(?, defect),
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
         data.model, data.model, data.sn || assetNo, data.sn || assetNo,
         data.name, data.status_pinjam, data.status_audit,
         data.pic_sample || data.retention_owner, data.retention_owner, data.retention_department,
-        data.retention_department, data.Location,
+        data.retention_department || data.Dept, data.Location,
         data.un, data.imei, data.imei2, data.hw_rev,
-        data.sample_separation_status, data.octa_status, data.defect_status,
+        data.sample_separation_status, data.octa_status, data.defect_status, data.defect,
         existing.id
       );
       return { id: existing.id, updated: true };
@@ -349,19 +350,19 @@ export class SampleService {
         INSERT INTO database_sample (
           model, model_name, nomor_asset, sn, serial_no, name, status_pinjam, status_audit,
           pic_sample, retention_owner, retention_department, Dept, Location,
-          un, imei, imei2, hw_rev, sample_separation_status, octa_status, defect_status, qr, timestamp
+          un, imei, imei2, hw_rev, sample_separation_status, octa_status, defect_status, defect, qr, timestamp
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `).run(
         data.model || 'UNKNOWN', data.model || 'UNKNOWN', assetNo, assetNo, assetNo,
         data.name || '', data.status_pinjam || 'KEMBALI', data.status_audit || 'RESET',
         data.pic_sample || data.retention_owner || '', data.retention_owner || '', data.retention_department || '',
-        data.retention_department || 'PE Solution P /SEIN-P', data.Location || 'Dynamics Building',
+        data.retention_department || data.Dept || 'PE Solution P /SEIN-P', data.Location || 'Dynamics Building',
         data.un || '', data.imei || '', data.imei2 || '', data.hw_rev || '',
-        data.sample_separation_status || 'Dev.', data.octa_status || '', data.defect_status || 'Normal',
+        data.sample_separation_status || 'Dev.', data.octa_status || '', data.defect_status || 'Normal', data.defect || '',
         `qr/qr_${assetNo}.png`, this.getJakartaTimestamp()
       );
       return { id: result.lastInsertRowid, created: true };

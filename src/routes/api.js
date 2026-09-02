@@ -153,7 +153,7 @@ apiRouter.get('/samples/:id', async (req, res) => {
 /**
  * 6. Create / Update Sample
  */
-apiRouter.post('/samples', authenticate, async (req, res) => {
+apiRouter.post('/samples', optionalAuth, async (req, res) => {
   try {
     const result = SampleService.saveSample(req.body);
     broadcastEvent('SAMPLE_UPDATED', { action: 'SAVE', sample: req.body });
@@ -163,7 +163,7 @@ apiRouter.post('/samples', authenticate, async (req, res) => {
   }
 });
 
-apiRouter.put('/samples/:id', authenticate, async (req, res) => {
+apiRouter.put('/samples/:id', optionalAuth, async (req, res) => {
   try {
     const sampleData = { ...req.body, id: req.params.id };
     const result = SampleService.saveSample(sampleData);

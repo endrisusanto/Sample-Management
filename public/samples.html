@@ -205,6 +205,36 @@
                 <input type="text" id="edit-name" class="form-control" placeholder="Nama Peminjam">
               </div>
               <div class="col-md-6">
+                <label class="form-label text-warning fw-bold"><i class="fas fa-shield-alt me-1"></i> Status Kondisi Perangkat *</label>
+                <select id="edit-defect-status" class="form-select border-warning">
+                  <option value="Normal">🟢 Normal (Siap Pakai)</option>
+                  <option value="Defect (LCD / Layar Rusak)">🔴 Defect (LCD / Layar Rusak)</option>
+                  <option value="Defect (Touchscreen)">🔴 Defect (Touchscreen / Sentuh Rusak)</option>
+                  <option value="Defect (Kamera)">🔴 Defect (Kamera Rusak / Error)</option>
+                  <option value="Defect (Baterai / Charging)">🔴 Defect (Baterai / Drop / Charging)</option>
+                  <option value="Defect (Audio / Speaker / Mic)">🔴 Defect (Audio / Speaker / Mic)</option>
+                  <option value="Defect (Tombol Fisik)">🔴 Defect (Tombol Fisik / Power / Vol)</option>
+                  <option value="Defect (Mati Total / No Power)">🔴 Defect (Mati Total / No Power)</option>
+                  <option value="Defect (Bootloop / Stuck Logo)">🔴 Defect (Bootloop / Stuck Logo)</option>
+                  <option value="Scratch / Fisik Lecet / Casing Pecah">🟡 Scratch / Fisik Lecet / Casing Pecah</option>
+                  <option value="Defect Lainnya">🔴 Defect Lainnya</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-secondary">Status OCTA</label>
+                <select id="edit-octa-status" class="form-select">
+                  <option value="">- Tidak Ada -</option>
+                  <option value="OCTA OK">OCTA OK</option>
+                  <option value="OCTA Defect">OCTA Defect</option>
+                  <option value="OCTA Broken">OCTA Broken</option>
+                  <option value="OCTA Replacement">OCTA Replacement</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-secondary">Catatan Kerusakan / Detail Defect</label>
+                <input type="text" id="edit-defect-detail" class="form-control" placeholder="Tuliskan catatan kondisi spesifik sample...">
+              </div>
+              <div class="col-md-6">
                 <label class="form-label text-secondary">IMEI / IMEI2</label>
                 <input type="text" id="edit-imei" class="form-control" placeholder="IMEI Number">
               </div>

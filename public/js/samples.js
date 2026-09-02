@@ -165,6 +165,9 @@ async function openEdit(id) {
       document.getElementById('edit-status-pinjam').value = sample.status_pinjam || 'KEMBALI';
       document.getElementById('edit-status-audit').value = sample.status_audit || 'RESET';
       document.getElementById('edit-name').value = sample.name || '';
+      document.getElementById('edit-defect-status').value = sample.defect_status || 'Normal';
+      document.getElementById('edit-defect-detail').value = sample.defect || '';
+      document.getElementById('edit-octa-status').value = sample.octa_status || '';
       document.getElementById('edit-imei').value = sample.imei || '';
       document.getElementById('edit-un').value = sample.un || '';
       document.getElementById('edit-hw-rev').value = sample.hw_rev || '';
@@ -198,6 +201,9 @@ document.getElementById('sample-form').addEventListener('submit', async (e) => {
     nomor_asset: document.getElementById('edit-asset').value.trim(),
     status_pinjam: document.getElementById('edit-status-pinjam').value,
     status_audit: document.getElementById('edit-status-audit').value,
+    defect_status: document.getElementById('edit-defect-status').value,
+    defect: document.getElementById('edit-defect-detail').value.trim(),
+    octa_status: document.getElementById('edit-octa-status').value,
     name: document.getElementById('edit-name').value.trim(),
     imei: document.getElementById('edit-imei').value.trim(),
     un: document.getElementById('edit-un').value.trim(),
