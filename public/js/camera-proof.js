@@ -10,7 +10,7 @@ export class CameraProofEngine {
     this.canvas = document.createElement('canvas');
   }
 
-  async startCamera(facingMode = 'environment') {
+  async startCamera(facingMode = 'user') {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Kamera tidak didukung pada browser ini.');
     }
@@ -25,6 +25,7 @@ export class CameraProofEngine {
       });
       if (this.video) {
         this.video.srcObject = this.stream;
+        this.video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
         await this.video.play();
       }
       return true;
