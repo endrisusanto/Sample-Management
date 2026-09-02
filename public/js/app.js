@@ -407,7 +407,9 @@ export const InactivityManager = {
 // Screen WakeLock / KeepAwake Engine
 export const KeepAwakeManager = {
   wakeLock: null,
-  enabled: localStorage.getItem('keepAwake') === 'true',
+  get enabled() {
+    return localStorage.getItem('keepAwake') === 'true';
+  },
 
   async init() {
     this.updateUI();
@@ -419,15 +421,24 @@ export const KeepAwakeManager = {
         await this.requestWakeLock();
       }
     });
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'keepAwake') {
+        this.updateUI();
+        if (this.enabled) this.requestWakeLock();
+        else this.releaseWakeLock();
+      }
+    });
   },
 
   async requestWakeLock() {
     if ('wakeLock' in navigator) {
       try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener('release', () => {
-          this.wakeLock = null;
-        });
+        if (!this.wakeLock) {
+          this.wakeLock = await navigator.wakeLock.request('screen');
+          this.wakeLock.addEventListener('release', () => {
+            this.wakeLock = null;
+          });
+        }
       } catch (err) {
         console.warn('Screen WakeLock warning:', err.message);
       }
@@ -443,10 +454,10 @@ export const KeepAwakeManager = {
     }
   },
 
-  async toggle(enable) {
-    this.enabled = typeof enable === 'boolean' ? enable : !this.enabled;
-    localStorage.setItem('keepAwake', this.enabled ? 'true' : 'false');
-    if (this.enabled) {
+  async set(enable) {
+    const isEnabled = Boolean(enable);
+    localStorage.setItem('keepAwake', isEnabled ? 'true' : 'false');
+    if (isEnabled) {
       await this.requestWakeLock();
     } else {
       await this.releaseWakeLock();
@@ -454,12 +465,28 @@ export const KeepAwakeManager = {
     this.updateUI();
   },
 
+  async toggle(enable) {
+    const next = typeof enable === 'boolean' ? enable : !this.enabled;
+    await this.set(next);
+  },
+
   updateUI() {
+    const active = this.enabled;
     document.querySelectorAll('.keep-awake-switch, #navbar-keep-awake-toggle, #modal-keep-awake-toggle, .keep-awake-checkbox').forEach(input => {
-      input.checked = this.enabled;
+      input.checked = active;
     });
   }
 };
+
+// Auto-initialize KeepAwakeManager on module load
+KeepAwakeManager.init();
+
+// Global delegated change listener for any keep-awake switch
+document.addEventListener('change', (e) => {
+  if (e.target && (e.target.classList.contains('keep-awake-switch') || e.target.id === 'navbar-keep-awake-toggle' || e.target.id === 'modal-keep-awake-toggle')) {
+    KeepAwakeManager.set(e.target.checked);
+  }
+});
 
 // Global App Navigation Grid Modal (App Launcher)
 export function initAppNavModal() {
@@ -541,10 +568,6 @@ export function initAppNavModal() {
     document.getElementById('modal-nav-theme-toggle')?.addEventListener('click', () => {
       Theme.toggle();
     });
-
-    document.getElementById('modal-keep-awake-toggle')?.addEventListener('change', (e) => {
-      KeepAwakeManager.toggle(e.target.checked);
-    });
   }
 
   // Intercept navbar toggler click on mobile/tablet or dedicated launcher buttons
@@ -576,11 +599,6 @@ function bindGlobalEvents() {
   if (themeBtn) {
     themeBtn.onclick = () => Theme.toggle();
   }
-  document.querySelectorAll('.keep-awake-switch, #navbar-keep-awake-toggle').forEach(chk => {
-    chk.onchange = (e) => {
-      KeepAwakeManager.toggle(e.target.checked);
-    };
-  });
 }
 
 if (document.readyState === 'loading') {
