@@ -1,5 +1,5 @@
 /**
- * 🖐️ Biometric Fingerprint Engine
+ * 🖐️ Biometric Fingerprint Engine (Multi-User Support)
  * Dual-Mode:
  * 1. Native Android BiometricPrompt (via AndroidNativeBiometric bridge in Android APK)
  * 2. WebAuthn / FIDO2 Passkey (for Desktop/Mobile Web Chrome, Edge, Safari)
@@ -30,14 +30,14 @@ function normalizeBiometricError(err) {
   const msg = (err && err.message) ? err.message : String(err || '');
   const lower = msg.toLowerCase();
 
-  if (lower.contains ? lower.contains('face') : lower.includes('face')) {
+  if (lower.includes('face') || lower.includes('unlock')) {
     return 'Sensor sidik jari belum didaftarkan pada perangkat ini. Silakan atur Sidik Jari (Fingerprint) di Pengaturan HP Anda.';
   }
   if (lower.includes('not enrolled') || lower.includes('no biometrics') || lower.includes('not supported') || lower.includes('not allowed')) {
     return 'Sensor sidik jari belum aktif. Silakan daftarkan Sidik Jari di menu Pengaturan Keamanan perangkat Anda.';
   }
   if (lower.includes('cancel') || lower.includes('dibatalkan')) {
-    return 'Perekaman sidik jari dibatalkan oleh pengguna.';
+    return 'Perekaman / verifikasi sidik jari dibatalkan.';
   }
   return msg;
 }
@@ -66,6 +66,35 @@ function promptNativeAndroidBiometric(title, subtitle) {
 }
 
 export class BiometricAuth {
+  /**
+   * Get all users registered with biometrics on this device
+   */
+  static getRegisteredUsers() {
+    try {
+      const raw = localStorage.getItem('device_biometric_users');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static saveRegisteredUser(userObj) {
+    try {
+      const list = BiometricAuth.getRegisteredUsers().filter(u => u.userId != userObj.userId);
+      list.push({
+        userId: userObj.userId,
+        userName: userObj.userName,
+        userEmail: userObj.userEmail,
+        credentialId: userObj.credentialId,
+        registeredAt: new Date().toISOString()
+      });
+      localStorage.setItem('device_biometric_users', JSON.stringify(list));
+      localStorage.setItem('last_biometric_cred_id', userObj.credentialId);
+    } catch (e) {
+      console.error('Failed to save biometric user locally:', e);
+    }
+  }
+
   /**
    * Check if device has biometric hardware (Fingerprint / Face ID)
    */
@@ -98,8 +127,8 @@ export class BiometricAuth {
       if (window.AndroidNativeBiometric) {
         await promptNativeAndroidBiometric('Registrasi Sidik Jari', `Sentuh sensor sidik jari untuk ${userName}`);
         
-        const androidCredId = `android_bio_${userId}_${btoa(userName || 'user')}`;
-        localStorage.setItem('last_biometric_cred_id', androidCredId);
+        const androidCredId = `android_bio_${userId}_${btoa(encodeURIComponent(userName || 'user'))}`;
+        BiometricAuth.saveRegisteredUser({ userId, userName, userEmail, credentialId: androidCredId });
 
         const res = await fetch('/api/auth/fingerprint/register', {
           method: 'POST',
@@ -156,7 +185,7 @@ export class BiometricAuth {
       if (!credential) throw new Error('Perekaman sidik jari dibatalkan.');
 
       const credentialId = bufferToBase64url(credential.rawId);
-      localStorage.setItem('last_biometric_cred_id', credentialId);
+      BiometricAuth.saveRegisteredUser({ userId, userName, userEmail, credentialId });
 
       // Save to Server
       const res = await fetch('/api/auth/fingerprint/register', {
@@ -179,14 +208,16 @@ export class BiometricAuth {
 
   /**
    * Trigger Native Fingerprint / Passkey Login
+   * @param {string} [specificCredentialId] Optional specific user credentialId
    */
-  static async loginWithFingerprint() {
+  static async loginWithFingerprint(specificCredentialId = null) {
     try {
+      const targetCredId = specificCredentialId || localStorage.getItem('last_biometric_cred_id');
+
       // 1. Android APK Native BiometricPrompt
       if (window.AndroidNativeBiometric) {
-        const storedCredId = localStorage.getItem('last_biometric_cred_id');
-        if (!storedCredId) {
-          throw new Error('Sidik jari belum didaftarkan pada perangkat ini. Silakan daftarkan terlebih dahulu di menu Pengguna.');
+        if (!targetCredId) {
+          throw new Error('Belum ada sidik jari yang didaftarkan pada perangkat ini. Silakan daftarkan di menu Pengguna.');
         }
 
         await promptNativeAndroidBiometric('Login Sample Tracker', 'Sentuh sensor sidik jari Anda');
@@ -194,7 +225,7 @@ export class BiometricAuth {
         const res = await fetch('/api/auth/fingerprint/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credentialId: storedCredId })
+          body: JSON.stringify({ credentialId: targetCredId })
         });
 
         const data = await res.json();
@@ -210,9 +241,8 @@ export class BiometricAuth {
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
 
-      const storedCredId = localStorage.getItem('last_biometric_cred_id');
-      const allowCredentials = storedCredId ? [{
-        id: base64urlToBuffer(storedCredId),
+      const allowCredentials = targetCredId ? [{
+        id: base64urlToBuffer(targetCredId),
         type: 'public-key'
       }] : [];
 

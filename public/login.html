@@ -108,6 +108,26 @@
     </div>
   </div>
 
+  <!-- Fingerprint Multi-User Select Modal -->
+  <div class="modal fade" id="fingerprintUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+      <div class="modal-content border-warning shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-1">
+          <h5 class="modal-title text-warning fw-bold fs-6">
+            <i class="fas fa-fingerprint me-2"></i> Pilih Akun Login Sidik Jari
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3">
+          <p class="text-secondary small mb-3">Pilih akun Anda yang terdaftar pada perangkat ini, lalu sentuh sensor biometrik:</p>
+          <div class="d-flex flex-column gap-2" id="fingerprint-user-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { FaceEngine } from '/js/face-engine.js';
@@ -117,10 +137,12 @@
     const alertBox = document.getElementById('login-alert');
     const submitBtn = document.getElementById('btn-login-submit');
     const faceLoginModal = new bootstrap.Modal(document.getElementById('faceLoginModal'));
+    const fpUserModal = new bootstrap.Modal(document.getElementById('fingerprintUserModal'));
     const faceEngine = new FaceEngine('face-video');
     const faceStatus = document.getElementById('face-scan-status');
     const btnCaptureFace = document.getElementById('btn-capture-face-login');
     const btnFingerprint = document.getElementById('btn-fingerprint-login');
+    const fpUserList = document.getElementById('fingerprint-user-list');
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -210,14 +232,13 @@
       }
     });
 
-    // Native Fingerprint / Passkey Login Flow
-    btnFingerprint.addEventListener('click', async () => {
+    async function executeFingerprintLogin(credId = null) {
       alertBox.classList.add('d-none');
       btnFingerprint.disabled = true;
       btnFingerprint.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sentuh Sensor...';
 
       try {
-        const result = await BiometricAuth.loginWithFingerprint();
+        const result = await BiometricAuth.loginWithFingerprint(credId);
         SoundEffects.play('SUCCESS');
         alertBox.className = 'alert alert-success py-2 px-3 small mb-3';
         alertBox.innerHTML = `✅ <strong>${result.message}</strong>`;
@@ -231,6 +252,37 @@
       } finally {
         btnFingerprint.disabled = false;
         btnFingerprint.innerHTML = '<i class="fas fa-fingerprint me-1 fs-6"></i> Sidik Jari';
+      }
+    }
+
+    // Native Fingerprint / Passkey Login Flow (Supports Multi-User)
+    btnFingerprint.addEventListener('click', async () => {
+      const users = BiometricAuth.getRegisteredUsers();
+
+      if (users.length > 1) {
+        // Render multi-user chooser
+        fpUserList.innerHTML = users.map(u => `
+          <button type="button" class="btn btn-surface text-start d-flex align-items-center justify-content-between p-2 btn-select-fp-user" data-cred="${u.credentialId}">
+            <div>
+              <div class="fw-bold text-light" style="font-size: 13px;">${u.userName}</div>
+              <div class="text-secondary small" style="font-size: 11px;">${u.userEmail || ''}</div>
+            </div>
+            <i class="fas fa-chevron-right text-warning"></i>
+          </button>
+        `).join('');
+
+        document.querySelectorAll('.btn-select-fp-user').forEach(btn => {
+          btn.addEventListener('click', () => {
+            fpUserModal.hide();
+            executeFingerprintLogin(btn.dataset.cred);
+          });
+        });
+
+        fpUserModal.show();
+      } else if (users.length === 1) {
+        executeFingerprintLogin(users[0].credentialId);
+      } else {
+        executeFingerprintLogin(null);
       }
     });
   </script>
