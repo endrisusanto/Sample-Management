@@ -530,8 +530,9 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
 
     if (data.success) {
       SoundEffects.play('SUCCESS');
+      const actionTitle = pendingBulkTargetAction === 'KEMBALI' ? 'SAMPLE SUDAH KEMBALI' : 'DATA PEMINJAMAN BERHASIL DISIMPAN';
       await showGiantAlert({
-        title: `${actionLabel.toUpperCase()} MASSAL BERHASIL`,
+        title: actionTitle,
         message: `Berhasil memproses <strong>${data.count} Unit</strong> (${pendingBulkModelName}) untuk PIC: <strong>${currentUserName}</strong>!`,
         action: pendingBulkTargetAction
       });
@@ -548,7 +549,7 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
       SoundEffects.play('ERROR');
       await showCustomAlert({
         title: `Gagal ${actionLabel}`,
-        message: data.message || `Terjadi kesalahan saat memproses ${actionLabel.toLowerCase()} massal.`,
+        message: data.message || `Terjadi kesalahan saat memproses ${actionLabel.toLowerCase()}.`,
         type: 'danger'
       });
     }

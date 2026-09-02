@@ -420,7 +420,7 @@
           if (result.success) {
             SoundEffects.play('KEMBALI');
             showGiantAlert({
-              title: 'PENGEMBALIAN MASSAL BERHASIL',
+              title: 'SAMPLE SUDAH KEMBALI',
               message: `Berhasil mengembalikan <strong>${result.count} Unit</strong> untuk <strong>${pendingTransactionPayload.name}</strong>!`,
               action: 'KEMBALI'
             });
@@ -430,7 +430,7 @@
             SoundEffects.play('ERROR');
             showGiantAlert({
               title: 'GAGAL PENGEMBALIAN',
-              message: result.message || 'Gagal memproses pengembalian massal',
+              message: result.message || 'Gagal memproses pengembalian sample',
               action: 'TIDAK_TERSEDIA'
             });
           }
