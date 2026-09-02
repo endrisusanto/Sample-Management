@@ -18,15 +18,9 @@
     }
   </style>
 </head>
-  <!-- Floating Login / Theme Controls for Expired / Public Screensaver Mode -->
-  <div id="screensaver-public-controls" class="position-fixed top-0 end-0 m-3 d-flex align-items-center gap-2" style="z-index: 1050; display: none;">
-    <button type="button" class="btn btn-surface btn-circle shadow-sm" id="btn-screensaver-theme-toggle" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
-    <a href="/login" class="btn btn-primary-custom py-1 px-3 shadow-lg rounded-pill fw-bold" style="font-size: 11.5px;">
-      <i class="fas fa-sign-in-alt me-1"></i> Masuk
-    </a>
-  </div>
+<body>
 
-  <!-- Standard Navigation Bar -->
+  <!-- Standard Navigation Bar (Visible when Logged In) -->
   <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid px-3">
       <a class="navbar-brand d-flex align-items-center gap-2" href="/">
@@ -71,6 +65,39 @@
   </nav>
 
   <main class="container-fluid px-3 py-3">
+    <!-- Seamless Top Card Banner (Visible in Public / Expired Screensaver Mode) -->
+    <div id="screensaver-top-card" class="card glass-panel mb-3 border-secondary shadow-sm top-login-card" style="display: none; cursor: pointer;" title="Klik di sini untuk Masuk ke Sistem">
+      <div class="card-body p-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="stat-icon bg-primary bg-opacity-10 text-primary p-2 rounded-circle" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-barcode fs-6"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-light d-flex align-items-center gap-2" style="font-size: 13px;">
+              <span>SAMPLE TRACKER • LIVE MONITOR</span>
+              <span class="live-dot ms-1" title="Live WebSocket Active"></span>
+            </div>
+            <div class="text-secondary small" style="font-size: 11px;">
+              <i class="fas fa-shield-alt text-success me-1"></i> Mode Layar Monitor • <strong>Klik kartu ini untuk Masuk / Login</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-end d-none d-sm-block">
+            <div class="clock-display" id="public-live-clock" style="font-size: 1.25rem;">00:00:00</div>
+            <div class="text-secondary" id="public-live-date" style="font-size: 10px;">-</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-surface btn-circle btn-sm shadow-sm" id="btn-public-theme-toggle" title="Ganti Tema"><i class="fas fa-sun text-warning"></i></button>
+            <button type="button" class="btn btn-surface btn-circle btn-sm shadow-sm" id="btn-public-screen-fs" title="Layar Penuh"><i class="fas fa-expand"></i></button>
+            <a href="/login" class="btn btn-primary-custom py-1 px-3 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-1" style="font-size: 12px;">
+              <i class="fas fa-sign-in-alt"></i> Masuk
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Top KPI Widgets -->
     <div class="row g-2 mb-3">
       <div class="col-6 col-lg-3">
@@ -172,9 +199,19 @@
 
     function updateClock() {
       const now = new Date();
-      document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID');
+      const timeStr = now.toLocaleTimeString('id-ID');
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('live-date').textContent = now.toLocaleDateString('id-ID', options);
+      const dateStr = now.toLocaleDateString('id-ID', options);
+
+      const clockEl = document.getElementById('live-clock');
+      const dateEl = document.getElementById('live-date');
+      if (clockEl) clockEl.textContent = timeStr;
+      if (dateEl) dateEl.textContent = dateStr;
+
+      const pubClock = document.getElementById('public-live-clock');
+      const pubDate = document.getElementById('public-live-date');
+      if (pubClock) pubClock.textContent = timeStr;
+      if (pubDate) pubDate.textContent = dateStr;
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -324,18 +361,35 @@
     async function checkScreensaverNavbar() {
       const user = await Auth.getUser() || Auth.getCurrentUser();
       const navEl = document.querySelector('nav.navbar');
-      const publicCtrl = document.getElementById('screensaver-public-controls');
+      const topCard = document.getElementById('screensaver-top-card');
       if (!user) {
         if (navEl) navEl.style.setProperty('display', 'none', 'important');
-        if (publicCtrl) publicCtrl.style.setProperty('display', 'flex', 'important');
+        if (topCard) topCard.style.setProperty('display', 'block', 'important');
       } else {
         if (navEl) navEl.style.removeProperty('display');
-        if (publicCtrl) publicCtrl.style.setProperty('display', 'none', 'important');
+        if (topCard) topCard.style.setProperty('display', 'none', 'important');
       }
     }
 
-    document.getElementById('btn-screensaver-theme-toggle')?.addEventListener('click', () => {
+    // Top Card Click -> Redirect to Login
+    document.getElementById('screensaver-top-card')?.addEventListener('click', (e) => {
+      // Don't trigger if clicked on child control buttons
+      if (e.target.closest('#btn-public-theme-toggle') || e.target.closest('#btn-public-screen-fs')) return;
+      window.location.href = '/login';
+    });
+
+    document.getElementById('btn-public-theme-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
       Theme.toggle();
+    });
+
+    document.getElementById('btn-public-screen-fs')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
     });
 
     document.getElementById('btn-screen-fs')?.addEventListener('click', (e) => {

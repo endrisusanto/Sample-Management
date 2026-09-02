@@ -89,6 +89,16 @@ body {
   box-shadow: var(--shadow-main);
 }
 
+.top-login-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.top-login-card:hover {
+  border-color: var(--accent-blue) !important;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25) !important;
+  transform: translateY(-2px);
+}
+
 /* Modal Backdrop & Nested Modal Stacking */
 .modal-backdrop {
   backdrop-filter: blur(8px);
