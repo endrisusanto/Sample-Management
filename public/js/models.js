@@ -1,5 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
-import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.90';
+import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.91';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -72,7 +72,7 @@ export async function initModelsPage() {
         let photoBase64 = null;
         if (cameraProof) {
           photoBase64 = cameraProof.captureStampedPhoto({
-            action: `BULK ${pendingBulkTargetAction}`,
+            action: pendingBulkTargetAction || 'PINJAM',
             model: pendingBulkModelName,
             nomorAsset: `${pendingBulkAssets.length} UNIT`,
             picName: currentUserName
