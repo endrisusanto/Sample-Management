@@ -98,6 +98,13 @@ export const Theme = {
         : '<i class="fas fa-moon text-primary"></i>';
       btn.title = theme === 'dark' ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode';
     }
+    const modalThemeBtn = document.getElementById('modal-nav-theme-toggle');
+    if (modalThemeBtn) {
+      modalThemeBtn.innerHTML = theme === 'dark'
+        ? '<i class="fas fa-sun text-warning"></i>'
+        : '<i class="fas fa-moon text-primary"></i>';
+      modalThemeBtn.title = theme === 'dark' ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode';
+    }
   }
 };
 
@@ -387,7 +394,12 @@ export function initAppNavModal() {
                   <span class="text-secondary" style="font-size: 10.5px;">Sample Management & Tracking System</span>
                 </div>
               </div>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-surface rounded-circle d-flex align-items-center justify-content-center border-secondary shadow-sm" id="modal-nav-theme-toggle" title="Ganti Tema" style="width: 32px; height: 32px; padding: 0;">
+                  <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
+                </button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
             </div>
 
             <div class="modal-body p-3 p-sm-4">
@@ -423,12 +435,6 @@ export function initAppNavModal() {
                   <div class="nav-tile-desc">Display Standby Mode</div>
                 </a>
               </div>
-            </div>
-
-            <div class="modal-footer border-top border-secondary p-2 d-flex justify-content-center" style="background: rgba(0,0,0,0.25);">
-              <button type="button" class="btn btn-sm btn-surface py-2 px-3 text-nowrap w-100 fw-semibold" id="modal-nav-theme-toggle">
-                <i class="fas fa-sun text-warning me-1"></i> Ganti Tema (Dark / Light Mode)
-              </button>
             </div>
           </div>
         </div>
