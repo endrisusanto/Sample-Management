@@ -43,7 +43,7 @@ const facesDir = path.join(uploadDir, 'faces');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(proofsDir)) fs.mkdirSync(proofsDir, { recursive: true });
 if (!fs.existsSync(facesDir)) fs.mkdirSync(facesDir, { recursive: true });
-app.use('/uploads', express.static(uploadDir));
+app.use('/uploads', express.static(uploadDir, { maxAge: '30d', immutable: true }));
 
 // WebSocket for Real-time Dashboard & Live Broadcasts
 const wss = new WebSocketServer({ server });
