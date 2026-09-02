@@ -197,12 +197,12 @@ export function showGiantAlert({ title, message, action = 'PINJAM', duration = 3
 
   overlay.innerHTML = `
     <div class="giant-alert-box ${action}">
-      <div style="font-size: 3rem; color: ${badgeColor}; margin-bottom: 0.75rem;">
+      <div style="font-size: 2.75rem; color: ${badgeColor}; margin-bottom: 0.5rem;">
         <i class="fas ${icon}"></i>
       </div>
-      <h3 class="fw-bold mb-2" style="font-size: 1.5rem; color: ${badgeColor};">${title || action}</h3>
-      <div class="fs-5 text-light mb-3" style="line-height: 1.5;">${message}</div>
-      <div class="progress" style="height: 5px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+      <h3 class="fw-bold mb-2 text-nowrap" style="font-size: 1.35rem; color: ${badgeColor};">${title || action}</h3>
+      <div class="fs-6 text-light mb-3 d-flex flex-wrap justify-content-center align-items-center gap-1" style="line-height: 1.5;">${message}</div>
+      <div class="progress" style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
         <div class="progress-bar" style="width: 100%; background: ${badgeColor}; transition: width ${duration}ms linear;"></div>
       </div>
     </div>

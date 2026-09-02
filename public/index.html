@@ -450,7 +450,7 @@
 
           showGiantAlert({
             title,
-            message: `<strong>SAMPLE:</strong> ${result.sample?.model || ''}<br><strong>NO. ASSET:</strong> ${result.sample?.nomor_asset || ''}<br><strong>PIC:</strong> ${name}`,
+            message: `<span class="text-nowrap me-2"><strong>SAMPLE:</strong> <span class="text-info">${result.sample?.model || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap mx-2"><strong>NO. ASSET:</strong> <span class="text-warning font-monospace">${result.sample?.nomor_asset || ''}</span></span> <span class="text-secondary d-none d-sm-inline">•</span> <span class="text-nowrap ms-2"><strong>PIC:</strong> <span class="text-primary fw-bold">${name}</span></span>`,
             action: result.action
           });
 
