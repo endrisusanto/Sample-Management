@@ -403,16 +403,16 @@ function openModelDetailModal(modelName) {
         </table>
       </div>
 
-      <!-- Bulk Borrow Action Bar (Revealed when at least 1 checkbox is checked) -->
-      <div id="bulk-borrow-bar" class="d-none mt-3 p-2 rounded bg-primary bg-opacity-10 border border-primary d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <!-- Sticky Bulk Borrow / Return Action Bar (Revealed when at least 1 checkbox is checked) -->
+      <div id="bulk-borrow-bar" class="mt-3 p-2 rounded border d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-lg" style="display: none !important; position: sticky; bottom: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 20;">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-primary fs-6 py-1 px-2" id="selected-units-badge"><i class="fas fa-check-square me-1"></i>0 Unit Dipilih</span>
           <span class="text-light small">Peminjam: <strong class="text-warning font-monospace" id="bulk-borrow-pic-label">${currentUserName}</strong></span>
         </div>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-sm btn-surface py-1 px-2" id="btn-uncheck-all-units">Batal</button>
-          <button type="button" class="btn btn-sm btn-primary-custom fw-bold py-1 px-3" id="btn-execute-bulk-borrow">
-            <i class="fas fa-camera me-1"></i> Pinjam Unit Terpilih
+          <button type="button" class="btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow" id="btn-execute-bulk-borrow">
+            <i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih
           </button>
         </div>
       </div>
@@ -584,7 +584,9 @@ function updateBulkBarState() {
   const count = checkedItems.length;
 
   if (count === 0) {
-    if (bulkBar) bulkBar.classList.add('d-none');
+    if (bulkBar) {
+      bulkBar.style.setProperty('display', 'none', 'important');
+    }
     // Re-enable all checkboxes
     allCheckboxes.forEach(chk => {
       chk.disabled = false;
@@ -630,9 +632,11 @@ function updateBulkBarState() {
     if (pendingBulkTargetAction === 'KEMBALI') {
       btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow';
       btnExecute.innerHTML = `<i class="fas fa-undo me-1"></i> Kembalikan ${count} Unit Terpilih`;
+      if (bulkBar) bulkBar.className = 'mt-3 p-2 rounded border border-success d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-lg bg-success bg-opacity-10';
     } else {
       btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow';
       btnExecute.innerHTML = `<i class="fas fa-hand-holding me-1"></i> Pinjam ${count} Unit Terpilih`;
+      if (bulkBar) bulkBar.className = 'mt-3 p-2 rounded border border-primary d-flex flex-wrap justify-content-between align-items-center gap-2 shadow-lg bg-primary bg-opacity-10';
     }
   }
 
@@ -643,7 +647,7 @@ function updateBulkBarState() {
   }
 
   if (bulkBar) {
-    bulkBar.classList.remove('d-none');
+    bulkBar.style.setProperty('display', 'flex', 'important');
   }
 
   const validSameStatusItems = allCheckboxes.filter(c => (c.dataset.status || 'KEMBALI') === activeStatus);
