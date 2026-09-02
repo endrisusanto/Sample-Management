@@ -266,6 +266,49 @@ body {
   align-items: center;
 }
 
+/* Borrower Card (Daftar Peminjam Aktif) */
+.borrower-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: var(--transition);
+  overflow: hidden;
+  box-shadow: var(--shadow-main);
+}
+
+.borrower-card:hover {
+  border-color: #f87171;
+  box-shadow: 0 4px 15px rgba(248, 113, 113, 0.2);
+}
+
+.borrower-header {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card-header);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.borrower-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f87171;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.borrower-body {
+  padding: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  flex-grow: 1;
+  background: var(--bg-surface);
+}
+
 /* Model Card */
 .model-card {
   background: var(--bg-surface);

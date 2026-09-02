@@ -156,12 +156,7 @@ function renderFilteredCards() {
 
           <div class="model-card-footer">
             <span><i class="fas fa-layer-group me-1"></i> ${m.items[0]?.Dept || 'PE Solution P /SEIN-P'}</span>
-            <div class="d-flex align-items-center gap-2">
-              <span>Audit: <strong class="${m.audited === m.total ? 'text-success' : 'text-warning'}">${m.audited}/${m.total}</strong></span>
-              <button type="button" class="btn btn-xs btn-primary-custom py-0 px-2 btn-open-model-detail" data-model="${m.model}" style="font-size: 10px;">
-                <i class="fas fa-expand me-1"></i> Detail
-              </button>
-            </div>
+            <span>Audit: <strong class="${m.audited === m.total ? 'text-success' : 'text-warning'}">${m.audited}/${m.total}</strong></span>
           </div>
         </div>
       </div>
