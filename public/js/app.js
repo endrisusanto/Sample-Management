@@ -406,36 +406,89 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// Inactivity Timeout & Screensaver Transition (5 Minutes = 300,000 ms)
+// Inactivity Timeout & Screensaver Transition (5 Minutes = 300 seconds)
 export const InactivityManager = {
-  timeoutMs: 5 * 60 * 1000, // 5 minutes (300 seconds)
-  timer: null,
+  timeoutSeconds: 5 * 60, // 300 seconds
+  expireAt: Date.now() + 5 * 60 * 1000,
+  intervalId: null,
 
   init() {
     const path = window.location.pathname;
-    // Do not run timer on screensaver or login page
-    if (path === '/screensaver' || path === '/screensaver.html' || path === '/login' || path === '/login.html') {
+    // Do not run timer on screensaver, login, or register pages
+    if (path === '/screensaver' || path === '/screensaver.html' || path === '/login' || path === '/login.html' || path === '/register' || path === '/register.html') {
       return;
     }
 
-    const resetTimer = () => {
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = setTimeout(() => this.triggerScreensaver(), this.timeoutMs);
-    };
+    this.resetTimer();
 
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
     events.forEach(evt => {
-      window.addEventListener(evt, resetTimer, { passive: true });
+      window.addEventListener(evt, () => this.resetTimer(), { passive: true });
     });
 
-    resetTimer();
+    if (this.intervalId) clearInterval(this.intervalId);
+    this.intervalId = setInterval(() => this.tick(), 1000);
+    this.updateUI();
+  },
+
+  resetTimer() {
+    this.expireAt = Date.now() + (this.timeoutSeconds * 1000);
+    this.updateUI();
+  },
+
+  tick() {
+    if (KeepAwakeManager.enabled) {
+      this.updateUI();
+      return;
+    }
+
+    const remainingMs = this.expireAt - Date.now();
+    if (remainingMs <= 0) {
+      this.triggerScreensaver();
+    } else {
+      this.updateUI();
+    }
+  },
+
+  updateUI() {
+    const pill = document.getElementById('session-countdown-pill');
+    const textEl = document.getElementById('session-countdown-text');
+    const iconEl = document.getElementById('session-countdown-icon');
+    if (!textEl && !pill) return;
+
+    if (KeepAwakeManager.enabled) {
+      if (textEl) textEl.textContent = 'Awake';
+      if (iconEl) iconEl.className = 'fas fa-infinity text-warning';
+      if (pill) {
+        pill.className = 'badge bg-surface border border-warning text-warning d-none d-sm-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill';
+        pill.title = 'Keep Awake aktif: Sesi dan layar tetap aktif';
+      }
+      return;
+    }
+
+    const remainingSec = Math.max(0, Math.ceil((this.expireAt - Date.now()) / 1000));
+    const mins = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+    const secs = (remainingSec % 60).toString().padStart(2, '0');
+
+    if (textEl) textEl.textContent = `${mins}:${secs}`;
+    if (iconEl) iconEl.className = remainingSec <= 60 ? 'fas fa-hourglass-end text-danger' : 'fas fa-stopwatch text-info';
+
+    if (pill) {
+      if (remainingSec <= 60) {
+        pill.className = 'badge bg-danger bg-opacity-25 border border-danger text-danger d-none d-sm-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill animate-pulse';
+        pill.title = `Sesi akan otomatis berakhir dalam ${remainingSec} detik`;
+      } else {
+        pill.className = 'badge bg-surface border border-secondary text-secondary d-none d-sm-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill';
+        pill.title = 'Sisa durasi sesi login sebelum beralih ke Screensaver';
+      }
+    }
   },
 
   async triggerScreensaver() {
-    // If KeepAwake is active, prevent auto-logout to screensaver
     if (KeepAwakeManager.enabled) {
       return;
     }
+    if (this.intervalId) clearInterval(this.intervalId);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (e) {}
@@ -504,6 +557,7 @@ export const KeepAwakeManager = {
       await this.releaseWakeLock();
     }
     this.updateUI();
+    InactivityManager.updateUI();
   },
 
   async toggle(enable) {
@@ -516,6 +570,7 @@ export const KeepAwakeManager = {
     document.querySelectorAll('.keep-awake-switch, #navbar-keep-awake-toggle, #modal-keep-awake-toggle, .keep-awake-checkbox').forEach(input => {
       input.checked = active;
     });
+    InactivityManager.updateUI();
   }
 };
 

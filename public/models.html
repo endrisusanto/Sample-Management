@@ -88,6 +88,12 @@
         </ul>
 
         <div class="d-flex align-items-center gap-2">
+          <!-- Session Countdown Badge -->
+          <div id="session-countdown-pill" class="badge bg-surface border border-secondary text-secondary d-none d-sm-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill" style="font-size: 11px; font-variant-numeric: tabular-nums;" title="Sisa durasi sesi login sebelum beralih ke Screensaver">
+            <i class="fas fa-stopwatch text-info" id="session-countdown-icon"></i>
+            <span id="session-countdown-text">05:00</span>
+          </div>
+
           <!-- Keep Awake Switch -->
           <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
             <input class="form-check-input ms-0 me-1 keep-awake-switch" type="checkbox" id="navbar-keep-awake-toggle" style="cursor: pointer;">
