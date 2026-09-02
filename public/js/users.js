@@ -1,19 +1,16 @@
 import { Auth, showGiantAlert, setupWebSocket, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
 import { FaceEngine } from '/js/face-engine.js';
-import { BiometricAuth } from '/js/biometric-auth.js';
 
 const usersGrid = document.getElementById('users-grid');
 const badgeModal = new bootstrap.Modal(document.getElementById('qrBadgeModal'));
 const userModal = new bootstrap.Modal(document.getElementById('userFormModal'));
 const resetDbModal = new bootstrap.Modal(document.getElementById('resetDbModal'));
 const registerFaceModal = new bootstrap.Modal(document.getElementById('registerFaceModal'));
-const registerFingerprintModal = new bootstrap.Modal(document.getElementById('registerFingerprintModal'));
 const faceEngine = new FaceEngine('reg-face-video');
 const userForm = document.getElementById('user-form');
 const resetDbForm = document.getElementById('reset-db-form');
 let currentUser = null;
 let targetFaceUserId = null;
-let targetFingerprintUser = null;
 
 async function loadUsers() {
   try {
@@ -29,7 +26,7 @@ async function loadUsers() {
     if (subtitleEl) {
       subtitleEl.textContent = isSuper
         ? 'Kelola seluruh akun pengguna, edit profil, hapus akun (Super User), cetak QR badge, dan opsi reset database sistem.'
-        : 'Profil Pengguna Saya & Kartu QR Badge. Anda dapat mencetak badge dan mendaftarkan sensor biometrik (Wajah / Sidik Jari).';
+        : 'Profil Pengguna Saya & Kartu QR Badge. Anda dapat mencetak badge dan mendaftarkan biometrik wajah (Face ID).';
     }
 
     const res = await fetch('/api/auth/users');
@@ -92,11 +89,7 @@ async function loadUsers() {
                 </button>
                 <button class="btn btn-surface btn-register-face py-1 ${u.face_descriptor ? 'text-success' : 'text-info'}"
                         data-id="${u.id}" data-name="${u.name}" title="Daftarkan Biometrik Wajah" style="font-size: 11px;">
-                  <i class="fas fa-camera me-1"></i> ${u.face_descriptor ? 'Face ID ✅' : 'Face ID'}
-                </button>
-                <button class="btn btn-surface btn-register-fingerprint py-1 text-warning"
-                        data-id="${u.id}" data-name="${u.name}" data-email="${u.email}" title="Daftarkan Sensor Sidik Jari / Passkey Perangkat" style="font-size: 11px;">
-                  <i class="fas fa-fingerprint me-1"></i> Sidik Jari
+                  <i class="fas fa-camera me-1"></i> ${u.face_descriptor ? 'Face ID ✅' : 'Daftar Face ID'}
                 </button>
               </div>
 
@@ -147,24 +140,6 @@ async function loadUsers() {
       });
     });
 
-    document.querySelectorAll('.btn-register-fingerprint').forEach(b => {
-      b.addEventListener('click', () => {
-        const { id, name, email } = b.dataset;
-        targetFingerprintUser = { id, name, email };
-        document.getElementById('reg-fingerprint-user-name').textContent = name;
-        
-        const statusEl = document.getElementById('reg-fingerprint-status');
-        statusEl.className = 'alert alert-warning py-2 px-3 small mb-3';
-        statusEl.innerHTML = '<i class="fas fa-info-circle me-1"></i> Siap merekam sidik jari. Klik tombol di bawah lalu sentuh sensor biometrik perangkat Anda.';
-        
-        const btnStart = document.getElementById('btn-start-fingerprint-reg');
-        btnStart.disabled = false;
-        btnStart.innerHTML = '<i class="fas fa-fingerprint me-1"></i> Mulai Perekaman Sidik Jari';
-
-        registerFingerprintModal.show();
-      });
-    });
-
     document.querySelectorAll('.btn-edit-user').forEach(b => {
       b.addEventListener('click', () => {
         const { id, name, email, level } = b.dataset;
@@ -184,40 +159,6 @@ async function loadUsers() {
     usersGrid.innerHTML = `<div class="col-12 text-center py-5 text-danger">Gagal memuat pengguna: ${e.message}</div>`;
   }
 }
-
-document.getElementById('btn-start-fingerprint-reg').addEventListener('click', async () => {
-  if (!targetFingerprintUser) return;
-  const btn = document.getElementById('btn-start-fingerprint-reg');
-  const statusEl = document.getElementById('reg-fingerprint-status');
-
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menunggu Sentuhan Sensor...';
-  statusEl.className = 'alert alert-primary py-2 px-3 small mb-3';
-  statusEl.innerHTML = '<i class="fas fa-hand-pointer text-warning me-1"></i> Sentuh sensor sidik jari / pemindai biometrik pada perangkat Anda sekarang.';
-
-  try {
-    const res = await BiometricAuth.registerFingerprint({
-      userId: targetFingerprintUser.id,
-      userName: targetFingerprintUser.name,
-      userEmail: targetFingerprintUser.email
-    });
-
-    SoundEffects.play('SUCCESS');
-    statusEl.className = 'alert alert-success py-2 px-3 small mb-3';
-    statusEl.innerHTML = '✅ <strong>Sidik Jari Berhasil Terdaftar!</strong>';
-
-    setTimeout(() => {
-      registerFingerprintModal.hide();
-      loadUsers();
-    }, 1200);
-  } catch (err) {
-    SoundEffects.play('ERROR');
-    statusEl.className = 'alert alert-danger py-2 px-3 small mb-3';
-    statusEl.innerHTML = '❌ ' + err.message;
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-redo me-1"></i> Coba Rekam Ulang';
-  }
-});
 
 document.getElementById('btn-close-reg-face').addEventListener('click', () => {
   faceEngine.stopCamera();

@@ -195,67 +195,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Save WebAuthn / Fingerprint Credential
-   */
-  static saveBiometricCredential({ userId, credentialId, publicKey = '', deviceName = 'Perangkat Sidik Jari' }) {
-    const user = db.prepare('SELECT id, name FROM users WHERE id = ?').get(userId);
-    if (!user) throw new Error('User tidak ditemukan');
-
-    db.prepare(`
-      INSERT INTO user_credentials (user_id, credential_id, public_key, device_name)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(credential_id) DO UPDATE SET 
-        public_key = excluded.public_key,
-        device_name = excluded.device_name
-    `).run(userId, credentialId, publicKey, deviceName);
-
-    return { success: true, message: `Sidik Jari / Passkey berhasil didaftarkan untuk ${user.name}` };
-  }
-
-  /**
-   * Verify Biometric / Fingerprint Login
-   */
-  static verifyBiometricLogin({ credentialId }) {
-    if (!credentialId) throw new Error('Credential ID sidik jari tidak ditemukan');
-
-    const cred = db.prepare(`
-      SELECT uc.*, u.name, u.email, u.level, u.face_photo 
-      FROM user_credentials uc
-      JOIN users u ON uc.user_id = u.id
-      WHERE uc.credential_id = ?
-    `).get(credentialId);
-
-    if (!cred) {
-      throw new Error('Sidik jari tidak terdaftar pada akun ini. Silakan daftarkan sidik jari terlebih dahulu di profil pengguna.');
-    }
-
-    const token = jwt.sign(
-      { id: cred.user_id, name: cred.name, email: cred.email, level: cred.level },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    return {
-      token,
-      user: {
-        id: cred.user_id,
-        name: cred.name,
-        email: cred.email,
-        level: cred.level,
-        face_photo: cred.face_photo
-      },
-      message: `Sidik Jari diverifikasi! Selamat datang, ${cred.name}`
-    };
-  }
-
-  /**
-   * Get User Biometric Credentials Count
-   */
-  static getUserBiometrics(userId) {
-    return db.prepare('SELECT id, device_name, created_at FROM user_credentials WHERE user_id = ?').all(userId);
-  }
-
   static verifyToken(token) {
     try {
       return jwt.verify(token, JWT_SECRET);
