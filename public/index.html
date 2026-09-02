@@ -551,7 +551,7 @@
               <td class="fw-bold text-primary">${it.model || it.model_name || '-'}</td>
               <td class="text-light fw-semibold">${it.sn || it.serial_no || '-'}</td>
               <td class="d-none d-md-table-cell text-secondary small font-monospace">${it.imei || '-'}</td>
-              <td><span class="selisih-badge text-warning" data-time="${it.timestamp}">${formatDuration(it.timestamp)}</span></td>
+              <td><span class="selisih-badge" data-time="${it.timestamp}">${formatDuration(it.timestamp)}</span></td>
             </tr>
           `).join('');
 
@@ -823,7 +823,7 @@
             <td class="text-center">${proofThumb}</td>
             <td class="small font-monospace">${it.imei || '-'}</td>
             <td><span class="badge bg-dark border border-secondary">${it.hw_rev || '-'}</span></td>
-            <td><span class="badge bg-warning bg-opacity-25 text-warning border border-warning font-monospace">${formatDuration(it.timestamp)}</span></td>
+            <td><span class="selisih-badge" data-time="${it.timestamp}">${formatDuration(it.timestamp)}</span></td>
             <td class="small text-secondary font-monospace">${it.timestamp || '-'}</td>
           </tr>
         `;

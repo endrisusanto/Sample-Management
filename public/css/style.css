@@ -47,10 +47,22 @@
   --drawer-bg: #ffffff;
   --drawer-header-bg: #f1f5f9;
   --shadow-main: 0 4px 15px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border-color);
+  --accent-amber: #b45309;
 }
 
 [data-theme="light"] .text-light {
   color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-warning {
+  color: #b45309 !important;
+}
+
+[data-theme="light"] .badge.bg-warning,
+[data-theme="light"] .badge.bg-warning.bg-opacity-25 {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d !important;
 }
 
 [data-theme="light"] .badge.bg-dark {
@@ -573,9 +585,23 @@ body {
 
 .selisih-badge {
   font-size: 10px;
-  color: var(--accent-amber);
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
   white-space: nowrap;
+  display: inline-block;
+  line-height: 1.3;
+}
+
+[data-theme="light"] .selisih-badge {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fcd34d !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 /* Global Compact Table */
