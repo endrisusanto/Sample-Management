@@ -14,10 +14,14 @@ export class CameraProofEngine {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Kamera tidak didukung pada browser ini.');
     }
+    
+    // Stop any active stream first to release hardware lock before requesting new stream
+    this.stopCamera();
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode,
+          facingMode: { ideal: facingMode },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
@@ -26,12 +30,26 @@ export class CameraProofEngine {
       if (this.video) {
         this.video.srcObject = this.stream;
         this.video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
-        await this.video.play();
+        await this.video.play().catch(() => {});
       }
       return true;
     } catch (err) {
-      console.error('Gagal mengakses kamera:', err);
-      throw new Error('Izin kamera ditolak atau kamera sedang digunakan.');
+      // Fallback to generic video stream if constraint is over-constrained
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        if (this.video) {
+          this.video.srcObject = this.stream;
+          this.video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+          await this.video.play().catch(() => {});
+        }
+        return true;
+      } catch (fallbackErr) {
+        console.error('Gagal mengakses kamera:', fallbackErr);
+        throw new Error('Izin kamera ditolak atau kamera sedang digunakan.');
+      }
     }
   }
 

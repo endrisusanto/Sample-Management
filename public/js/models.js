@@ -45,10 +45,18 @@ export async function initModelsPage() {
 
     const btnSwitchCamera = document.getElementById('btn-switch-camera-bulk');
     if (btnSwitchCamera) {
-      btnSwitchCamera.addEventListener('click', async () => {
+      btnSwitchCamera.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+        const labelCam = document.getElementById('label-bulk-cam-facing');
+        if (labelCam) {
+          labelCam.textContent = currentFacingMode === 'user' ? 'Kamera Depan (Mirror)' : 'Kamera Belakang';
+        }
         try {
-          await cameraProof.startCamera(currentFacingMode);
+          if (cameraProof) {
+            await cameraProof.startCamera(currentFacingMode);
+          }
         } catch (e) {
           console.warn('Switch camera error:', e.message);
         }
