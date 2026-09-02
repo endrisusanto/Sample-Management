@@ -374,7 +374,7 @@ function openModelDetailModal(modelName) {
       </div>
 
       <div class="table-responsive rounded border border-secondary" style="max-height: 56vh; overflow-y: auto;">
-        <table class="custom-table table-sm mb-0">
+        <table class="custom-table table-sm mb-0 text-nowrap">
           <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
             <tr>
               <th style="width: 35px;" class="text-center">
@@ -619,17 +619,17 @@ function updateBulkBarState() {
   // Dynamic button label & styling
   if (btnExecute) {
     if (pendingBulkTargetAction === 'KEMBALI') {
-      btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow';
+      btnExecute.className = 'btn btn-sm btn-success fw-bold py-1 px-3 shadow text-nowrap';
       btnExecute.innerHTML = `<i class="fas fa-undo me-1"></i> Kembalikan ${count} Unit Terpilih`;
     } else {
-      btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow';
+      btnExecute.className = 'btn btn-sm btn-primary-custom fw-bold py-1 px-3 shadow text-nowrap';
       btnExecute.innerHTML = `<i class="fas fa-hand-holding me-1"></i> Pinjam ${count} Unit Terpilih`;
     }
   }
 
   if (selectedBadge) {
     const actionText = pendingBulkTargetAction === 'KEMBALI' ? 'Pengembalian' : 'Peminjaman';
-    selectedBadge.className = `badge ${pendingBulkTargetAction === 'KEMBALI' ? 'bg-success' : 'bg-primary'} fs-6 py-1 px-2`;
+    selectedBadge.className = `badge ${pendingBulkTargetAction === 'KEMBALI' ? 'bg-success' : 'bg-primary'} fs-6 py-1 px-2 text-nowrap`;
     selectedBadge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit (${actionText})`;
   }
 
@@ -659,41 +659,42 @@ function renderModalTableRows(items) {
       ? `<img src="${u.proof_image}" class="img-thumbnail btn-view-proof-img" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti transaksi" data-img="${u.proof_image}" data-title="${assetNo} (${u.model || ''})" data-sub="${u.status_pinjam || ''} • PIC: ${u.name || '-'}">`
       : `<span class="text-muted small">-</span>`;
 
+    const imeiDisplay = u.imei ? (u.imei2 ? `${u.imei} / ${u.imei2}` : u.imei) : '-';
+
     return `
       <tr>
         <td class="text-center">
           <input type="checkbox" class="custom-check-lg unit-check-item" data-asset="${assetNo}" data-status="${u.status_pinjam || 'KEMBALI'}">
         </td>
-        <td class="text-secondary font-monospace">${i + 1}</td>
-        <td><strong class="text-primary font-monospace">${assetNo}</strong></td>
-        <td class="text-light fw-semibold">${u.sn || u.serial_no || '-'}</td>
-        <td>
-          <span class="badge ${isPinjam ? 'bg-danger' : 'bg-success'}">
+        <td class="text-secondary font-monospace text-nowrap">${i + 1}</td>
+        <td class="text-nowrap"><strong class="text-primary font-monospace">${assetNo}</strong></td>
+        <td class="text-light fw-semibold text-nowrap">${u.sn || u.serial_no || '-'}</td>
+        <td class="text-nowrap">
+          <span class="badge ${isPinjam ? 'bg-danger' : 'bg-success'} text-nowrap">
             <i class="fas ${isPinjam ? 'fa-user-lock' : 'fa-check-circle'} me-1"></i>${u.status_pinjam || 'KEMBALI'}
           </span>
         </td>
-        <td class="text-center">${proofThumbnail}</td>
-        <td>
+        <td class="text-center text-nowrap">${proofThumbnail}</td>
+        <td class="text-nowrap">
           ${isPinjam ? `<span class="fw-bold text-warning">${u.name || '-'}</span>` : `<span class="text-secondary">${u.pic_sample || u.retention_owner || '-'}</span>`}
         </td>
-        <td>
-          <span class="badge ${isAudited ? 'bg-info' : 'bg-secondary'}">
+        <td class="text-nowrap">
+          <span class="badge ${isAudited ? 'bg-info' : 'bg-secondary'} text-nowrap">
             <i class="fas ${isAudited ? 'fa-clipboard-check' : 'fa-hourglass-start'} me-1"></i>${u.status_audit || 'RESET'}
           </span>
         </td>
-        <td class="small font-monospace">${u.un || '-'}</td>
-        <td class="small font-monospace">${u.imei || '-'}${u.imei2 ? `<br><span class="text-muted">${u.imei2}</span>` : ''}</td>
-        <td><span class="badge bg-dark border border-secondary">${u.hw_rev || '-'}</span></td>
-        <td>
-          <span class="badge ${isNormal ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'}" title="${u.defect || ''}">
-            ${u.defect_status || 'Normal'}
+        <td class="small font-monospace text-nowrap">${u.un || '-'}</td>
+        <td class="small font-monospace text-nowrap">${imeiDisplay}</td>
+        <td class="text-nowrap"><span class="badge bg-dark border border-secondary">${u.hw_rev || '-'}</span></td>
+        <td class="text-nowrap">
+          <span class="badge ${isNormal ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'} text-nowrap" title="${u.defect || ''}">
+            ${u.defect_status || 'Normal'}${u.defect ? ` (${u.defect})` : ''}
           </span>
-          ${u.defect ? `<div class="text-muted small text-truncate" style="max-width: 140px; font-size: 10px;">${u.defect}</div>` : ''}
         </td>
-        <td>${u.octa_status ? `<span class="badge bg-secondary">${u.octa_status}</span>` : '-'}</td>
-        <td class="small text-secondary font-monospace">${u.timestamp || '-'}</td>
-        <td class="text-center">
-          <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2 btn-open-sample-edit" data-id="${u.id}" title="Edit Sample & Kondisi">
+        <td class="text-nowrap">${u.octa_status ? `<span class="badge bg-secondary">${u.octa_status}</span>` : '-'}</td>
+        <td class="small text-secondary font-monospace text-nowrap">${u.timestamp || '-'}</td>
+        <td class="text-center text-nowrap">
+          <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2 btn-open-sample-edit text-nowrap" data-id="${u.id}" title="Edit Sample & Kondisi">
             <i class="fas fa-edit me-1"></i>Edit
           </button>
         </td>

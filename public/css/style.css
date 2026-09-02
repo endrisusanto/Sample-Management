@@ -111,18 +111,22 @@ body {
   z-index: 1080 !important;
 }
 
-/* Ensure modal tables stay transparent dark themed */
+/* Ensure modal tables stay transparent dark themed and prevent text wrapping */
 .modal-content table, 
 .modal-content .table,
 .modal-content .table tr,
 .modal-content .table td,
-.modal-content .table th {
+.modal-content .table th,
+.modal-content th,
+.modal-content td {
   background-color: transparent !important;
   color: var(--text-primary) !important;
   --bs-table-bg: transparent !important;
   --bs-table-accent-bg: transparent !important;
   --bs-table-striped-bg: transparent !important;
   --bs-table-hover-bg: transparent !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
 }
 
 /* Custom Large High-Visibility Checkbox */
@@ -536,6 +540,7 @@ body {
   font-size: 11px;
   border-collapse: separate;
   border-spacing: 0;
+  white-space: nowrap !important;
 }
 
 .custom-table th {
@@ -547,6 +552,8 @@ body {
   letter-spacing: 0.5px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--table-border-color);
+  white-space: nowrap !important;
+  vertical-align: middle;
 }
 
 .custom-table td {
@@ -554,6 +561,8 @@ body {
   border-bottom: 1px solid var(--table-border-color);
   font-size: 11px;
   color: var(--text-primary);
+  white-space: nowrap !important;
+  vertical-align: middle;
 }
 
 .custom-table tr:hover td {
