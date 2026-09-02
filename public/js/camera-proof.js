@@ -46,9 +46,9 @@ export class CameraProofEngine {
   }
 
   /**
-   * Captures the current camera frame and burns visual timestamp & metadata overlay
+   * Captures current camera frame and burns clean, monochrome inline chip watermark
    */
-  captureStampedPhoto({ action = 'PINJAM', model = '-', nomorAsset = '-', picName = 'PIC', location = 'PE SOLUTION P / SEIN-P' } = {}) {
+  captureStampedPhoto({ action = 'PINJAM', model = '-', nomorAsset = '-', picName = 'PIC', location = 'PE SOLUTION' } = {}) {
     if (!this.video || !this.stream) return null;
 
     const width = this.video.videoWidth || 640;
@@ -61,69 +61,85 @@ export class CameraProofEngine {
     // 1. Draw raw camera frame
     ctx.drawImage(this.video, 0, 0, width, height);
 
-    // 2. Draw Bottom Translucent Security Banner
-    const bannerHeight = Math.max(70, Math.floor(height * 0.18));
-    const gradient = ctx.createLinearGradient(0, height - bannerHeight, 0, height);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
-    gradient.addColorStop(0.3, 'rgba(10, 15, 29, 0.85)');
-    gradient.addColorStop(1, 'rgba(5, 8, 16, 0.95)');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, height - bannerHeight, width, bannerHeight);
-
-    // Top border accent for banner
-    const isKembali = action.toUpperCase() === 'KEMBALI';
-    const isAudit = action.toUpperCase().includes('AUDIT');
-    const accentColor = isKembali ? '#10b981' : (isAudit ? '#8b5cf6' : '#3b82f6');
-
-    ctx.fillStyle = accentColor;
-    ctx.fillRect(0, height - bannerHeight, width, 3);
-
-    // 3. Format Date & Time with Timezone
+    // 2. Format Date & Time with Jakarta WIB timezone
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID', {
-      year: 'numeric', month: 'short', day: '2-digit', weekday: 'short'
+      day: '2-digit', month: 'short', year: 'numeric'
     });
     const timeStr = now.toLocaleTimeString('id-ID', {
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
     }) + ' WIB';
 
-    // 4. Action Badge Box
-    const fontSize = Math.max(12, Math.floor(height * 0.032));
-    ctx.font = `bold ${fontSize}px sans-serif`;
+    const cleanAction = action.toUpperCase();
+    const cleanPic = picName.toUpperCase();
+    const cleanAsset = nomorAsset || '-';
+    const cleanModel = model || '-';
 
-    const badgeText = `[ ${action.toUpperCase()} ]`;
-    const badgeMetrics = ctx.measureText(badgeText);
-    const badgeWidth = badgeMetrics.width + 16;
-    const badgeHeight = fontSize + 8;
-    const badgeX = 14;
-    const badgeY = height - bannerHeight + 12;
+    // 3. Compact Monochrome Inline Chip Watermark
+    const fontSize = Math.max(11, Math.floor(height * 0.026));
+    ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
 
-    ctx.fillStyle = accentColor;
-    ctx.beginPath();
-    ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
-    ctx.fill();
+    const singleLineText = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}   |   ${cleanPic}   |   ${dateStr}, ${timeStr}`;
+    const singleLineWidth = ctx.measureText(singleLineText).width;
+    const maxAvailableWidth = width - 28;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(badgeText, badgeX + 8, badgeY + fontSize);
+    const padX = Math.max(10, Math.floor(fontSize * 0.9));
+    const padY = Math.max(5, Math.floor(fontSize * 0.5));
+    const chipHeight = fontSize + (padY * 2);
+    const radius = Math.floor(chipHeight / 2);
 
-    // 5. Asset & Model Text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize + 1}px sans-serif`;
-    const assetLine = `${nomorAsset} — ${model}`;
-    ctx.fillText(assetLine, badgeX + badgeWidth + 12, badgeY + fontSize);
+    if (singleLineWidth + (padX * 2) <= maxAvailableWidth) {
+      // --- Single Line Inline Pill Chip ---
+      const chipWidth = singleLineWidth + (padX * 2);
+      const chipX = 14;
+      const chipY = height - chipHeight - 14;
 
-    // 6. PIC, Timestamp & Location Subtext
-    ctx.font = `500 ${Math.max(10, Math.floor(fontSize * 0.85))}px sans-serif`;
-    ctx.fillStyle = '#cbd5e1';
-    const subLine1 = `👤 PIC: ${picName.toUpperCase()}   |   🕒 ${dateStr}, ${timeStr}`;
-    ctx.fillText(subLine1, 14, badgeY + badgeHeight + fontSize + 2);
+      // Draw frosted monochrome pill container
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1.2;
 
-    const subLine2 = `📍 ${location}   |   🔒 DIGITAL WATERMARK ID: ${Date.now().toString(36).toUpperCase()}`;
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(subLine2, 14, badgeY + badgeHeight + (fontSize * 2) + 4);
+      ctx.beginPath();
+      ctx.roundRect(chipX, chipY, chipWidth, chipHeight, radius);
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw text
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(singleLineText, chipX + padX, chipY + padY + fontSize - 2);
+    } else {
+      // --- Dual Line Stacked Compact Monochrome Chips ---
+      const line1 = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}`;
+      const line2 = `👤 ${cleanPic}   |   🕒 ${dateStr}, ${timeStr}`;
+
+      const w1 = ctx.measureText(line1).width + (padX * 2);
+      const w2 = ctx.measureText(line2).width + (padX * 2);
+      const chipWidth = Math.min(maxAvailableWidth, Math.max(w1, w2));
+
+      const totalH = (chipHeight * 2) + 4;
+      const chipX = 14;
+      const chipY = height - totalH - 12;
+
+      // Draw frosted monochrome rounded card
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1.2;
+
+      ctx.beginPath();
+      ctx.roundRect(chipX, chipY, chipWidth, totalH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Line 1
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(line1, chipX + padX, chipY + padY + fontSize - 1);
+
+      // Line 2
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText(line2, chipX + padX, chipY + chipHeight + padY + fontSize - 1);
+    }
 
     // Return compressed JPEG data URL
-    return this.canvas.toDataURL('image/jpeg', 0.85);
+    return this.canvas.toDataURL('image/jpeg', 0.88);
   }
 }
