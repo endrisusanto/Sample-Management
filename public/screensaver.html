@@ -18,7 +18,13 @@
     }
   </style>
 </head>
-<body>
+  <!-- Floating Login / Theme Controls for Expired / Public Screensaver Mode -->
+  <div id="screensaver-public-controls" class="position-fixed top-0 end-0 m-3 d-flex align-items-center gap-2" style="z-index: 1050; display: none;">
+    <button type="button" class="btn btn-surface btn-circle shadow-sm" id="btn-screensaver-theme-toggle" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+    <a href="/login" class="btn btn-primary-custom py-1 px-3 shadow-lg rounded-pill fw-bold" style="font-size: 11.5px;">
+      <i class="fas fa-sign-in-alt me-1"></i> Masuk
+    </a>
+  </div>
 
   <!-- Standard Navigation Bar -->
   <nav class="navbar navbar-expand-lg navbar-custom">
@@ -39,7 +45,7 @@
           <li class="nav-item"><a class="nav-link" href="/audit"><i class="fas fa-clipboard-check"></i> Audit Sample</a></li>
           <li class="nav-item"><a class="nav-link" href="/samples"><i class="fas fa-boxes"></i> Master Database</a></li>
           <li class="nav-item"><a class="nav-link" href="/models"><i class="fas fa-microchip"></i> Card Per-Model</a></li>
-          <li class="nav-item"><a class="nav-link" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
+          <li class="nav-item nav-super-user-only" id="nav-item-import" style="display: none;"><a class="nav-link" href="/import"><i class="fas fa-file-import"></i> Bulk Ingestion</a></li>
           <li class="nav-item"><a class="nav-link active" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
         </ul>
 
@@ -314,7 +320,25 @@
       }
     }
 
-    document.getElementById('btn-screen-fs').addEventListener('click', (e) => {
+    // Check authentication to toggle navbar visibility on screensaver
+    async function checkScreensaverNavbar() {
+      const user = await Auth.getUser() || Auth.getCurrentUser();
+      const navEl = document.querySelector('nav.navbar');
+      const publicCtrl = document.getElementById('screensaver-public-controls');
+      if (!user) {
+        if (navEl) navEl.style.setProperty('display', 'none', 'important');
+        if (publicCtrl) publicCtrl.style.setProperty('display', 'flex', 'important');
+      } else {
+        if (navEl) navEl.style.removeProperty('display');
+        if (publicCtrl) publicCtrl.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    document.getElementById('btn-screensaver-theme-toggle')?.addEventListener('click', () => {
+      Theme.toggle();
+    });
+
+    document.getElementById('btn-screen-fs')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
@@ -323,6 +347,7 @@
       }
     });
 
+    checkScreensaverNavbar();
     setupWebSocket(() => refreshDashboard());
     refreshDashboard();
     setInterval(refreshDashboard, 15000);

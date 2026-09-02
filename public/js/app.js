@@ -175,11 +175,17 @@ export const Auth = {
   },
 
   renderNavbarUser(user) {
+    const isSuper = user && (user.level === 'super user' || user.level === 'admin');
+    
+    // Toggle Super-User-only nav links (Bulk Ingestion)
+    document.querySelectorAll('.nav-super-user-only, #nav-item-import').forEach(el => {
+      el.style.display = isSuper ? '' : 'none';
+    });
+
     const userContainer = document.getElementById('nav-user-container');
     if (!userContainer) return;
 
     if (user) {
-      const isSuper = user.level === 'super user' || user.level === 'admin';
       const badgeLabel = isSuper ? 'Super User' : 'Member';
       const badgeClass = isSuper ? 'bg-danger text-white' : 'bg-secondary bg-opacity-50 text-light';
       userContainer.innerHTML = `
@@ -205,11 +211,11 @@ export const Auth = {
     } else {
       userContainer.innerHTML = `
         <a href="/login" class="btn btn-primary-custom py-1 px-2" style="font-size: 11px; min-height: 32px;">
-          <i class="fas fa-sign-in-alt"></i> Login
+          <i class="fas fa-sign-in-alt me-1"></i> Masuk
         </a>
       `;
     }
-  }
+  },
 };
 
 // Giant Visual Alert Box
@@ -411,6 +417,7 @@ export const InactivityManager = {
   timeoutSeconds: 5 * 60, // 300 seconds
   expireAt: Date.now() + 5 * 60 * 1000,
   intervalId: null,
+  lastActivityTime: Date.now(),
 
   init() {
     const path = window.location.pathname;
@@ -419,21 +426,33 @@ export const InactivityManager = {
       return;
     }
 
-    this.resetTimer();
+    this.resetTimer(false);
 
-    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
-    events.forEach(evt => {
-      window.addEventListener(evt, () => this.resetTimer(), { passive: true });
+    // Discrete action events reset timer
+    ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+      window.addEventListener(evt, () => this.handleUserActivity(false), { passive: true });
     });
+
+    // Throttled mouse movement so countdown ticks down visibly
+    window.addEventListener('mousemove', () => this.handleUserActivity(true), { passive: true });
 
     if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => this.tick(), 1000);
     this.updateUI();
   },
 
-  resetTimer() {
+  handleUserActivity(isMouseMove = false) {
+    const now = Date.now();
+    if (isMouseMove && (now - this.lastActivityTime < 15000)) {
+      return; // Ignore mouse movement jitter to allow visible countdown
+    }
+    this.lastActivityTime = now;
+    this.resetTimer(true);
+  },
+
+  resetTimer(refreshUI = true) {
     this.expireAt = Date.now() + (this.timeoutSeconds * 1000);
-    this.updateUI();
+    if (refreshUI) this.updateUI();
   },
 
   tick() {
@@ -643,7 +662,7 @@ export function initAppNavModal() {
                   <div class="nav-tile-title">Card Per-Model</div>
                   <div class="nav-tile-desc">Ringkasan Tiap Tipe Model</div>
                 </a>
-                <a href="/import" class="nav-grid-tile ${currentPath === '/import' || currentPath === '/import.html' ? 'active' : ''}">
+                <a href="/import" class="nav-grid-tile nav-super-user-only ${currentPath === '/import' || currentPath === '/import.html' ? 'active' : ''}" style="display: none;">
                   <div class="nav-tile-icon text-danger"><i class="fas fa-file-import"></i></div>
                   <div class="nav-tile-title">Bulk Ingestion</div>
                   <div class="nav-tile-desc">Import Data Excel / CSV</div>
