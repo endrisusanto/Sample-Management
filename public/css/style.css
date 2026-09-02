@@ -1017,6 +1017,131 @@ body {
   }
 }
 
+/* Tablet Typography & Compact UI Scale (768px - 1280px) */
+@media (max-width: 1280px) {
+  body {
+    font-size: 11px !important;
+  }
+
+  .navbar-brand {
+    font-size: 0.85rem !important;
+  }
+
+  .nav-link {
+    font-size: 10.5px !important;
+    padding: 0.25rem 0.45rem !important;
+    gap: 0.25rem !important;
+    min-height: 30px !important;
+  }
+
+  .nav-link i {
+    font-size: 0.85rem !important;
+  }
+
+  .stat-widget {
+    padding: 0.45rem 0.65rem !important;
+  }
+
+  .stat-label {
+    font-size: 9px !important;
+    letter-spacing: 0.4px !important;
+  }
+
+  .stat-val {
+    font-size: 1.15rem !important;
+  }
+
+  .stat-icon {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .scan-hero-card {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .scan-hero-card .section-title,
+  .scan-hero-card h6 {
+    font-size: 10.5px !important;
+  }
+
+  .scan-input {
+    font-size: 11.5px !important;
+    min-height: 38px !important;
+    padding: 0.4rem 0.65rem !important;
+  }
+
+  .input-group-text {
+    font-size: 11px !important;
+    padding: 0.35rem 0.6rem !important;
+  }
+
+  h4, .h4 {
+    font-size: 1.05rem !important;
+  }
+
+  h5, .h5 {
+    font-size: 0.95rem !important;
+  }
+
+  h6, .h6 {
+    font-size: 0.85rem !important;
+  }
+
+  .borrower-card .borrower-header,
+  .user-borrow-card .user-card-header {
+    padding: 0.35rem 0.6rem !important;
+  }
+
+  .borrower-name,
+  .user-card-name {
+    font-size: 11px !important;
+  }
+
+  .dense-table th,
+  .dense-table td,
+  .custom-table th,
+  .custom-table td {
+    padding: 4px 6px !important;
+    font-size: 9.5px !important;
+  }
+
+  .selisih-badge {
+    font-size: 9px !important;
+    padding: 1px 4px !important;
+  }
+
+  .borrower-card .user-card-footer,
+  .user-borrow-card .user-card-footer {
+    font-size: 9.5px !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  .btn-primary-custom,
+  .btn-surface {
+    font-size: 10.5px !important;
+    min-height: 36px !important;
+    padding: 0.35rem 0.75rem !important;
+  }
+
+  .filter-chip {
+    font-size: 10px !important;
+    padding: 0.25rem 0.6rem !important;
+  }
+
+  .touch-user-pill {
+    font-size: 10px !important;
+    min-height: 30px !important;
+    padding: 0.3rem 0.55rem !important;
+  }
+
+  .footer-log-drawer .footer-log-header {
+    font-size: 10px !important;
+    padding: 0.3rem 0.75rem !important;
+  }
+}
+
 /* Responsive Tablet & Smartphone (up to 991px) */
 @media (max-width: 991px) {
   .navbar-collapse {
