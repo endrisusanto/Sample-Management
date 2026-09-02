@@ -28,7 +28,7 @@ cd "$ROOT_DIR/android"
 
 APK_SRC="$ROOT_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
 APK_DEST_DIR="$ROOT_DIR/apk"
-APK_DEST="$APK_DEST_DIR/SampleTracker-debug.apk"
+APK_DEST="$APK_DEST_DIR/SampleTracker.apk"
 
 if [ -f "$APK_SRC" ]; then
   mkdir -p "$APK_DEST_DIR"
