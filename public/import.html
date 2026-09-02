@@ -22,6 +22,10 @@
       background: rgba(59, 130, 246, 0.08);
       box-shadow: 0 0 20px var(--accent-blue-glow);
     }
+    .progress-bar-animated-custom {
+      background: linear-gradient(90deg, #2563eb, #00f0ff);
+      transition: width 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -61,38 +65,55 @@
     <!-- Header -->
     <div class="mb-4">
       <h2 class="fw-bold"><i class="fas fa-upload text-primary me-2"></i>Bulk Data Ingestion & Import</h2>
-      <p class="text-secondary">Import ratusan sample sekaligus melalui Paste Data (TSV / CSV) atau Upload File Excel (.xlsx, .csv).</p>
+      <p class="text-secondary">Import ribuan sample sekaligus melalui Upload File Excel (.xlsx, .xls, .csv) atau Paste Data Tabel dengan sistem pengiriman batch per 100 baris.</p>
     </div>
 
     <!-- Mode Selector Tabs -->
     <ul class="nav nav-pills mb-4 gap-2" id="importTab" role="tablist">
       <li class="nav-item">
-        <button class="btn btn-surface active px-4 py-2" id="paste-tab" data-bs-toggle="pill" data-bs-target="#paste-pane">
-          <i class="fas fa-paste me-2"></i> Paste Text / Table (TSV / CSV)
+        <button class="btn btn-surface active px-4 py-2" id="file-tab" data-bs-toggle="pill" data-bs-target="#file-pane">
+          <i class="fas fa-file-excel me-2"></i> Upload File Excel (.xlsx / .csv)
         </button>
       </li>
       <li class="nav-item">
-        <button class="btn btn-surface px-4 py-2" id="file-tab" data-bs-toggle="pill" data-bs-target="#file-pane">
-          <i class="fas fa-file-excel me-2"></i> Upload File Excel (.xlsx / .csv)
+        <button class="btn btn-surface px-4 py-2" id="paste-tab" data-bs-toggle="pill" data-bs-target="#paste-pane">
+          <i class="fas fa-paste me-2"></i> Paste Text / Table (TSV / CSV)
         </button>
       </li>
     </ul>
 
     <div class="tab-content">
-      <!-- Pane 1: Paste Text / TSV -->
-      <div class="tab-pane fade show active" id="paste-pane">
+      <!-- Pane 1: File Upload Dropzone -->
+      <div class="tab-pane fade show active" id="file-pane">
+        <div class="glass-panel p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="fas fa-cloud-upload-alt text-primary me-2"></i>Upload File Excel / CSV</h5>
+          <div class="dropzone-box" id="dropzone">
+            <i class="fas fa-file-excel text-success fs-1 mb-3"></i>
+            <h5 class="fw-bold">Drag & Drop file Excel (.xlsx, .xls) atau .csv di sini</h5>
+            <p class="text-secondary small mb-3">Sistem akan membaca dan mem-parsing seluruh baris secara otomatis</p>
+            <input type="file" id="file-input" class="d-none" accept=".xlsx, .xls, .csv">
+            <button type="button" class="btn btn-primary-custom" onclick="document.getElementById('file-input').click()">
+              <i class="fas fa-folder-open me-1"></i> Pilih File dari Perangkat
+            </button>
+            <div id="file-selected-name" class="mt-3 text-info fw-bold"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 2: Paste Text / TSV -->
+      <div class="tab-pane fade" id="paste-pane">
         <div class="glass-panel p-4 mb-4">
           <h5 class="fw-bold mb-3"><i class="fas fa-keyboard text-primary me-2"></i>Paste Data Kolom (Tab-Separated atau Comma-Separated)</h5>
           <p class="text-secondary small mb-3">
-            Format yang didukung: Model Name, Serial, Sample separation status, OCTA status, UN, IMEI, IMEI2, HW Rev, Retention Owner, dll.
+            Format kolom: Model Name, Serial, Sample separation status, OCTA status, UN, IMEI, IMEI2, HW Rev, Retention Owner, dll.
           </p>
 
-          <textarea id="raw-tsv-input" class="form-control font-monospace mb-3" rows="10" placeholder="Model Name&#9;Serial&#9;Sample separation status... (Paste data tabel di sini)"></textarea>
+          <textarea id="raw-tsv-input" class="form-control font-monospace mb-3" rows="8" placeholder="Model Name&#9;Serial&#9;Sample separation status... (Paste data tabel di sini)"></textarea>
 
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <button class="btn btn-surface btn-sm" id="btn-load-sample-data">
-                <i class="fas fa-magic me-1"></i> Muat Template Sample Prompt
+                <i class="fas fa-magic me-1"></i> Muat Template Contoh
               </button>
               <button class="btn btn-surface btn-sm ms-2" id="btn-clear-text">
                 <i class="fas fa-trash me-1"></i> Bersihkan
@@ -104,42 +125,63 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Pane 2: File Upload Dropzone -->
-      <div class="tab-pane fade" id="file-pane">
-        <div class="glass-panel p-4 mb-4">
-          <h5 class="fw-bold mb-3"><i class="fas fa-cloud-upload-alt text-primary me-2"></i>Upload File Excel / CSV</h5>
-          <div class="dropzone-box" id="dropzone">
-            <i class="fas fa-file-excel text-success fs-1 mb-3"></i>
-            <h5 class="fw-bold">Drag & Drop file Excel (.xlsx, .xls) atau .csv di sini</h5>
-            <p class="text-secondary small mb-3">atau klik untuk memilih file dari komputer Anda</p>
-            <input type="file" id="file-input" class="d-none" accept=".xlsx, .xls, .csv">
-            <button type="button" class="btn btn-primary-custom" onclick="document.getElementById('file-input').click()">
-              <i class="fas fa-folder-open me-1"></i> Pilih File
-            </button>
-            <div id="file-selected-name" class="mt-3 text-info fw-bold"></div>
-          </div>
-        </div>
+    <!-- Progress Ingestion Box -->
+    <div class="glass-panel p-4 mb-4 d-none" id="import-progress-container">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-light mb-0" id="progress-status-title">
+          <i class="fas fa-spinner fa-spin text-info me-2"></i> Mengirim data batch ke server...
+        </h6>
+        <span class="badge bg-primary fs-6 font-monospace" id="progress-percentage-badge">0%</span>
+      </div>
+      
+      <div class="progress mb-2" style="height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+        <div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-animated-custom" id="import-progress-bar" style="width: 0%;"></div>
+      </div>
+
+      <div class="d-flex justify-content-between small text-secondary">
+        <span id="progress-batch-detail">Batch 0 dari 0</span>
+        <span id="progress-stats-detail">Baru: 0 | Diupdate: 0 | Gagal: 0</span>
       </div>
     </div>
 
     <!-- Preview & Commit Card -->
     <div class="glass-panel p-4 d-none" id="preview-container">
-      <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
         <div>
           <h4 class="fw-bold m-0"><i class="fas fa-eye text-warning me-2"></i>Preview Data Ingestion</h4>
-          <span class="text-secondary small" id="preview-summary">0 data siap disimpan ke database</span>
+          <div class="d-flex align-items-center gap-2 mt-1">
+            <span class="badge bg-primary" id="preview-total-badge">Total: 0 Sample</span>
+            <span class="text-secondary small" id="preview-summary">Siap disimpan ke database</span>
+          </div>
         </div>
-        <button class="btn btn-success fw-bold px-4 py-2" id="btn-commit-import">
-          <i class="fas fa-check-circle me-1"></i> Simpan ke Database
-        </button>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Rows per page selector -->
+          <div class="d-flex align-items-center gap-1">
+            <span class="text-secondary small">Tampilkan:</span>
+            <select id="preview-page-size" class="form-select form-select-sm bg-dark text-light border-secondary" style="width: 100px;">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+              <option value="all">Semua</option>
+            </select>
+          </div>
+
+          <button class="btn btn-success fw-bold px-4 py-2" id="btn-commit-import">
+            <i class="fas fa-check-circle me-1"></i> Simpan ke Database (Batch 100)
+          </button>
+        </div>
       </div>
 
-      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-        <table class="custom-table" id="preview-table">
-          <thead>
+      <!-- Preview Table -->
+      <div class="table-responsive rounded border border-secondary" style="max-height: 520px; overflow-y: auto;">
+        <table class="custom-table table-sm mb-0" id="preview-table">
+          <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
             <tr>
-              <th>#</th>
+              <th style="width: 50px;">#</th>
               <th>Model Name</th>
               <th>Serial / No Asset</th>
               <th>OCTA Status</th>
@@ -154,32 +196,77 @@
           <tbody id="preview-tbody"></tbody>
         </table>
       </div>
+
+      <!-- Pagination for Preview -->
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary" id="preview-pagination-container">
+        <span class="text-secondary small" id="preview-pagination-info">Menampilkan 1 - 100 dari 0 data</span>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-surface" id="btn-preview-prev"><i class="fas fa-chevron-left me-1"></i> Sebelumnya</button>
+          <button class="btn btn-surface" id="btn-preview-next">Selanjutnya <i class="fas fa-chevron-right ms-1"></i></button>
+        </div>
+      </div>
     </div>
 
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module">
-    import { Auth, showGiantAlert } from '/js/app.js';
+    import { Auth, showGiantAlert, SoundEffects } from '/js/app.js';
 
-    let parsedRows = [];
+    let allParsedRows = [];
+    let previewCurrentPage = 1;
+    let previewPageSize = 100;
+
     const tsvInput = document.getElementById('raw-tsv-input');
     const previewContainer = document.getElementById('preview-container');
     const previewTbody = document.getElementById('preview-tbody');
     const previewSummary = document.getElementById('preview-summary');
+    const previewTotalBadge = document.getElementById('preview-total-badge');
+    const previewPageSizeSelect = document.getElementById('preview-page-size');
+    const previewPaginationInfo = document.getElementById('preview-pagination-info');
+    const btnPreviewPrev = document.getElementById('btn-preview-prev');
+    const btnPreviewNext = document.getElementById('btn-preview-next');
+
     const btnCommit = document.getElementById('btn-commit-import');
     const fileInput = document.getElementById('file-input');
     const dropzone = document.getElementById('dropzone');
+
+    const progressContainer = document.getElementById('import-progress-container');
+    const progressBar = document.getElementById('import-progress-bar');
+    const progressStatusTitle = document.getElementById('progress-status-title');
+    const progressPercentageBadge = document.getElementById('progress-percentage-badge');
+    const progressBatchDetail = document.getElementById('progress-batch-detail');
+    const progressStatsDetail = document.getElementById('progress-stats-detail');
+
+    // Helper: Normalize Row Object Keys (Handles variations of Excel column headers)
+    function normalizeRowObject(raw) {
+      const normalized = {};
+      for (const [key, val] of Object.entries(raw)) {
+        const k = key.trim();
+        const v = String(val !== undefined && val !== null ? val : '').trim();
+
+        if (/^model(\s*name)?$/i.test(k)) normalized['Model Name'] = v;
+        else if (/^(serial|sn|no\.?\s*asset|nomor\s*asset)$/i.test(k)) normalized['Serial'] = v;
+        else if (/^octa/i.test(k)) normalized['OCTA status'] = v;
+        else if (/^un$/i.test(k) || /^un\s*code/i.test(k)) normalized['UN'] = v;
+        else if (/^imei2$/i.test(k)) normalized['IMEI2'] = v;
+        else if (/^imei$/i.test(k) || /^imei1$/i.test(k)) normalized['IMEI'] = v;
+        else if (/^hw(\s*rev)?/i.test(k)) normalized['HW Rev.'] = v;
+        else if (/^(retention\s*owner|pic(\s*sample)?|owner)$/i.test(k)) normalized['Retention Owner'] = v;
+        else if (/^(retention\s*dept|retention\s*department|dept|departemen)$/i.test(k)) normalized['Retention Department'] = v;
+        else normalized[k] = v;
+      }
+      return normalized;
+    }
 
     // Parse pasted TSV / CSV text
     function parseTextData(text) {
       const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
       if (lines.length === 0) return [];
 
-      // Determine separator (tab or comma)
       const firstLine = lines[0];
-      const isTab = firstLine.includes('\t');
-      const delimiter = isTab ? '\t' : ',';
+      const delimiter = firstLine.includes('\t') ? '\t' : ',';
 
       let headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
       const hasHeader = headers.some(h => /model|serial|asset|imei/i.test(h));
@@ -194,45 +281,111 @@
       for (let i = startIndex; i < lines.length; i++) {
         const cols = lines[i].split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
         if (cols.length < 2) continue;
-        if (cols[0] === 'Model Name' && cols[1] === 'Serial') continue; // skip duplicate header
+        if (cols[0] === 'Model Name' && cols[1] === 'Serial') continue;
 
         const obj = {};
         headers.forEach((h, idx) => {
           obj[h] = cols[idx] || '';
         });
-        rows.push(obj);
+        rows.push(normalizeRowObject(obj));
       }
 
       return rows;
     }
 
-    function renderPreview(rows) {
-      parsedRows = rows;
-      if (rows.length === 0) {
+    // Render Paginated Preview Table
+    function renderPreviewTable() {
+      const total = allParsedRows.length;
+      if (total === 0) {
         previewContainer.classList.add('d-none');
-        alert('Tidak ada data valid yang dapat diproses');
         return;
       }
 
-      previewSummary.textContent = `${rows.length} data sample siap di-UPSERT ke database`;
-      previewTbody.innerHTML = rows.slice(0, 100).map((r, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td class="fw-bold text-primary">${r['Model Name'] || r.model_name || r.model || '-'}</td>
-          <td><span class="badge bg-dark border border-secondary">${r.Serial || r.serial || r.nomor_asset || r.sn || '-'}</span></td>
-          <td>${r['OCTA status'] || r.octa_status || '-'}</td>
-          <td>${r.UN || r.un || '-'}</td>
-          <td>${r.IMEI || r.imei || '-'}</td>
-          <td>${r.IMEI2 || r.imei2 || '-'}</td>
-          <td>${r['HW Rev.'] || r.hw_rev || '-'}</td>
-          <td>${r['Retention Owner'] || r.retention_owner || '-'}</td>
-          <td class="small text-secondary">${r['Retention Department'] || r.retention_department || '-'}</td>
-        </tr>
-      `).join('');
+      previewTotalBadge.textContent = `Total: ${total.toLocaleString('id-ID')} Sample`;
+      previewSummary.textContent = `${total.toLocaleString('id-ID')} data sample terdeteksi, siap dikirim dalam batch 100 baris.`;
+
+      let startIdx = 0;
+      let endIdx = total;
+      let totalPages = 1;
+
+      if (previewPageSize !== 'all') {
+        const size = parseInt(previewPageSize, 10);
+        totalPages = Math.ceil(total / size) || 1;
+        if (previewCurrentPage > totalPages) previewCurrentPage = totalPages;
+        if (previewCurrentPage < 1) previewCurrentPage = 1;
+
+        startIdx = (previewCurrentPage - 1) * size;
+        endIdx = Math.min(startIdx + size, total);
+        previewPaginationInfo.textContent = `Menampilkan ${startIdx + 1} - ${endIdx} dari ${total.toLocaleString('id-ID')} data (Halaman ${previewCurrentPage} / ${totalPages})`;
+        btnPreviewPrev.disabled = previewCurrentPage <= 1;
+        btnPreviewNext.disabled = previewCurrentPage >= totalPages;
+        document.getElementById('preview-pagination-container').classList.remove('d-none');
+      } else {
+        previewPaginationInfo.textContent = `Menampilkan seluruh ${total.toLocaleString('id-ID')} baris data`;
+        document.getElementById('preview-pagination-container').classList.add('d-none');
+      }
+
+      const rowsToDisplay = allParsedRows.slice(startIdx, endIdx);
+
+      previewTbody.innerHTML = rowsToDisplay.map((r, i) => {
+        const rowNum = startIdx + i + 1;
+        const model = r['Model Name'] || r.model_name || r.model || '-';
+        const serial = r.Serial || r.serial || r.nomor_asset || r.sn || '-';
+        const octa = r['OCTA status'] || r.octa_status || '-';
+        const un = r.UN || r.un || '-';
+        const imei = r.IMEI || r.imei || '-';
+        const imei2 = r.IMEI2 || r.imei2 || '-';
+        const hwRev = r['HW Rev.'] || r.hw_rev || '-';
+        const owner = r['Retention Owner'] || r.retention_owner || '-';
+        const dept = r['Retention Department'] || r.retention_department || '-';
+
+        return `
+          <tr>
+            <td class="text-secondary font-monospace">${rowNum}</td>
+            <td class="fw-bold text-primary">${model}</td>
+            <td><span class="badge bg-dark border border-secondary">${serial}</span></td>
+            <td>${octa}</td>
+            <td class="font-monospace small">${un}</td>
+            <td class="font-monospace small">${imei}</td>
+            <td class="font-monospace small">${ime2}</td>
+            <td>${hwRev}</td>
+            <td class="fw-semibold">${owner}</td>
+            <td class="small text-secondary">${dept}</td>
+          </tr>
+        `;
+      }).join('');
 
       previewContainer.classList.remove('d-none');
+    }
+
+    function setParsedData(rows) {
+      allParsedRows = rows;
+      previewCurrentPage = 1;
+      renderPreviewTable();
       previewContainer.scrollIntoView({ behavior: 'smooth' });
     }
+
+    previewPageSizeSelect.addEventListener('change', (e) => {
+      previewPageSize = e.target.value;
+      previewCurrentPage = 1;
+      renderPreviewTable();
+    });
+
+    btnPreviewPrev.addEventListener('click', () => {
+      if (previewCurrentPage > 1) {
+        previewCurrentPage--;
+        renderPreviewTable();
+      }
+    });
+
+    btnPreviewNext.addEventListener('click', () => {
+      const size = parseInt(previewPageSize, 10) || 100;
+      const totalPages = Math.ceil(allParsedRows.length / size);
+      if (previewCurrentPage < totalPages) {
+        previewCurrentPage++;
+        renderPreviewTable();
+      }
+    });
 
     document.getElementById('btn-parse-paste').addEventListener('click', () => {
       const text = tsvInput.value.trim();
@@ -241,7 +394,11 @@
         return;
       }
       const rows = parseTextData(text);
-      renderPreview(rows);
+      if (rows.length === 0) {
+        alert('Tidak ada data valid yang dapat diproses dari teks yang dimasukkan.');
+        return;
+      }
+      setParsedData(rows);
     });
 
     document.getElementById('btn-load-sample-data').addEventListener('click', () => {
@@ -255,10 +412,11 @@ SM-X846B_EUR_XX\tZES1079M\tDev.\t\t\t\tNormal\tCE0426A43ADACDE9407E\t\t\tNormal\
 
     document.getElementById('btn-clear-text').addEventListener('click', () => {
       tsvInput.value = '';
+      allParsedRows = [];
       previewContainer.classList.add('d-none');
     });
 
-    // File Dropzone handlers
+    // File Dropzone handlers (Client-side Excel parsing via SheetJS)
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
     dropzone.addEventListener('drop', (e) => {
@@ -266,72 +424,114 @@ SM-X846B_EUR_XX\tZES1079M\tDev.\t\t\t\tNormal\tCE0426A43ADACDE9407E\t\t\tNormal\
       dropzone.classList.remove('dragover');
       if (e.dataTransfer.files.length) {
         fileInput.files = e.dataTransfer.files;
-        handleFileUpload(e.dataTransfer.files[0]);
+        handleFileSelect(e.dataTransfer.files[0]);
       }
     });
 
     fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) handleFileUpload(fileInput.files[0]);
+      if (fileInput.files.length) handleFileSelect(fileInput.files[0]);
     });
 
-    async function handleFileUpload(file) {
-      document.getElementById('file-selected-name').textContent = `File terpilih: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
-      const formData = new FormData();
-      formData.append('file', file);
+    function handleFileSelect(file) {
+      document.getElementById('file-selected-name').innerHTML = `<i class="fas fa-file-alt me-1"></i> ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-      try {
-        const res = await fetch('/api/samples/upload-file', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-          showGiantAlert({
-            title: 'FILE BERHASIL DIIMPORT!',
-            message: `Total: ${data.summary.total} Baris<br>Baru: ${data.summary.inserted} | Diperbarui: ${data.summary.updated}`,
-            action: 'SUCCESS',
-            duration: 4000
-          });
-        } else {
-          alert('Upload gagal: ' + (data.message || 'Error'));
+          if (!rawJson || rawJson.length === 0) {
+            alert('File kosong atau tidak memiliki data baris.');
+            return;
+          }
+
+          const normalizedRows = rawJson.map(r => normalizeRowObject(r));
+          setParsedData(normalizedRows);
+        } catch (err) {
+          alert('Gagal membaca file Excel/CSV: ' + err.message);
         }
-      } catch (err) {
-        alert('Gagal mengupload file: ' + err.message);
-      }
+      };
+      reader.readAsArrayBuffer(file);
     }
 
-    // Commit Bulk Ingestion to Database
+    // Commit Bulk Ingestion to Database in 100-Row Batches
     btnCommit.addEventListener('click', async () => {
-      if (parsedRows.length === 0) return;
-      btnCommit.disabled = true;
-      btnCommit.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...`;
+      if (allParsedRows.length === 0) return;
 
-      try {
-        const res = await fetch('/api/samples/bulk-import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rows: parsedRows })
-        });
-        const data = await res.json();
+      const totalRows = allParsedRows.length;
+      const batchSize = 100;
+      const totalBatches = Math.ceil(totalRows / batchSize);
 
-        if (data.success) {
-          showGiantAlert({
-            title: 'BULK IMPORT SUKSES!',
-            message: `Total Data: ${data.summary.total}<br>Data Baru Ditambahkan: ${data.summary.inserted}<br>Data Diupdate: ${data.summary.updated}`,
-            action: 'SUCCESS',
-            duration: 4000
-          });
-          previewContainer.classList.add('d-none');
-          tsvInput.value = '';
-        } else {
-          alert('Gagal import: ' + (data.message || 'Perlu Super User login'));
-        }
-      } catch (err) {
-        alert('Error: ' + err.message);
-      } finally {
-        btnCommit.disabled = false;
-        btnCommit.innerHTML = `<i class="fas fa-check-circle me-1"></i> Simpan ke Database`;
+      if (!confirm(`Konfirmasi Ingestion:\nKirim ${totalRows.toLocaleString('id-ID')} data sample ke server dalam ${totalBatches} batch (per 100 baris)?`)) {
+        return;
       }
+
+      btnCommit.disabled = true;
+      btnCommit.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Memproses Batch...`;
+      
+      progressContainer.classList.remove('d-none');
+      progressContainer.scrollIntoView({ behavior: 'smooth' });
+
+      let cumulativeInserted = 0;
+      let cumulativeUpdated = 0;
+      let cumulativeFailed = 0;
+
+      for (let i = 0; i < totalBatches; i++) {
+        const start = i * batchSize;
+        const end = Math.min(start + batchSize, totalRows);
+        const batchRows = allParsedRows.slice(start, end);
+        const batchNumber = i + 1;
+        const currentPercentage = Math.round((batchNumber / totalBatches) * 100);
+
+        // Update progress UI
+        progressBar.style.width = `${currentPercentage}%`;
+        progressPercentageBadge.textContent = `${currentPercentage}%`;
+        progressBatchDetail.textContent = `Mengirim Batch ${batchNumber} dari ${totalBatches} (${end}/${totalRows} baris)`;
+        progressStatsDetail.textContent = `Baru: ${cumulativeInserted} | Diupdate: ${cumulativeUpdated} | Gagal: ${cumulativeFailed}`;
+
+        try {
+          const res = await fetch('/api/samples/bulk-import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: batchRows })
+          });
+
+          const data = await res.json();
+          if (data.success && data.summary) {
+            cumulativeInserted += data.summary.inserted || 0;
+            cumulativeUpdated += data.summary.updated || 0;
+            cumulativeFailed += data.summary.failed || 0;
+          } else {
+            cumulativeFailed += batchRows.length;
+            console.error(`Batch ${batchNumber} error:`, data.message);
+          }
+        } catch (err) {
+          cumulativeFailed += batchRows.length;
+          console.error(`Batch ${batchNumber} network error:`, err);
+        }
+
+        progressStatsDetail.textContent = `Baru: ${cumulativeInserted} | Diupdate: ${cumulativeUpdated} | Gagal: ${cumulativeFailed}`;
+      }
+
+      SoundEffects.play('SUCCESS');
+      progressStatusTitle.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i> Ingestion Selesai!`;
+      progressBar.style.width = '100%';
+      progressPercentageBadge.textContent = '100%';
+      progressPercentageBadge.className = 'badge bg-success fs-6 font-monospace';
+
+      showGiantAlert({
+        title: 'BULK IMPORT SUKSES!',
+        message: `Total: ${totalRows.toLocaleString('id-ID')} Baris<br>Data Baru: ${cumulativeInserted} | Diperbarui: ${cumulativeUpdated} | Gagal: ${cumulativeFailed}`,
+        action: 'SUCCESS',
+        duration: 4500
+      });
+
+      btnCommit.disabled = false;
+      btnCommit.innerHTML = `<i class="fas fa-check-circle me-1"></i> Simpan ke Database (Batch 100)`;
     });
   </script>
 </body>
