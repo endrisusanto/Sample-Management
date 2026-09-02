@@ -228,10 +228,10 @@ document.getElementById('btn-save-face-reg').addEventListener('click', async () 
   const statusEl = document.getElementById('reg-face-status');
   btn.disabled = true;
   statusEl.className = 'alert alert-primary py-2 px-3 small mb-3';
-  statusEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Merekam biometrik wajah...';
+  statusEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mendeteksi biometrik wajah AI...';
 
   try {
-    const result = faceEngine.extractFaceDescriptor();
+    const result = await faceEngine.extractFaceDescriptor();
     if (!result) throw new Error('Wajah tidak terdeteksi pada kamera.');
 
     const res = await fetch('/api/auth/register-face', {

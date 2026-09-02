@@ -1,7 +1,10 @@
 /**
- * 👤 Biometric Face Recognition Client Engine
- * Extracts 128-dimensional facial embedding vectors from live camera frames
+ * 👤 Biometric Face Recognition AI Client Engine (TensorFlow / face-api Deep Learning)
+ * Extracts 128-dimensional deep neural facial embedding vectors with 68 landmark points
  */
+
+let modelsLoaded = false;
+let modelLoadPromise = null;
 
 export class FaceEngine {
   constructor(videoElementId) {
@@ -10,14 +13,72 @@ export class FaceEngine {
     this.canvas = document.createElement('canvas');
   }
 
+  /**
+   * Loads Face Recognition Deep Learning weights into memory
+   */
+  static async loadModels() {
+    if (modelsLoaded) return true;
+    if (modelLoadPromise) return modelLoadPromise;
+
+    modelLoadPromise = (async () => {
+      // Ensure faceapi script is loaded
+      if (typeof window.faceapi === 'undefined') {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = '/vendor/face-api/face-api.min.js';
+          script.onload = resolve;
+          script.onerror = () => {
+            // Fallback to CDN if local fails
+            const cdnScript = document.createElement('script');
+            cdnScript.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js';
+            cdnScript.onload = resolve;
+            cdnScript.onerror = reject;
+            document.head.appendChild(cdnScript);
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      const MODEL_URL = '/models/face';
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        modelsLoaded = true;
+        console.log('✅ Biometric Face AI Deep Learning Models loaded successfully.');
+        return true;
+      } catch (err) {
+        console.warn('Fallback loading face models from CDN:', err);
+        const CDN_MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(CDN_MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(CDN_MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(CDN_MODEL_URL)
+        ]);
+        modelsLoaded = true;
+        return true;
+      }
+    })();
+
+    return modelLoadPromise;
+  }
+
   async startCamera(facingMode = 'user') {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Kamera tidak didukung pada browser ini.');
     }
+
+    this.stopCamera();
+
+    // Start background model loading
+    FaceEngine.loadModels().catch(e => console.warn('Model pre-load error:', e));
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode,
+          facingMode: { ideal: facingMode },
           width: { ideal: 640 },
           height: { ideal: 480 }
         },
@@ -25,12 +86,13 @@ export class FaceEngine {
       });
       if (this.video) {
         this.video.srcObject = this.stream;
-        await this.video.play();
+        this.video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+        await this.video.play().catch(() => {});
       }
       return true;
     } catch (err) {
       console.error('Kamera gagal diakses:', err);
-      throw new Error('Izin kamera ditolak atau kamera tidak ditemukan.');
+      throw new Error('Izin kamera ditolak atau kamera sedang digunakan.');
     }
   }
 
@@ -45,60 +107,36 @@ export class FaceEngine {
   }
 
   /**
-   * Captures face frame and computes a 128-dimensional facial biometric descriptor
+   * Captures face frame and computes a 128-dimensional deep neural facial descriptor
    */
-  extractFaceDescriptor() {
-    if (!this.video || !this.stream) return null;
-
-    const width = 128;
-    const height = 128;
-    this.canvas.width = width;
-    this.canvas.height = height;
-    const ctx = this.canvas.getContext('2d');
-
-    // Crop center square (face region)
-    const vw = this.video.videoWidth || 640;
-    const vh = this.video.videoHeight || 480;
-    const size = Math.min(vw, vh) * 0.7;
-    const sx = (vw - size) / 2;
-    const sy = (vh - size) / 2;
-
-    ctx.drawImage(this.video, sx, sy, size, size, 0, 0, width, height);
-
-    const imgData = ctx.getImageData(0, 0, width, height);
-    const data = imgData.data;
-
-    // Convert to 128-D normalized feature vector across 8x16 spatial grid zones
-    const descriptor = new Array(128).fill(0);
-    const cellsX = 8;
-    const cellsY = 16;
-    const cellW = width / cellsX;
-    const cellH = height / cellsY;
-
-    for (let cy = 0; cy < cellsY; cy++) {
-      for (let cx = 0; cx < cellsX; cx++) {
-        const binIndex = cy * cellsX + cx;
-        let sum = 0;
-        let count = 0;
-
-        for (let y = Math.floor(cy * cellH); y < Math.floor((cy + 1) * cellH); y++) {
-          for (let x = Math.floor(cx * cellW); x < Math.floor((cx + 1) * cellW); x++) {
-            const idx = (y * width + x) * 4;
-            // Grayscale luminance
-            const lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255;
-            sum += lum;
-            count++;
-          }
-        }
-        descriptor[binIndex] = count > 0 ? sum / count : 0;
-      }
+  async extractFaceDescriptor() {
+    if (!this.video || !this.stream) {
+      throw new Error('Kamera belum aktif.');
     }
 
-    // L2 Normalize descriptor
-    const norm = Math.sqrt(descriptor.reduce((acc, val) => acc + val * val, 0)) || 1;
-    const normalizedDescriptor = descriptor.map(v => v / norm);
+    // Ensure models are loaded
+    await FaceEngine.loadModels();
 
-    // Full photo snapshot for preview & verification
+    if (this.video.readyState < 2) {
+      await new Promise(resolve => {
+        this.video.onloadeddata = resolve;
+        setTimeout(resolve, 500);
+      });
+    }
+
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+    const detection = await faceapi.detectSingleFace(this.video, options)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detection) {
+      throw new Error('Wajah tidak terdeteksi. Pastikan wajah berada di dalam bingkai kamera dengan pencahayaan yang cukup.');
+    }
+
+    const vw = this.video.videoWidth || 640;
+    const vh = this.video.videoHeight || 480;
+
+    // Capture high quality snapshot for preview & admin storage
     const fullCanvas = document.createElement('canvas');
     fullCanvas.width = vw;
     fullCanvas.height = vh;
@@ -107,7 +145,7 @@ export class FaceEngine {
     const photoDataUrl = fullCanvas.toDataURL('image/jpeg', 0.85);
 
     return {
-      descriptor: normalizedDescriptor,
+      descriptor: Array.from(detection.descriptor), // 128-D Float32Array converted to standard Array
       photo: photoDataUrl
     };
   }

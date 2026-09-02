@@ -171,9 +171,9 @@ export class AuthService {
       }
     }
 
-    // Threshold for face descriptor Euclidean distance
-    if (!bestMatch || minDistance > 0.58) {
-      throw new Error(`Wajah tidak cocok dengan pengguna terdaftar (Kemiripan: ${minDistance.toFixed(2)}).`);
+    // Threshold for neural face descriptor Euclidean distance (face-api 128-D standard: < 0.55 is high confidence match)
+    if (!bestMatch || minDistance > 0.55) {
+      throw new Error(`Wajah tidak cocok dengan pengguna terdaftar (Jarak biometrik: ${minDistance.toFixed(2)}).`);
     }
 
     const token = jwt.sign(
