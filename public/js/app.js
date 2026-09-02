@@ -367,12 +367,73 @@ export const InactivityManager = {
   },
 
   async triggerScreensaver() {
+    // If KeepAwake is active, prevent auto-logout to screensaver
+    if (KeepAwakeManager.enabled) {
+      return;
+    }
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (e) {}
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/screensaver';
+  }
+};
+
+// Screen WakeLock / KeepAwake Engine
+export const KeepAwakeManager = {
+  wakeLock: null,
+  enabled: localStorage.getItem('keepAwake') === 'true',
+
+  async init() {
+    this.updateUI();
+    if (this.enabled) {
+      await this.requestWakeLock();
+    }
+    document.addEventListener('visibilitychange', async () => {
+      if (this.enabled && document.visibilityState === 'visible') {
+        await this.requestWakeLock();
+      }
+    });
+  },
+
+  async requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        this.wakeLock.addEventListener('release', () => {
+          this.wakeLock = null;
+        });
+      } catch (err) {
+        console.warn('Screen WakeLock warning:', err.message);
+      }
+    }
+  },
+
+  async releaseWakeLock() {
+    if (this.wakeLock) {
+      try {
+        await this.wakeLock.release();
+        this.wakeLock = null;
+      } catch (err) {}
+    }
+  },
+
+  async toggle(enable) {
+    this.enabled = typeof enable === 'boolean' ? enable : !this.enabled;
+    localStorage.setItem('keepAwake', this.enabled ? 'true' : 'false');
+    if (this.enabled) {
+      await this.requestWakeLock();
+    } else {
+      await this.releaseWakeLock();
+    }
+    this.updateUI();
+  },
+
+  updateUI() {
+    document.querySelectorAll('#modal-keep-awake-toggle, .keep-awake-checkbox').forEach(input => {
+      input.checked = this.enabled;
+    });
   }
 };
 
@@ -395,9 +456,20 @@ export function initAppNavModal() {
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
+                <!-- Keep Awake Toggle Checkbox -->
+                <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
+                  <input class="form-check-input ms-0 me-1" type="checkbox" id="modal-keep-awake-toggle" style="cursor: pointer;" ${KeepAwakeManager.enabled ? 'checked' : ''}>
+                  <label class="form-check-label text-secondary fw-semibold small pe-1 user-select-none" for="modal-keep-awake-toggle" style="font-size: 10.5px; cursor: pointer;">
+                    <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
+                  </label>
+                </div>
+
+                <!-- Theme Toggle Button -->
                 <button type="button" class="btn btn-surface btn-circle border-secondary shadow-sm" id="modal-nav-theme-toggle" title="Ganti Tema">
                   <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
                 </button>
+
+                <!-- Close Modal Button -->
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
             </div>
@@ -445,6 +517,10 @@ export function initAppNavModal() {
     document.getElementById('modal-nav-theme-toggle')?.addEventListener('click', () => {
       Theme.toggle();
     });
+
+    document.getElementById('modal-keep-awake-toggle')?.addEventListener('change', (e) => {
+      KeepAwakeManager.toggle(e.target.checked);
+    });
   }
 
   // Intercept navbar toggler click on mobile/tablet or dedicated launcher buttons
@@ -470,6 +546,7 @@ function bindGlobalEvents() {
   Theme.init();
   Auth.getUser();
   InactivityManager.init();
+  KeepAwakeManager.init();
   initAppNavModal();
   const themeBtn = document.getElementById('theme-toggle-btn');
   if (themeBtn) {
