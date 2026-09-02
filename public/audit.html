@@ -73,13 +73,13 @@
       </div>
     </div>
 
-    <!-- Scanner Section with Proper Padding -->
+    <!-- Scanner Section (Seamless Flow) -->
     <div class="row g-2 mb-3">
       <div class="col-12">
-        <div class="glass-panel p-3">
+        <div class="glass-panel p-3 border-warning shadow">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
             <div>
-              <h5 class="fw-bold m-0 text-light"><i class="fas fa-search me-2 text-warning"></i>Audit Pengecekan Fisik Sample</h5>
+              <h5 class="fw-bold m-0 text-light"><i class="fas fa-clipboard-check me-2 text-warning"></i>Audit Pengecekan Fisik Sample</h5>
               <p class="text-secondary m-0" style="font-size: 11px;">Validasi keberadaan fisik asset di laboratorium dengan scan barcode / QR code.</p>
             </div>
             <button class="btn btn-outline-danger btn-sm py-1 px-3" id="btn-reset-audit" title="Reset semua status audit sample kembali ke RESET">
@@ -87,24 +87,18 @@
             </button>
           </div>
 
-          <!-- Quick Touch Auditor Pills -->
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-secondary fw-bold small text-uppercase" style="font-size: 10.5px;">
-              <i class="fas fa-hand-pointer me-1 text-primary"></i> Pilih Nama Auditor (Quick-Select)
-            </span>
-          </div>
-          <div class="touch-pill-container mb-3" id="quick-auditor-pills">
-            <div class="text-muted small py-1"><i class="fas fa-spinner fa-spin me-1"></i>Memuat auditor...</div>
-          </div>
-
           <form id="audit-form" class="row g-2 align-items-center">
+            <!-- Nama Auditor (Auto-filled from login user, Readonly) -->
             <div class="col-md-4 col-12">
               <div class="input-group">
-                <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-user-check text-warning"></i></span>
-                <input type="text" id="auditor-name" class="form-control scan-input fs-6 py-2" placeholder="Nama Auditor / Scan Badge" required>
+                <span class="input-group-text bg-surface border-secondary py-1 px-2" title="Nama Auditor Terautentikasi">
+                  <i class="fas fa-user-check text-warning"></i>
+                </span>
+                <input type="text" id="auditor-name" class="form-control scan-input fs-6 py-2 fw-bold text-light" placeholder="Nama Auditor..." readonly style="background: rgba(255,255,255,0.05); cursor: default;" required>
               </div>
             </div>
 
+            <!-- Asset Scanner -->
             <div class="col-md-5 col-8">
               <div class="input-group">
                 <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-barcode text-success"></i></span>
@@ -115,34 +109,18 @@
               </div>
             </div>
 
+            <!-- Submit Button -->
             <div class="col-md-3 col-4">
-              <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center">
-                <i class="fas fa-check"></i> PROSES AUDIT
+              <button type="submit" class="btn btn-warning w-100 py-2 justify-content-center fw-bold fs-6" id="btn-submit-audit">
+                <i class="fas fa-paper-plane me-1"></i> Submit Audit
               </button>
             </div>
           </form>
-
-          <!-- Camera Proof Live View (Collapsible) -->
-          <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
-            <button type="button" class="btn btn-surface btn-sm py-1 text-warning" id="btn-toggle-audit-cam">
-              <i class="fas fa-camera me-1"></i> <span id="audit-cam-label">Aktifkan Bukti Foto Audit (Timestamp Watermark)</span>
-            </button>
-            <span class="text-secondary small" style="font-size: 10.5px;" id="audit-cam-status">Mode Foto Otomatis: Nonaktif</span>
-          </div>
-
-          <div class="mt-2 d-none" id="audit-cam-container">
-            <div class="position-relative mx-auto rounded overflow-hidden border border-warning" style="max-width: 320px; max-height: 180px; background: #000;">
-              <video id="audit-proof-video" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover;"></video>
-              <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 py-1 px-2 text-center text-white" style="font-size: 10px;">
-                <i class="fas fa-stamp text-warning me-1"></i> Watermark Bukti Fisik dibakar otomatis saat scan
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- Recent Audit Logs Table with Proper Padding -->
+    <!-- Recent Audit Logs Table -->
     <div class="row g-2">
       <div class="col-12">
         <div class="glass-panel p-3">
@@ -159,10 +137,10 @@
             <table class="custom-table" id="audit-table">
               <thead>
                 <tr>
-                  <th>No</th>
+                  <th>#</th>
                   <th>Waktu Pengecekan</th>
                   <th>Auditor</th>
-                  <th>Nomor Asset / Serial</th>
+                  <th>Nomor Asset</th>
                   <th>Model</th>
                   <th>PIC Sample</th>
                   <th>Status Audit</th>
@@ -170,28 +148,86 @@
                 </tr>
               </thead>
               <tbody id="audit-tbody">
-                <tr><td colspan="8" class="text-center py-4 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Memuat data audit...</td></tr>
+                <tr><td colspan="8" class="text-center py-4 text-muted">Memuat data audit...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
-
   </main>
 
-  <!-- Audit Proof Viewer Modal -->
+  <!-- Seamless Photo Proof & Audit Confirmation Modal -->
+  <div class="modal fade" id="auditProofConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+      <div class="modal-content border-warning shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-1 d-flex justify-content-between align-items-center">
+          <h5 class="modal-title text-warning fw-bold fs-6">
+            <i class="fas fa-camera text-warning me-2"></i> Konfirmasi & Bukti Foto Audit
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btn-close-audit-proof-modal"></button>
+        </div>
+
+        <div class="modal-body p-3 pt-1">
+          <!-- Summary Target Banner -->
+          <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-75 p-2 rounded border border-secondary mb-2 small">
+            <div>
+              <div class="text-secondary" style="font-size: 11px;">Auditor:</div>
+              <strong class="text-warning" id="proof-auditor-label">-</strong>
+            </div>
+            <div class="text-end">
+              <div class="text-secondary" style="font-size: 11px;">Nomor Asset:</div>
+              <strong class="text-primary font-monospace" id="proof-audit-asset-label">-</strong>
+            </div>
+          </div>
+
+          <!-- Camera Switch & Options Bar -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <button type="button" class="btn btn-surface btn-sm py-1 px-2 text-warning" id="btn-switch-audit-cam" title="Ganti Kamera Depan / Belakang">
+              <i class="fas fa-camera-rotate me-1"></i> <span id="label-audit-cam-facing" style="font-size: 11px;">Kamera Depan (Mirror)</span>
+            </button>
+            <span class="badge bg-success bg-opacity-25 text-success border border-success" style="font-size: 10px;">
+              <i class="fas fa-circle fa-xs me-1"></i> Auto-Watermark Aktif
+            </span>
+          </div>
+
+          <!-- Live Camera Viewport -->
+          <div class="position-relative mx-auto rounded overflow-hidden mb-3 border border-secondary" style="background: #000; height: 260px;">
+            <video id="audit-proof-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+            
+            <!-- Watermark HUD Overlay Preview -->
+            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 py-1 px-2 d-flex justify-content-between align-items-center text-white small" style="font-size: 10px;">
+              <span><i class="fas fa-clipboard-check text-warning me-1"></i> AUDIT FISIK • PE SOLUTION P</span>
+              <span id="audit-hud-time" class="font-monospace text-warning">LIVE TIME</span>
+            </div>
+          </div>
+
+          <!-- Action Submit Buttons -->
+          <div class="d-flex flex-column gap-2">
+            <button type="button" class="btn btn-warning w-100 py-2 fw-bold fs-6 justify-content-center" id="btn-capture-confirm-audit">
+              <i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Audit
+            </button>
+            <button type="button" class="btn btn-surface w-100 py-1 text-secondary small" id="btn-skip-photo-audit">
+              <i class="fas fa-forward me-1"></i> Simpan Tanpa Foto
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Proof Viewer Modal -->
   <div class="modal fade" id="auditProofModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-warning" style="background: var(--bg-surface-elevated, #0f172a);">
         <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title text-warning fw-bold fs-6" id="auditProofModalTitle">
-            <i class="fas fa-clipboard-check me-2"></i> Bukti Fisik Audit Sample (Watermarked)
+          <h5 class="modal-title text-warning fw-bold fs-6">
+            <i class="fas fa-camera-retro me-2"></i> Bukti Foto Audit Fisik (Watermarked)
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body text-center p-3">
-          <img id="auditProofModalImg" src="" alt="Bukti Audit" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
+          <img id="auditProofModalImg" src="" alt="Bukti Foto Audit" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
           <div class="text-secondary small" id="auditProofModalSub"></div>
         </div>
       </div>
@@ -200,7 +236,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
-    import { Auth, showGiantAlert, setupWebSocket } from '/js/app.js';
+    import { Auth, showGiantAlert, setupWebSocket, SoundEffects } from '/js/app.js';
     import { CameraProofEngine } from '/js/camera-proof.js';
     import { QRScannerModal } from '/js/qr-scanner.js';
 
@@ -209,20 +245,52 @@
     const auditForm = document.getElementById('audit-form');
     const auditTbody = document.getElementById('audit-tbody');
     const btnReset = document.getElementById('btn-reset-audit');
-    const pillsContainer = document.getElementById('quick-auditor-pills');
+    const btnCameraQr = document.getElementById('btn-audit-camera-qr-scan');
+
     const auditProofModal = new bootstrap.Modal(document.getElementById('auditProofModal'));
     const auditProofModalImg = document.getElementById('auditProofModalImg');
     const auditProofModalSub = document.getElementById('auditProofModalSub');
-    const btnAuditCameraQr = document.getElementById('btn-audit-camera-qr-scan');
 
-    // QR & Barcode Camera Scanner Trigger for Audit
-    btnAuditCameraQr.addEventListener('click', () => {
+    // Audit Proof Confirmation Modal Elements
+    const auditProofConfirmModalEl = document.getElementById('auditProofConfirmModal');
+    const auditProofConfirmModal = new bootstrap.Modal(auditProofConfirmModalEl);
+    const proofAuditorLabel = document.getElementById('proof-auditor-label');
+    const proofAuditAssetLabel = document.getElementById('proof-audit-asset-label');
+    const btnSwitchAuditCam = document.getElementById('btn-switch-audit-cam');
+    const labelAuditCamFacing = document.getElementById('label-audit-cam-facing');
+    const btnCaptureConfirmAudit = document.getElementById('btn-capture-confirm-audit');
+    const btnSkipPhotoAudit = document.getElementById('btn-skip-photo-audit');
+    const auditHudTime = document.getElementById('audit-hud-time');
+
+    let auditFacingMode = 'user'; // default front camera mirror
+    const cameraProof = new CameraProofEngine('audit-proof-video');
+
+    // Auto-fill Auditor name from logged-in user
+    function initAuditorUser() {
+      const user = Auth.getUser();
+      if (user && user.name) {
+        auditorInput.value = user.name.toUpperCase();
+      } else {
+        auditorInput.value = 'ENDRI SUSANTO';
+      }
+    }
+
+    // Live HUD Clock inside Modal
+    setInterval(() => {
+      if (auditHudTime) {
+        const now = new Date();
+        auditHudTime.textContent = now.toLocaleTimeString('id-ID');
+      }
+    }, 1000);
+
+    // QR & Barcode Camera Scanner Trigger
+    btnCameraQr.addEventListener('click', () => {
       QRScannerModal.open({
-        title: 'Pindai QR / Barcode Sample untuk Audit',
+        title: 'Pindai QR / Barcode Asset Audit',
         onScan: (decodedText) => {
           assetInput.value = decodedText;
           if (auditorInput.value.trim()) {
-            auditForm.requestSubmit();
+            openAuditProofModal();
           } else {
             auditorInput.focus();
           }
@@ -230,74 +298,135 @@
       });
     });
 
-    // Camera Proof Engine Setup
-    const cameraProof = new CameraProofEngine('audit-proof-video');
-    const btnToggleCam = document.getElementById('btn-toggle-audit-cam');
-    const camContainer = document.getElementById('audit-cam-container');
-    const camLabel = document.getElementById('audit-cam-label');
-    const camStatus = document.getElementById('audit-cam-status');
-    let isCamActive = false;
-
-    btnToggleCam.addEventListener('click', async () => {
-      if (!isCamActive) {
-        try {
-          await cameraProof.startCamera('environment');
-          isCamActive = true;
-          camContainer.classList.remove('d-none');
-          camLabel.textContent = 'Nonaktifkan Kamera Bukti';
-          btnToggleCam.className = 'btn btn-warning btn-sm py-1 text-dark fw-bold';
-          camStatus.innerHTML = '<span class="text-success"><i class="fas fa-circle text-success me-1"></i>Kamera Audit Aktif</span>';
-        } catch (err) {
-          alert('Gagal membuka kamera: ' + err.message);
-        }
-      } else {
-        cameraProof.stopCamera();
-        isCamActive = false;
-        camContainer.classList.add('d-none');
-        camLabel.textContent = 'Aktifkan Bukti Foto Audit (Timestamp Watermark)';
-        btnToggleCam.className = 'btn btn-surface btn-sm py-1 text-warning';
-        camStatus.textContent = 'Mode Foto Otomatis: Nonaktif';
+    // Switch Audit Camera (Front Mirror / Back)
+    btnSwitchAuditCam.addEventListener('click', async () => {
+      auditFacingMode = auditFacingMode === 'user' ? 'environment' : 'user';
+      labelAuditCamFacing.textContent = auditFacingMode === 'user' ? 'Kamera Depan (Mirror)' : 'Kamera Belakang';
+      try {
+        await cameraProof.startCamera(auditFacingMode);
+      } catch (err) {
+        console.warn('Error switching camera:', err);
       }
     });
 
-    async function loadAuditorPills() {
+    // Open Audit Proof Modal on Submit
+    async function openAuditProofModal() {
+      const name = auditorInput.value.trim();
+      const nomor_asset = assetInput.value.trim();
+
+      if (!name) { auditorInput.focus(); return; }
+      if (!nomor_asset) { assetInput.focus(); return; }
+
+      proofAuditorLabel.textContent = name;
+      proofAuditAssetLabel.textContent = nomor_asset;
+      auditProofConfirmModal.show();
+
       try {
-        const res = await fetch('/api/auth/users');
-        const data = await res.json();
-        const users = data.users || [
-          { name: 'ENDRI SUSANTO' },
-          { name: 'APTA PRANA MAS ERLANGGA' },
-          { name: 'FAZLUR RAHMA' },
-          { name: 'LUTFI BUKHARI' },
-          { name: 'DHANAR KURNIA PUTRA' }
-        ];
-
-        pillsContainer.innerHTML = users.map(u => `
-          <button type="button" class="touch-user-pill" data-name="${u.name}">
-            <i class="fas fa-user-check text-warning"></i> ${u.name}
-          </button>
-        `).join('');
-
-        document.querySelectorAll('.touch-user-pill').forEach(pill => {
-          pill.addEventListener('click', () => {
-            document.querySelectorAll('.touch-user-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            auditorInput.value = pill.dataset.name;
-            assetInput.focus();
-          });
-        });
-      } catch (e) {
-        pillsContainer.innerHTML = '';
+        labelAuditCamFacing.textContent = auditFacingMode === 'user' ? 'Kamera Depan (Mirror)' : 'Kamera Belakang';
+        await cameraProof.startCamera(auditFacingMode);
+      } catch (err) {
+        console.warn('Could not auto-start camera for audit proof:', err);
       }
     }
 
+    auditForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      openAuditProofModal();
+    });
+
+    auditProofConfirmModalEl.addEventListener('hidden.bs.modal', () => {
+      cameraProof.stopCamera();
+    });
+
+    // Execute Audit API Call
+    async function executeAudit(proofImageBase64 = null) {
+      const name = auditorInput.value.trim();
+      const nomor_asset = assetInput.value.trim();
+
+      btnCaptureConfirmAudit.disabled = true;
+      btnCaptureConfirmAudit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan Audit...';
+      btnSkipPhotoAudit.disabled = true;
+
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, nomor_asset, proof_image: proofImageBase64 })
+        });
+        const result = await res.json();
+
+        auditProofConfirmModal.hide();
+        cameraProof.stopCamera();
+
+        if (result.success) {
+          SoundEffects.play('SUCCESS');
+          if (result.action === 'SUDAH') {
+            showGiantAlert({
+              title: 'SUDAH DICHECK SEBELUMNYA',
+              message: `<strong>SAMPLE:</strong> ${result.sample?.model || ''}<br><strong>ASSET:</strong> ${result.sample?.nomor_asset}<br>Status: SUDAH DIAUDIT`,
+              action: 'KEMBALI'
+            });
+          } else {
+            showGiantAlert({
+              title: 'BERHASIL DICHECK!',
+              message: `<strong>SAMPLE:</strong> ${result.sample?.model || ''}<br><strong>ASSET:</strong> ${result.sample?.nomor_asset}<br><strong>Auditor:</strong> ${name}`,
+              action: 'SUCCESS'
+            });
+          }
+          assetInput.value = '';
+          assetInput.focus();
+          loadAuditStats();
+          loadAuditHistory();
+        } else {
+          SoundEffects.play('ERROR');
+          showGiantAlert({
+            title: 'DATA TIDAK TERSEDIA',
+            message: result.message || 'Sample tidak ditemukan dalam database!',
+            action: 'TIDAK_TERSEDIA'
+          });
+          assetInput.select();
+        }
+      } catch (err) {
+        SoundEffects.play('ERROR');
+        showGiantAlert({
+          title: 'ERROR SISTEM',
+          message: err.message,
+          action: 'TIDAK_TERSEDIA'
+        });
+      } finally {
+        btnCaptureConfirmAudit.disabled = false;
+        btnCaptureConfirmAudit.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Audit';
+        btnSkipPhotoAudit.disabled = false;
+      }
+    }
+
+    // Button: Capture Photo & Confirm Audit
+    btnCaptureConfirmAudit.addEventListener('click', () => {
+      const name = auditorInput.value.trim();
+      const nomor_asset = assetInput.value.trim();
+      const proof_image = cameraProof.captureStampedPhoto({
+        action: 'AUDIT FISIK',
+        model: 'DEVICE',
+        nomorAsset: nomor_asset,
+        picName: name
+      });
+      executeAudit(proof_image);
+    });
+
+    // Button: Skip Photo & Save Audit
+    btnSkipPhotoAudit.addEventListener('click', () => {
+      executeAudit(null);
+    });
+
     async function loadAuditStats() {
       try {
-        const res = await fetch('/api/stats/dashboard');
+        const res = await fetch('/api/stats');
         const { stats } = await res.json();
-        document.getElementById('audit-total').textContent = stats.totalSamples;
-        document.getElementById('audit-checked').textContent = stats.audited;
-        document.getElementById('audit-pending').textContent = stats.unaudited;
+        if (stats) {
+          document.getElementById('audit-total').textContent = (stats.totalSamples || 0).toLocaleString('id-ID');
+          document.getElementById('audit-checked').textContent = (stats.audited || 0).toLocaleString('id-ID');
+          document.getElementById('audit-pending').textContent = (stats.unaudited || 0).toLocaleString('id-ID');
+        }
       } catch (e) {}
     }
 
@@ -329,7 +458,6 @@
           `;
         }).join('');
 
-        // Wire view proof image buttons
         document.querySelectorAll('.btn-view-audit-proof').forEach(btn => {
           btn.addEventListener('click', () => {
             auditProofModalImg.src = btn.dataset.img;
@@ -341,80 +469,6 @@
         auditTbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-danger">Gagal memuat history audit</td></tr>`;
       }
     }
-
-    async function init() {
-      await loadAuditorPills();
-      await loadAuditStats();
-      await loadAuditHistory();
-
-      const user = await Auth.getUser();
-      if (user && !auditorInput.value) {
-        auditorInput.value = user.name;
-        assetInput.focus();
-      }
-    }
-
-    auditForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = auditorInput.value.trim();
-      const nomor_asset = assetInput.value.trim();
-
-      if (!name) { auditorInput.focus(); return; }
-      if (!nomor_asset) { assetInput.focus(); return; }
-
-      // Capture stamped photo if camera is active
-      let proof_image = null;
-      if (isCamActive) {
-        proof_image = cameraProof.captureStampedPhoto({
-          action: 'AUDIT FISIK',
-          model: 'DEVICE',
-          nomorAsset: nomor_asset,
-          picName: name
-        });
-      }
-
-      try {
-        const res = await fetch('/api/audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, nomor_asset, proof_image })
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          if (result.action === 'SUDAH') {
-            showGiantAlert({
-              title: 'SUDAH DICHECK SEBELUMNYA',
-              message: `SAMPLE: ${result.sample?.model || ''}<br>ASSET: ${result.sample?.nomor_asset}<br>Status: SUDAH DIAUDIT`,
-              action: 'KEMBALI'
-            });
-          } else {
-            showGiantAlert({
-              title: 'BERHASIL DICHECK!',
-              message: `SAMPLE: ${result.sample?.model || ''}<br>ASSET: ${result.sample?.nomor_asset}<br>Auditor: ${name}`,
-              action: 'SUCCESS'
-            });
-          }
-          assetInput.value = '';
-          assetInput.focus();
-          loadAuditStats();
-          loadAuditHistory();
-        } else {
-          showGiantAlert({
-            title: 'DATA TIDAK TERSEDIA',
-            message: result.message || 'Sample tidak ditemukan dalam database!',
-            action: 'TIDAK_TERSEDIA'
-          });
-          assetInput.select();
-        }
-      } catch (err) {
-        showGiantAlert({
-          title: 'ERROR',
-          message: err.message,
-          action: 'TIDAK_TERSEDIA'
-        });
-      }
-    });
 
     btnReset.addEventListener('click', async () => {
       if (!confirm('Apakah Anda yakin ingin me-RESET seluruh status audit sample kembali ke RESET?')) return;
@@ -451,7 +505,9 @@
       }
     });
 
-    init();
+    initAuditorUser();
+    loadAuditStats();
+    loadAuditHistory();
   </script>
 </body>
 </html>

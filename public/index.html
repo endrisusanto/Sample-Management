@@ -95,13 +95,13 @@
       </div>
 
       <form id="scan-form" class="row g-2 align-items-center">
-        <!-- Nama Peminjam (Auto-populated from logged-in user) -->
+        <!-- Nama Peminjam (Auto-populated from logged-in user, readonly) -->
         <div class="col-md-4 col-12">
           <div class="input-group">
             <span class="input-group-text bg-surface border-secondary py-1 px-2" title="Nama Peminjam Terautentikasi">
               <i class="fas fa-user-check text-success"></i>
             </span>
-            <input type="text" id="pic-name-input" class="form-control scan-input fs-6 py-2 fw-bold text-light" placeholder="Nama Peminjam..." required>
+            <input type="text" id="pic-name-input" class="form-control scan-input fs-6 py-2 fw-bold text-light" placeholder="Nama Peminjam..." readonly style="background: rgba(255,255,255,0.05); cursor: default;" required>
           </div>
         </div>
 

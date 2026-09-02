@@ -254,10 +254,28 @@ apiRouter.get('/export', async (req, res) => {
 /**
  * 10. Dashboard & Live Analytics
  */
-apiRouter.get('/stats/dashboard', async (req, res) => {
+apiRouter.get('/dashboard', async (req, res) => {
+  try {
+    const stats = SampleService.getDashboardStats();
+    res.json({ success: true, borrowers: stats.userCards, stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+apiRouter.get('/stats', async (req, res) => {
   try {
     const stats = SampleService.getDashboardStats();
     res.json({ success: true, stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+apiRouter.get('/stats/dashboard', async (req, res) => {
+  try {
+    const stats = SampleService.getDashboardStats();
+    res.json({ success: true, stats, borrowers: stats.userCards });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
