@@ -179,13 +179,15 @@ export const Auth = {
     if (!userContainer) return;
 
     if (user) {
-      const isSuper = user.level === 'super user';
+      const isSuper = user.level === 'super user' || user.level === 'admin';
+      const badgeLabel = isSuper ? 'Super User' : 'Member';
+      const badgeClass = isSuper ? 'bg-danger text-white' : 'bg-secondary bg-opacity-50 text-light';
       userContainer.innerHTML = `
         <div class="dropdown">
           <button class="btn btn-surface dropdown-toggle py-1 px-2 d-flex align-items-center gap-1" data-bs-toggle="dropdown" style="font-size: 11px;">
-            <i class="fas fa-user-circle text-primary"></i>
+            <i class="fas ${isSuper ? 'fa-user-shield text-danger' : 'fa-user-circle text-primary'}"></i>
             <span class="fw-bold d-none d-sm-inline">${user.name}</span>
-            <span class="badge ${isSuper ? 'bg-danger' : 'bg-secondary'}" style="font-size: 9px;">${user.level}</span>
+            <span class="badge ${badgeClass}" style="font-size: 9px;"><i class="fas ${isSuper ? 'fa-shield-alt' : 'fa-user'} me-1"></i>${badgeLabel}</span>
           </button>
           <ul class="dropdown-menu dropdown-menu-end shadow">
             <li><h6 class="dropdown-header">${user.email}</h6></li>

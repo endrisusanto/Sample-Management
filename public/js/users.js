@@ -17,8 +17,14 @@ let targetFingerprintUser = null;
 
 async function loadUsers() {
   try {
-    currentUser = await Auth.getUser();
-    const isSuper = currentUser && currentUser.level === 'super user';
+    currentUser = await Auth.getUser() || Auth.getCurrentUser();
+    const isSuper = currentUser && (currentUser.level === 'super user' || currentUser.level === 'admin');
+
+    // Toggle Super-User-only toolbar buttons
+    const resetDbBtn = document.getElementById('btn-reset-db');
+    const addUserBtn = document.getElementById('btn-add-user');
+    if (resetDbBtn) resetDbBtn.style.display = isSuper ? 'inline-flex' : 'none';
+    if (addUserBtn) addUserBtn.style.display = isSuper ? 'inline-flex' : 'none';
 
     const res = await fetch('/api/auth/users');
     const data = await res.json();
@@ -45,23 +51,26 @@ async function loadUsers() {
 
     usersGrid.innerHTML = users.map(u => {
       const isMe = currentUser && currentUser.id === u.id;
-      const isSuperUser = u.level === 'super user';
-      const badgeClass = isSuperUser ? 'bg-danger' : 'bg-primary';
+      const isSuperUser = u.level === 'super user' || u.level === 'admin';
+      const badgeHtml = isSuperUser
+        ? `<span class="badge bg-danger bg-opacity-25 text-danger border border-danger text-uppercase px-2 py-1" style="font-size: 10px;"><i class="fas fa-shield-alt me-1"></i>Super User</span>`
+        : `<span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary text-uppercase px-2 py-1" style="font-size: 10px;"><i class="fas fa-user me-1"></i>Member</span>`;
+      const iconClass = isSuperUser ? 'fas fa-user-shield text-danger' : 'fas fa-user-circle text-secondary';
       const qrUrl = `/api/qr?text=${encodeURIComponent(u.name)}&width=200`;
 
       return `
         <div class="col-md-6 col-lg-4">
-          <div class="glass-panel p-3 h-100 d-flex flex-column justify-content-between">
+          <div class="glass-panel p-3 h-100 d-flex flex-column justify-content-between border ${isSuperUser ? 'border-danger border-opacity-50' : 'border-secondary border-opacity-25'}">
             <div>
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="badge ${badgeClass} text-uppercase">${u.level}</span>
-                <i class="fas fa-user-circle fs-4 text-primary"></i>
+                ${badgeHtml}
+                <i class="${iconClass} fs-4"></i>
               </div>
               <h5 class="fw-bold text-light mb-1" style="font-size: 13px;">${u.name}</h5>
               <p class="text-secondary small mb-2"><i class="far fa-envelope me-1"></i>${u.email}</p>
             </div>
 
-            <div class="text-center p-2 bg-white rounded my-2 d-inline-block align-self-center">
+            <div class="text-center p-2 bg-white rounded my-2 d-inline-block align-self-center shadow-sm">
               <img src="${qrUrl}" alt="QR Badge" style="width: 120px; height: 120px;">
               <div class="text-dark fw-bold small mt-1" style="font-size: 11px;">${u.name}</div>
             </div>
@@ -70,7 +79,7 @@ async function loadUsers() {
               <div class="btn-group w-100">
                 <button class="btn btn-surface btn-view-badge py-1" 
                         data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" data-qr="${qrUrl}" style="font-size: 11px;">
-                  <i class="fas fa-qrcode me-1"></i> Badge
+                  <i class="fas fa-qrcode me-1 text-primary"></i> Badge
                 </button>
                 <button class="btn btn-surface btn-register-face py-1 ${u.face_descriptor ? 'text-success' : 'text-info'}"
                         data-id="${u.id}" data-name="${u.name}" title="Daftarkan Biometrik Wajah" style="font-size: 11px;">
@@ -248,11 +257,15 @@ document.getElementById('btn-save-face-reg').addEventListener('click', async () 
 });
 
 function showBadgeModal(user, qrUrl) {
+  const isSuperUser = user.level === 'super user' || user.level === 'admin';
+  const badgeLabel = isSuperUser ? 'SUPER USER' : 'MEMBER';
+  const badgeBg = isSuperUser ? 'bg-danger' : 'bg-secondary';
+
   document.getElementById('badgeModalBody').innerHTML = `
     <div class="p-4 bg-white text-dark rounded-4 shadow d-inline-block border">
       <div class="text-primary fw-bold mb-1" style="font-size: 0.85rem;">PE SOLUTION / SEIN-P</div>
       <h4 class="fw-bold text-dark mb-1">${user.name}</h4>
-      <div class="text-muted small mb-3">${user.email} | <span class="badge bg-dark">${user.level.toUpperCase()}</span></div>
+      <div class="text-muted small mb-3">${user.email} | <span class="badge ${badgeBg}">${badgeLabel}</span></div>
       <img src="${qrUrl}" style="width: 200px; height: 200px;" class="mb-2 rounded">
       <div class="text-muted small">Scan QR ini pada form scanner peminjaman</div>
     </div>
@@ -269,7 +282,7 @@ function showBadgeModal(user, qrUrl) {
     doc.write('<div style="border: 2px solid #333; padding: 30px; display: inline-block; border-radius: 12px;">');
     doc.write('<h3>PE SOLUTION / SEIN-P</h3>');
     doc.write('<h2>' + user.name + '</h2>');
-    doc.write('<p>' + user.email + ' - ' + user.level.toUpperCase() + '</p>');
+    doc.write('<p>' + user.email + ' - <strong>' + badgeLabel + '</strong></p>');
     doc.write('<img src="' + qrUrl + '" style="width: 220px; height: 220px;">');
     doc.write('</div></body></html>');
     doc.close();
