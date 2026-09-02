@@ -631,18 +631,32 @@
       const titleEl = document.getElementById('borrowerDetailModalTitle');
       const bodyEl = document.getElementById('borrowerDetailModalBody');
 
+      const activeUser = Auth.getCurrentUser();
+      const isSuperUser = activeUser && (activeUser.level === 'super user' || activeUser.level === 'admin');
+      const currentUserName = (activeUser && activeUser.name) ? activeUser.name.trim().toUpperCase() : '';
+      const borrowerNameUpper = (borrowerObj.name || '').trim().toUpperCase();
+      const canReturn = isSuperUser || (currentUserName && borrowerNameUpper && currentUserName === borrowerNameUpper);
+
       if (titleEl) {
         titleEl.innerHTML = `
           <div class="d-flex align-items-center gap-2">
             <i class="fas fa-user-tag text-danger fs-5"></i>
             <span>${borrowerObj.name}</span>
             <span class="badge bg-danger ms-2">${borrowerObj.count} Unit Sedang Dipinjam</span>
+            ${!canReturn ? '<span class="badge bg-secondary ms-1"><i class="fas fa-lock me-1"></i>Read-Only</span>' : ''}
           </div>
         `;
       }
 
       if (bodyEl) {
         bodyEl.innerHTML = `
+          ${!canReturn ? `
+            <div class="alert alert-secondary py-2 px-3 small mb-3 border-0 bg-surface d-flex align-items-center gap-2 text-warning">
+              <i class="fas fa-lock fs-5"></i>
+              <span class="text-light">Anda melihat peminjaman <strong>${borrowerObj.name}</strong> dalam mode baca. Pengembalian unit hanya dapat diproses oleh PIC peminjam asli atau <strong>Super User</strong>.</span>
+            </div>
+          ` : ''}
+
           <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div class="input-group" style="max-width: 320px;">
               <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-search"></i></span>
@@ -658,7 +672,7 @@
               <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
                 <tr>
                   <th style="width: 35px;" class="text-center">
-                    <input type="checkbox" class="custom-check-lg" id="check-all-borrower-units" title="Pilih / Batalkan Semua">
+                    <input type="checkbox" class="custom-check-lg" id="check-all-borrower-units" ${!canReturn ? 'disabled' : ''} title="Pilih / Batalkan Semua">
                   </th>
                   <th style="width: 30px;">#</th>
                   <th>No. Asset</th>
@@ -672,7 +686,7 @@
                 </tr>
               </thead>
               <tbody id="modal-borrower-tbody">
-                ${renderBorrowerModalRows(borrowerObj.items)}
+                ${renderBorrowerModalRows(borrowerObj.items, canReturn)}
               </tbody>
             </table>
           </div>
@@ -702,7 +716,7 @@
               const text = `${it.nomor_asset || ''} ${it.sn || ''} ${it.model || ''} ${it.imei || ''}`.toLowerCase();
               return text.includes(q);
             });
-            tbodyInModal.innerHTML = renderBorrowerModalRows(filtered);
+            tbodyInModal.innerHTML = renderBorrowerModalRows(filtered, canReturn);
             attachBorrowerModalEvents();
             updateBorrowerBulkBar();
           });
@@ -712,7 +726,9 @@
         const checkAll = document.getElementById('check-all-borrower-units');
         if (checkAll) {
           checkAll.addEventListener('change', (e) => {
-            document.querySelectorAll('.borrower-unit-check').forEach(c => { c.checked = e.target.checked; });
+            document.querySelectorAll('.borrower-unit-check').forEach(c => {
+              if (c.dataset.noAccess !== 'true') c.checked = e.target.checked;
+            });
             updateBorrowerBulkBar();
           });
         }
@@ -770,7 +786,7 @@
       const btn = document.getElementById('btn-execute-borrower-return');
       const checkAll = document.getElementById('check-all-borrower-units');
       const checkedBoxes = document.querySelectorAll('.borrower-unit-check:checked');
-      const allBoxes = document.querySelectorAll('.borrower-unit-check');
+      const allBoxes = Array.from(document.querySelectorAll('.borrower-unit-check')).filter(c => c.dataset.noAccess !== 'true');
       const count = checkedBoxes.length;
 
       if (badge) badge.innerHTML = `<i class="fas fa-check-square me-1"></i>${count} Unit (Pengembalian)`;
@@ -787,7 +803,7 @@
       }
     }
 
-    function renderBorrowerModalRows(items) {
+    function renderBorrowerModalRows(items, canReturn = true) {
       if (!items || items.length === 0) {
         return `<tr><td colspan="10" class="text-center py-4 text-muted">Tidak ada sample yang cocok.</td></tr>`;
       }
@@ -797,10 +813,19 @@
           ? `<img src="${it.proof_image}" class="img-thumbnail btn-view-borrow-proof" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti" data-img="${it.proof_image}" data-title="${it.nomor_asset || ''} (${it.model || ''})" data-sub="Peminjam: ${it.name || '-'} pada ${it.timestamp}">`
           : `<span class="text-muted small">-</span>`;
 
+        const isNoAccess = !canReturn;
+        const tooltipMsg = isNoAccess ? `Pengembalian hanya bisa dilakukan oleh PIC (${pendingBorrowerName}) atau Super User` : '';
+
         return `
-          <tr>
+          <tr style="${isNoAccess ? 'opacity: 0.6;' : ''}">
             <td class="text-center">
-              <input type="checkbox" class="custom-check-lg borrower-unit-check" data-asset="${it.nomor_asset || it.sn || ''}" data-model="${it.model || ''}">
+              <input type="checkbox" 
+                     class="custom-check-lg borrower-unit-check" 
+                     data-asset="${it.nomor_asset || it.sn || ''}" 
+                     data-model="${it.model || ''}"
+                     data-no-access="${isNoAccess ? 'true' : 'false'}"
+                     ${isNoAccess ? 'disabled' : ''}
+                     title="${tooltipMsg}">
             </td>
             <td class="text-secondary font-monospace">${i + 1}</td>
             <td><strong class="text-primary font-monospace">${it.nomor_asset || it.sn || '-'}</strong></td>
