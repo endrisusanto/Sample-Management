@@ -47,16 +47,13 @@ async function loadUsers() {
     }
 
     let users = data.users || [];
-    if (!isSuper && currentUser) {
-      users = users.filter(u => u.id === currentUser.id);
-    }
     if (users.length === 0) {
       usersGrid.innerHTML = '<div class="col-12 text-center py-5 text-muted">Belum ada data user terdaftar.</div>';
       return;
     }
 
     usersGrid.innerHTML = users.map(u => {
-      const isMe = currentUser && currentUser.id === u.id;
+      const isMe = currentUser && (String(currentUser.id) === String(u.id) || currentUser.email === u.email);
       const isSuperUser = u.level === 'super user' || u.level === 'admin';
       const badgeHtml = isSuperUser
         ? `<span class="badge bg-danger bg-opacity-25 text-danger border border-danger text-uppercase px-2 py-1" style="font-size: 10px;"><i class="fas fa-shield-alt me-1"></i>Super User</span>`

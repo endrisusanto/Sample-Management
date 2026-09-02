@@ -75,11 +75,11 @@ export class AuthService {
   }
 
   static getAllUsers() {
-    return db.prepare('SELECT id, name, email, qr, level, created_at FROM users ORDER BY id ASC').all();
+    return db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor FROM users ORDER BY id ASC').all();
   }
 
   static getUserById(id) {
-    return db.prepare('SELECT id, name, email, qr, level, created_at FROM users WHERE id = ?').get(id);
+    return db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor FROM users WHERE id = ?').get(id);
   }
 
   static deleteUser(id) {
