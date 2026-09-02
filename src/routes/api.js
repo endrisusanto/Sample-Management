@@ -52,6 +52,11 @@ apiRouter.post('/borrow-return', optionalAuth, async (req, res) => {
     }
 
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 /**
  * 1b. Batch Borrow / Return
  */
