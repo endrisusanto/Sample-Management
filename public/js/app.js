@@ -457,9 +457,7 @@ export function initAppNavModal() {
   }
 
   // Intercept navbar toggler click on mobile/tablet or dedicated launcher buttons
-  document.querySelectorAll('.navbar-toggler, [data-bs-target="#mainNavbar"], #btn-app-launcher').forEach(btn => {
-    btn.removeAttribute('data-bs-toggle');
-    btn.removeAttribute('data-bs-target');
+  document.querySelectorAll('#btn-open-nav-modal, #btn-app-launcher, .navbar-toggler, [data-bs-target="#mainNavbar"], [data-bs-target="#appNavModal"]').forEach(btn => {
     btn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
