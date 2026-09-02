@@ -35,7 +35,15 @@
         </ul>
 
         <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <!-- Keep Awake Switch -->
+          <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
+            <input class="form-check-input ms-0 me-1 keep-awake-switch" type="checkbox" id="navbar-keep-awake-toggle" style="cursor: pointer;">
+            <label class="form-check-label text-secondary fw-semibold small pe-1 user-select-none d-none d-sm-inline" for="navbar-keep-awake-toggle" style="font-size: 11px; cursor: pointer;">
+              <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
+            </label>
+          </div>
+
+          <button class="btn btn-surface btn-circle" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
           <div id="nav-user-container"></div>
         </div>
       </div>

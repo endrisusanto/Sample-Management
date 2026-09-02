@@ -455,7 +455,7 @@ export const KeepAwakeManager = {
   },
 
   updateUI() {
-    document.querySelectorAll('#modal-keep-awake-toggle, .keep-awake-checkbox').forEach(input => {
+    document.querySelectorAll('.keep-awake-switch, #navbar-keep-awake-toggle, #modal-keep-awake-toggle, .keep-awake-checkbox').forEach(input => {
       input.checked = this.enabled;
     });
   }
@@ -482,7 +482,7 @@ export function initAppNavModal() {
               <div class="d-flex align-items-center gap-2">
                 <!-- Keep Awake Toggle Checkbox -->
                 <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
-                  <input class="form-check-input ms-0 me-1" type="checkbox" id="modal-keep-awake-toggle" style="cursor: pointer;" ${KeepAwakeManager.enabled ? 'checked' : ''}>
+                  <input class="form-check-input ms-0 me-1 keep-awake-switch" type="checkbox" id="modal-keep-awake-toggle" style="cursor: pointer;" ${KeepAwakeManager.enabled ? 'checked' : ''}>
                   <label class="form-check-label text-secondary fw-semibold small pe-1 user-select-none" for="modal-keep-awake-toggle" style="font-size: 10.5px; cursor: pointer;">
                     <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
                   </label>
@@ -576,6 +576,11 @@ function bindGlobalEvents() {
   if (themeBtn) {
     themeBtn.onclick = () => Theme.toggle();
   }
+  document.querySelectorAll('.keep-awake-switch, #navbar-keep-awake-toggle').forEach(chk => {
+    chk.onchange = (e) => {
+      KeepAwakeManager.toggle(e.target.checked);
+    };
+  });
 }
 
 if (document.readyState === 'loading') {

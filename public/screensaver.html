@@ -43,16 +43,21 @@
           <li class="nav-item"><a class="nav-link active" href="/screensaver"><i class="fas fa-tv"></i> Screensaver</a></li>
         </ul>
 
-        <div class="d-flex align-items-center gap-3">
-          <a href="/login" class="badge bg-primary bg-opacity-25 border border-primary text-info px-3 py-2 text-decoration-none shadow d-none d-sm-inline-block" style="font-size: 11px;">
-            <i class="fas fa-hand-pointer me-1"></i> Sentuh / Klik untuk Login
-          </a>
+        <div class="d-flex align-items-center gap-2">
+          <!-- Keep Awake Switch -->
+          <div class="form-check form-switch m-0 d-flex align-items-center gap-1 bg-surface px-2 py-1 rounded-pill border border-secondary" title="Layar Tetap Menyala (Cegah Sleep / Standby)">
+            <input class="form-check-input ms-0 me-1 keep-awake-switch" type="checkbox" id="navbar-keep-awake-toggle" style="cursor: pointer;">
+            <label class="form-check-label text-secondary fw-semibold small pe-1 user-select-none d-none d-sm-inline" for="navbar-keep-awake-toggle" style="font-size: 11px; cursor: pointer;">
+              <i class="fas fa-bolt text-warning me-1"></i>Keep Awake
+            </label>
+          </div>
+
           <div class="text-end d-none d-md-block">
             <div class="clock-display" id="live-clock">00:00:00</div>
             <div class="text-secondary" id="live-date" style="font-size: 10px;">-</div>
           </div>
-          <button class="btn btn-surface p-2" id="btn-screen-fs" title="Mode Layar Penuh"><i class="fas fa-expand"></i></button>
-          <button class="btn btn-surface p-2" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
+          <button class="btn btn-surface btn-circle" id="btn-screen-fs" title="Mode Layar Penuh"><i class="fas fa-expand"></i></button>
+          <button class="btn btn-surface btn-circle" id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-sun text-warning"></i></button>
           <div id="nav-user-container"></div>
         </div>
       </div>
@@ -316,24 +321,6 @@
       } else {
         if (document.exitFullscreen) document.exitFullscreen();
       }
-    });
-
-    // Touch / Click / Keypress anywhere on Screensaver redirects immediately to /login
-    let isRedirecting = false;
-    function handleScreensaverInteraction(e) {
-      if (e.target.closest('#btn-screen-fs') || e.target.closest('#theme-toggle-btn') || e.target.closest('.dropdown')) {
-        return;
-      }
-      if (isRedirecting) return;
-      isRedirecting = true;
-      window.location.href = '/login';
-    }
-
-    document.addEventListener('click', handleScreensaverInteraction);
-    document.addEventListener('touchstart', handleScreensaverInteraction, { passive: true });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F11') return; // Allow F11 fullscreen key
-      handleScreensaverInteraction(e);
     });
 
     setupWebSocket(() => refreshDashboard());
