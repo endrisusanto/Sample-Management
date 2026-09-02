@@ -81,16 +81,16 @@
       <p class="text-secondary">Import ribuan sample sekaligus melalui Upload File Excel (.xlsx, .xls, .csv) atau Paste Data Tabel dengan sistem pengiriman batch per 100 baris.</p>
     </div>
 
-    <!-- Mode Selector Tabs -->
-    <ul class="nav nav-pills mb-4 gap-2" id="importTab" role="tablist">
-      <li class="nav-item">
-        <button class="btn btn-surface active px-4 py-2" id="file-tab" data-bs-toggle="pill" data-bs-target="#file-pane">
-          <i class="fas fa-file-excel me-2"></i> Upload File Excel (.xlsx / .csv)
+    <!-- Mode Selector Tabs (50:50 on mobile) -->
+    <ul class="nav nav-pills mb-4 gap-2 mobile-50-50-split w-100" id="importTab" role="tablist">
+      <li class="nav-item flex-fill">
+        <button class="btn btn-surface active w-100 py-2 d-flex align-items-center justify-content-center text-nowrap" id="file-tab" data-bs-toggle="pill" data-bs-target="#file-pane">
+          <i class="fas fa-file-excel me-1"></i> Upload File Excel
         </button>
       </li>
-      <li class="nav-item">
-        <button class="btn btn-surface px-4 py-2" id="paste-tab" data-bs-toggle="pill" data-bs-target="#paste-pane">
-          <i class="fas fa-paste me-2"></i> Paste Text / Table (TSV / CSV)
+      <li class="nav-item flex-fill">
+        <button class="btn btn-surface w-100 py-2 d-flex align-items-center justify-content-center text-nowrap" id="paste-tab" data-bs-toggle="pill" data-bs-target="#paste-pane">
+          <i class="fas fa-paste me-1"></i> Paste Text / Tabel
         </button>
       </li>
     </ul>

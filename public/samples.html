@@ -63,18 +63,20 @@
         <p class="text-secondary m-0" style="font-size: 11px;">Kelola, cari, filter, edit dan cetak QR Code seluruh sample dan asset.</p>
       </div>
 
-      <div class="d-flex flex-wrap align-items-center gap-2">
-        <a href="/import" class="btn btn-surface"><i class="fas fa-file-import me-1"></i> Bulk Ingestion</a>
-        <div class="btn-group">
-          <button type="button" class="btn btn-surface dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="fas fa-download me-1"></i> Export Data
-          </button>
-          <ul class="dropdown-menu shadow">
-            <li><a class="dropdown-item" href="/api/export?format=xlsx"><i class="fas fa-file-excel text-success me-2"></i>Export Excel (.xlsx)</a></li>
-            <li><a class="dropdown-item" href="/api/export?format=csv"><i class="fas fa-file-csv text-primary me-2"></i>Export CSV (.csv)</a></li>
-          </ul>
+      <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2 w-100 w-md-auto">
+        <div class="d-flex align-items-center gap-2 mobile-50-50-split w-100">
+          <a href="/import" class="btn btn-surface d-flex align-items-center justify-content-center text-nowrap"><i class="fas fa-file-import me-1"></i> Bulk Ingestion</a>
+          <div class="dropdown flex-fill">
+            <button type="button" class="btn btn-surface dropdown-toggle w-100 d-flex align-items-center justify-content-center text-nowrap" data-bs-toggle="dropdown">
+              <i class="fas fa-download me-1"></i> Export Data
+            </button>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item" href="/api/export?format=xlsx"><i class="fas fa-file-excel text-success me-2"></i>Export Excel (.xlsx)</a></li>
+              <li><a class="dropdown-item" href="/api/export?format=csv"><i class="fas fa-file-csv text-primary me-2"></i>Export CSV (.csv)</a></li>
+            </ul>
+          </div>
         </div>
-        <button class="btn btn-primary-custom" id="btn-add-sample">
+        <button class="btn btn-primary-custom text-nowrap w-100 w-md-auto" id="btn-add-sample">
           <i class="fas fa-plus me-1"></i> Tambah Sample
         </button>
       </div>
@@ -83,40 +85,40 @@
     <!-- Filter & Search Panel -->
     <div class="glass-panel p-3 mb-4">
       <div class="row g-2 align-items-center">
-        <div class="col-md-4">
-          <div class="input-group">
+        <div class="col-md-4 col-12">
+          <div class="input-group w-100">
             <span class="input-group-text bg-surface border-secondary"><i class="fas fa-search"></i></span>
             <input type="text" id="search-input" class="form-control" placeholder="Cari Model, Serial, IMEI, UN, PIC...">
           </div>
         </div>
 
-        <div class="col-md-2">
-          <select id="filter-pinjam" class="form-select">
+        <div class="col-md-2 col-6">
+          <select id="filter-pinjam" class="form-select w-100">
             <option value="">Status Pinjam: Semua</option>
             <option value="PINJAM">PINJAM</option>
             <option value="KEMBALI">KEMBALI / Tersedia</option>
           </select>
         </div>
 
-        <div class="col-md-2">
-          <select id="filter-audit" class="form-select">
+        <div class="col-md-2 col-6">
+          <select id="filter-audit" class="form-select w-100">
             <option value="">Status Audit: Semua</option>
             <option value="SUDAH">SUDAH Diaudit</option>
             <option value="RESET">RESET / Belum</option>
           </select>
         </div>
 
-        <div class="col-md-2">
-          <select id="filter-limit" class="form-select">
+        <div class="col-md-2 col-12 col-sm-6">
+          <select id="filter-limit" class="form-select w-100">
             <option value="25">25 per halaman</option>
             <option value="50">50 per halaman</option>
             <option value="100">100 per halaman</option>
           </select>
         </div>
 
-        <div class="col-md-2 d-flex gap-2">
-          <button class="btn btn-primary-custom w-100" id="btn-filter"><i class="fas fa-filter"></i> Terapkan</button>
-          <button class="btn btn-surface" id="btn-reset-filter" title="Reset Filter"><i class="fas fa-undo"></i></button>
+        <div class="col-md-2 col-12 col-sm-6 d-flex gap-2 w-100">
+          <button class="btn btn-primary-custom flex-grow-1" id="btn-filter"><i class="fas fa-filter me-1"></i> Terapkan</button>
+          <button class="btn btn-surface px-3" id="btn-reset-filter" title="Reset Filter"><i class="fas fa-undo"></i></button>
         </div>
       </div>
     </div>
@@ -297,6 +299,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="/js/samples.js"></script>
+  <script type="module" src="/js/samples.js?v=2.1.0"></script>
 </body>
 </html>

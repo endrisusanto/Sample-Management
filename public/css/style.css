@@ -1372,6 +1372,10 @@ body {
     justify-content: center !important;
   }
 
+  .mobile-50-50-split > * > .btn {
+    width: 100% !important;
+  }
+
   /* Full Width Form Controls & Search Inputs on Mobile */
   .input-group,
   .input-group:has(#model-search-input),
@@ -1384,26 +1388,41 @@ body {
     max-width: 100% !important;
   }
 
-  /* Full Width Button Groups on Mobile */
-  .btn-group,
+  /* Explicit Full Width Mobile Containers */
   .mobile-full-width {
     width: 100% !important;
     display: flex !important;
   }
-  .btn-group > .btn {
-    flex: 1 1 auto !important;
-  }
 
-  /* Uniform Height & Shape for Buttons, Inputs, Selects on Mobile */
+  /* Uniform Height & Shape for Buttons, Inputs, Selects on Mobile (excluding table buttons) */
   .form-control,
   .form-select,
   .input-group-text,
   .btn-primary-custom,
-  .btn-surface {
+  .btn-surface:not(table .btn):not(.btn-group-sm .btn):not(.btn-xs) {
     min-height: 38px !important;
     height: 38px !important;
     border-radius: var(--radius-sm, 8px) !important;
     font-size: 12px !important;
+  }
+
+  /* Keep Table Action Buttons Compact and Crisp */
+  table .btn,
+  .table .btn,
+  .custom-table .btn,
+  .btn-group-sm > .btn {
+    min-height: 28px !important;
+    height: 28px !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+  }
+
+  table .btn-group,
+  .table .btn-group,
+  .custom-table .btn-group {
+    width: auto !important;
+    display: inline-flex !important;
   }
 
   /* Preserve input-group border radii */
