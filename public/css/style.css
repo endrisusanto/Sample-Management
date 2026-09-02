@@ -1377,15 +1377,27 @@ body {
   }
 
   /* Full Width Form Controls & Search Inputs on Mobile */
-  .input-group,
-  .input-group:has(#model-search-input),
-  .input-group:has(#modal-unit-search),
-  .input-group:has(#search-input),
-  #model-search-input,
-  #modal-unit-search,
-  #search-input {
+  .input-group {
     width: 100% !important;
     max-width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+  }
+
+  .input-group > .input-group-text {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 0.75rem !important;
+  }
+
+  .input-group > .form-control {
+    flex: 1 1 auto !important;
+    width: 1% !important;
+    min-width: 0 !important;
   }
 
   /* Explicit Full Width Mobile Containers */
