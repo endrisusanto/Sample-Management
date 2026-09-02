@@ -1,4 +1,4 @@
-import { Auth, setupWebSocket } from '/js/app.js';
+import { Auth, setupWebSocket, showCustomAlert, showCustomConfirm } from '/js/app.js';
 
 let currentPage = 1;
 let totalPages = 1;
@@ -212,17 +212,38 @@ async function openEdit(id) {
 }
 
 async function deleteItem(id) {
-  if (!confirm('Hapus sample ini dari database?')) return;
+  const ok = await showCustomConfirm({
+    title: 'Hapus Sample',
+    message: 'Apakah Anda yakin ingin menghapus sample ini dari database?',
+    type: 'danger',
+    confirmText: 'Ya, Hapus',
+    confirmColor: 'btn-danger'
+  });
+  if (!ok) return;
+
   try {
     const res = await fetch(`/api/samples/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
       loadSamples(currentPage);
+      await showCustomAlert({
+        title: 'Berhasil',
+        message: 'Sample berhasil dihapus dari database.',
+        type: 'success'
+      });
     } else {
-      alert(data.message || 'Gagal menghapus sample (Perlu Super User)');
+      await showCustomAlert({
+        title: 'Gagal Menghapus',
+        message: data.message || 'Gagal menghapus sample (Perlu Super User)',
+        type: 'danger'
+      });
     }
   } catch (e) {
-    alert('Error: ' + e.message);
+    await showCustomAlert({
+      title: 'Error',
+      message: e.message,
+      type: 'danger'
+    });
   }
 }
 
@@ -257,11 +278,24 @@ document.getElementById('sample-form').addEventListener('submit', async (e) => {
     if (data.success) {
       editModal.hide();
       loadSamples(currentPage);
+      await showCustomAlert({
+        title: 'Berhasil',
+        message: 'Data sample berhasil disimpan.',
+        type: 'success'
+      });
     } else {
-      alert(data.message || 'Gagal menyimpan sample');
+      await showCustomAlert({
+        title: 'Gagal Menyimpan',
+        message: data.message || 'Gagal menyimpan sample',
+        type: 'danger'
+      });
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    await showCustomAlert({
+      title: 'Error',
+      message: err.message,
+      type: 'danger'
+    });
   }
 });
 

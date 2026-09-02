@@ -242,6 +242,103 @@ export function setupWebSocket(onEvent) {
   connect();
 }
 
+// Custom Professional Dialog System (Replacing Native alert/confirm)
+export function showCustomAlert({ title = 'Informasi', message = '', type = 'info', confirmText = 'Mengerti' }) {
+  return new Promise((resolve) => {
+    const modalId = 'custom-alert-modal-' + Date.now();
+    const iconHtml = type === 'danger' || type === 'error'
+      ? '<i class="fas fa-times-circle text-danger fs-1"></i>'
+      : type === 'success'
+      ? '<i class="fas fa-check-circle text-success fs-1"></i>'
+      : type === 'warning'
+      ? '<i class="fas fa-exclamation-triangle text-warning fs-1"></i>'
+      : '<i class="fas fa-info-circle text-info fs-1"></i>';
+
+    const modalEl = document.createElement('div');
+    modalEl.className = 'modal fade';
+    modalEl.id = modalId;
+    modalEl.tabIndex = -1;
+    modalEl.style.zIndex = '1099';
+    modalEl.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content glass-panel border border-${type === 'danger' || type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+          <div class="modal-body p-4 text-center">
+            <div class="mb-3">${iconHtml}</div>
+            <h5 class="fw-bold text-light mb-2">${title}</h5>
+            <div class="text-secondary small mb-4">${message}</div>
+            <button type="button" class="btn btn-primary-custom px-4 fw-bold btn-ok-alert">${confirmText}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+    const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+
+    modalEl.querySelector('.btn-ok-alert').addEventListener('click', () => {
+      bsModal.hide();
+      resolve(true);
+    });
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      modalEl.remove();
+    });
+
+    bsModal.show();
+  });
+}
+
+export function showCustomConfirm({ title = 'Konfirmasi', message = '', type = 'warning', confirmText = 'Lanjutkan', cancelText = 'Batal', confirmColor = 'btn-primary-custom' }) {
+  return new Promise((resolve) => {
+    const modalId = 'custom-confirm-modal-' + Date.now();
+    const iconHtml = type === 'danger'
+      ? '<i class="fas fa-exclamation-triangle text-danger fs-1"></i>'
+      : type === 'warning'
+      ? '<i class="fas fa-question-circle text-warning fs-1"></i>'
+      : '<i class="fas fa-info-circle text-info fs-1"></i>';
+
+    const modalEl = document.createElement('div');
+    modalEl.className = 'modal fade';
+    modalEl.id = modalId;
+    modalEl.tabIndex = -1;
+    modalEl.style.zIndex = '1099';
+    modalEl.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content glass-panel border border-${type === 'danger' ? 'danger' : 'primary'} shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+          <div class="modal-body p-4 text-center">
+            <div class="mb-3">${iconHtml}</div>
+            <h5 class="fw-bold text-light mb-2">${title}</h5>
+            <div class="text-secondary small mb-4">${message}</div>
+            <div class="d-flex justify-content-center gap-2">
+              <button type="button" class="btn btn-surface px-4 btn-cancel-confirm">${cancelText}</button>
+              <button type="button" class="btn ${confirmColor} px-4 fw-bold btn-ok-confirm">${confirmText}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+    const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+
+    modalEl.querySelector('.btn-ok-confirm').addEventListener('click', () => {
+      bsModal.hide();
+      resolve(true);
+    });
+    modalEl.querySelector('.btn-cancel-confirm').addEventListener('click', () => {
+      bsModal.hide();
+      resolve(false);
+    });
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      modalEl.remove();
+    });
+
+    bsModal.show();
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.customAlert = showCustomAlert;
+  window.customConfirm = showCustomConfirm;
+}
+
 function bindGlobalEvents() {
   Theme.init();
   Auth.getUser();
@@ -256,3 +353,4 @@ if (document.readyState === 'loading') {
 } else {
   bindGlobalEvents();
 }
+

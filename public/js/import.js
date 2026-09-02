@@ -1,4 +1,4 @@
-import { Auth, showGiantAlert, SoundEffects } from '/js/app.js';
+import { Auth, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
 
 let allParsedRows = [];
 let previewCurrentPage = 1;
@@ -181,15 +181,23 @@ if (btnPreviewNext) {
 
 const btnParsePaste = document.getElementById('btn-parse-paste');
 if (btnParsePaste) {
-  btnParsePaste.addEventListener('click', () => {
+  btnParsePaste.addEventListener('click', async () => {
     const text = tsvInput.value.trim();
     if (!text) {
-      alert('Silakan paste data tabel terlebih dahulu');
+      await showCustomAlert({
+        title: 'Perhatian',
+        message: 'Silakan paste data tabel Excel/TSV terlebih dahulu ke dalam text box.',
+        type: 'warning'
+      });
       return;
     }
     const rows = parseTextData(text);
     if (rows.length === 0) {
-      alert('Tidak ada data valid yang dapat diproses dari teks yang dimasukkan.');
+      await showCustomAlert({
+        title: 'Format Tidak Valid',
+        message: 'Tidak ada data valid yang dapat diproses dari teks yang dimasukkan.',
+        type: 'danger'
+      });
       return;
     }
     setParsedData(rows);
@@ -244,7 +252,7 @@ function handleFileSelect(file) {
   }
   
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
@@ -253,14 +261,22 @@ function handleFileSelect(file) {
       const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
       if (!rawJson || rawJson.length === 0) {
-        alert('File kosong atau tidak memiliki data baris.');
+        await showCustomAlert({
+          title: 'File Kosong',
+          message: 'File Excel/CSV kosong atau tidak memiliki data baris.',
+          type: 'warning'
+        });
         return;
       }
 
       const normalizedRows = rawJson.map(r => normalizeRowObject(r));
       setParsedData(normalizedRows);
     } catch (err) {
-      alert('Gagal membaca file Excel/CSV: ' + err.message);
+      await showCustomAlert({
+        title: 'Error Membaca File',
+        message: 'Gagal membaca file Excel/CSV: ' + err.message,
+        type: 'danger'
+      });
     }
   };
   reader.readAsArrayBuffer(file);
@@ -275,9 +291,13 @@ if (btnCommit) {
     const batchSize = 100;
     const totalBatches = Math.ceil(totalRows / batchSize);
 
-    if (!confirm(`Konfirmasi Ingestion:\nKirim ${totalRows.toLocaleString('id-ID')} data sample ke server dalam ${totalBatches} batch (per 100 baris)?`)) {
-      return;
-    }
+    const ok = await showCustomConfirm({
+      title: 'Konfirmasi Bulk Ingestion',
+      message: `Kirim <strong>${totalRows.toLocaleString('id-ID')} data sample</strong> ke server dalam <strong>${totalBatches} batch</strong> (per 100 baris)?`,
+      type: 'warning',
+      confirmText: '⚡ Ya, Mulai Ingestion'
+    });
+    if (!ok) return;
 
     btnCommit.disabled = true;
     btnCommit.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Memproses Batch...`;

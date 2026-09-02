@@ -1,4 +1,4 @@
-import { Auth, setupWebSocket, showGiantAlert, SoundEffects } from '/js/app.js';
+import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -107,11 +107,24 @@ export async function initModelsPage() {
               openModelDetailModal(updated.model);
             }
           }
+          await showCustomAlert({
+            title: 'Berhasil',
+            message: 'Perubahan data sample berhasil disimpan.',
+            type: 'success'
+          });
         } else {
-          alert(data.message || 'Gagal menyimpan perubahan sample');
+          await showCustomAlert({
+            title: 'Gagal Menyimpan',
+            message: data.message || 'Gagal menyimpan perubahan sample',
+            type: 'danger'
+          });
         }
       } catch (err) {
-        alert('Error: ' + err.message);
+        await showCustomAlert({
+          title: 'Error',
+          message: err.message,
+          type: 'danger'
+        });
       }
     });
   }
@@ -394,9 +407,15 @@ function openModelDetailModal(modelName) {
 
         if (selectedAssets.length === 0) return;
 
-        if (!confirm(`Konfirmasi peminjaman ${selectedAssets.length} unit untuk ${currentUserName}?`)) {
-          return;
-        }
+        const ok = await showCustomConfirm({
+          title: 'Konfirmasi Bulk Pinjam',
+          message: `Apakah Anda yakin ingin meminjam <strong>${selectedAssets.length} unit</strong> sample untuk <strong>${currentUserName}</strong>?`,
+          type: 'warning',
+          confirmText: '⚡ Ya, Pinjam Unit',
+          cancelText: 'Batal'
+        });
+
+        if (!ok) return;
 
         btnBulkBorrow.disabled = true;
         btnBulkBorrow.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memproses...';
@@ -423,10 +442,18 @@ function openModelDetailModal(modelName) {
               openModelDetailModal(updated.model);
             }
           } else {
-            alert(result.message || 'Gagal memproses peminjaman massal');
+            await showCustomAlert({
+              title: 'Gagal Bulk Pinjam',
+              message: result.message || 'Gagal memproses peminjaman massal',
+              type: 'danger'
+            });
           }
         } catch (err) {
-          alert('Error: ' + err.message);
+          await showCustomAlert({
+            title: 'Error',
+            message: err.message,
+            type: 'danger'
+          });
         } finally {
           btnBulkBorrow.disabled = false;
           btnBulkBorrow.innerHTML = '<i class="fas fa-hand-holding me-1"></i> Pinjam Unit Terpilih';
@@ -566,7 +593,13 @@ async function openSampleEditModal(id) {
   try {
     const res = await fetch(`/api/samples/${id}`);
     const { sample } = await res.json();
-    if (!sample) return alert('Sample tidak ditemukan');
+    if (!sample) {
+      return showCustomAlert({
+        title: 'Tidak Ditemukan',
+        message: 'Data sample tidak ditemukan di server.',
+        type: 'warning'
+      });
+    }
 
     document.getElementById('edit-sample-id').value = sample.id || '';
     document.getElementById('edit-sample-model').value = sample.model || '';
@@ -585,7 +618,11 @@ async function openSampleEditModal(id) {
 
     editModal.show();
   } catch (err) {
-    alert('Gagal memuat detail sample: ' + err.message);
+    showCustomAlert({
+      title: 'Error',
+      message: 'Gagal memuat detail sample: ' + err.message,
+      type: 'danger'
+    });
   }
 }
 

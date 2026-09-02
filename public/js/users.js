@@ -1,4 +1,4 @@
-import { Auth, showGiantAlert, setupWebSocket, SoundEffects } from '/js/app.js';
+import { Auth, showGiantAlert, setupWebSocket, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
 import { FaceEngine } from '/js/face-engine.js';
 import { BiometricAuth } from '/js/biometric-auth.js';
 
@@ -293,7 +293,14 @@ function openEditUser(user) {
 }
 
 async function deleteUser(id, name) {
-  if (!confirm(`Apakah Anda yakin ingin menghapus user "${name}"?`)) return;
+  const ok = await showCustomConfirm({
+    title: 'Hapus User',
+    message: `Apakah Anda yakin ingin menghapus user <strong>"${name}"</strong> dari sistem?`,
+    type: 'danger',
+    confirmText: 'Ya, Hapus',
+    confirmColor: 'btn-danger'
+  });
+  if (!ok) return;
 
   try {
     const res = await fetch(`/api/auth/users/${id}`, { method: 'DELETE' });
@@ -307,10 +314,18 @@ async function deleteUser(id, name) {
       });
       loadUsers();
     } else {
-      alert(data.message || 'Gagal menghapus user');
+      await showCustomAlert({
+        title: 'Gagal Menghapus',
+        message: data.message || 'Gagal menghapus user',
+        type: 'danger'
+      });
     }
   } catch (err) {
-    alert('Gagal menghapus user: ' + err.message);
+    await showCustomAlert({
+      title: 'Error',
+      message: 'Gagal menghapus user: ' + err.message,
+      type: 'danger'
+    });
   }
 }
 
@@ -329,35 +344,42 @@ userForm.addEventListener('submit', async (e) => {
   const payload = {
     name: document.getElementById('form-name').value.trim(),
     email: document.getElementById('form-email').value.trim(),
-    password: document.getElementById('form-password').value,
     level: document.getElementById('form-level').value
   };
+  const password = document.getElementById('form-password').value;
+  if (password) payload.password = password;
 
   try {
-    const url = id ? `/api/auth/users/${id}` : '/api/auth/register';
+    const url = id ? `/api/auth/users/${id}` : '/api/auth/users';
     const method = id ? 'PUT' : 'POST';
-
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-
     if (data.success) {
       userModal.hide();
       showGiantAlert({
-        title: id ? 'USER DIPERBARUI' : 'USER DITAMBAHKAN',
-        message: `User ${payload.name} berhasil disimpan.`,
+        title: 'USER DISIMPAN',
+        message: `Data user ${payload.name} berhasil disimpan.`,
         action: 'SUCCESS',
         duration: 3000
       });
       loadUsers();
     } else {
-      alert(data.message || 'Gagal menyimpan data user');
+      await showCustomAlert({
+        title: 'Gagal Menyimpan',
+        message: data.message || 'Gagal menyimpan data user',
+        type: 'danger'
+      });
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    await showCustomAlert({
+      title: 'Error',
+      message: err.message,
+      type: 'danger'
+    });
   }
 });
 
@@ -384,17 +406,27 @@ resetDbForm.addEventListener('submit', async (e) => {
   const reset_users = document.getElementById('check-reset-users').checked;
 
   if (!delete_all_samples && !reload_default_samples && !clear_flow && !reset_status && !reset_users) {
-    alert('Silakan pilih minimal 1 opsi checklist untuk di-reset!');
+    await showCustomAlert({
+      title: 'Perhatian',
+      message: 'Silakan pilih minimal 1 opsi checklist untuk di-reset!',
+      type: 'warning'
+    });
     return;
   }
 
-  let warnMessage = 'Konfirmasi Eksekusi:\nLanjutkan proses reset database sesuai checklist yang dipilih?';
+  let warnMessage = 'Apakah Anda yakin ingin melanjutkan proses reset database sesuai checklist yang dipilih?';
   if (delete_all_samples) {
-    warnMessage = '⚠️ PERINGATAN KRUSIAL:\nAnda memilih HAPUS BERSIH SELURUH DATA MASTER SAMPLE.\nSeluruh data device akan dihapus menjadi 0.\n\nLanjutkan proses penghapusan?';
+    warnMessage = '⚠️ <strong>PERINGATAN KRUSIAL:</strong><br>Anda memilih <strong>HAPUS BERSIH SELURUH DATA MASTER SAMPLE</strong>.<br>Seluruh data device akan dihapus menjadi 0.<br><br>Lanjutkan proses penghapusan?';
   }
 
-  const confirmAction = confirm(warnMessage);
-  if (!confirmAction) return;
+  const ok = await showCustomConfirm({
+    title: 'Konfirmasi Reset Database',
+    message: warnMessage,
+    type: 'danger',
+    confirmText: 'Ya, Eksekusi Reset',
+    confirmColor: 'btn-danger'
+  });
+  if (!ok) return;
 
   const btnExec = document.getElementById('btn-execute-reset-db');
   btnExec.disabled = true;
@@ -424,10 +456,18 @@ resetDbForm.addEventListener('submit', async (e) => {
       });
       loadUsers();
     } else {
-      alert(result.message || 'Gagal reset database (Akses Super User Diperlukan)');
+      await showCustomAlert({
+        title: 'Gagal Reset Database',
+        message: result.message || 'Gagal reset database (Akses Super User Diperlukan)',
+        type: 'danger'
+      });
     }
   } catch (err) {
-    alert('Gagal me-reset database: ' + err.message);
+    await showCustomAlert({
+      title: 'Error',
+      message: 'Gagal me-reset database: ' + err.message,
+      type: 'danger'
+    });
   } finally {
     btnExec.disabled = false;
     btnExec.innerHTML = '<i class="fas fa-trash-restore me-1"></i> Eksekusi Reset Terpilih';

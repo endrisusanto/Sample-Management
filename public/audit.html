@@ -236,7 +236,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
-    import { Auth, showGiantAlert, setupWebSocket, SoundEffects } from '/js/app.js';
+    import { Auth, showGiantAlert, setupWebSocket, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
     import { CameraProofEngine } from '/js/camera-proof.js';
     import { QRScannerModal } from '/js/qr-scanner.js';
 
@@ -471,7 +471,15 @@
     }
 
     btnReset.addEventListener('click', async () => {
-      if (!confirm('Apakah Anda yakin ingin me-RESET seluruh status audit sample kembali ke RESET?')) return;
+      const ok = await showCustomConfirm({
+        title: 'Konfirmasi Reset Audit',
+        message: 'Apakah Anda yakin ingin me-<strong>RESET seluruh status audit</strong> sample kembali ke awal?',
+        type: 'danger',
+        confirmText: 'Ya, Reset Semua',
+        confirmColor: 'btn-danger'
+      });
+      if (!ok) return;
+
       try {
         const res = await fetch('/api/audit/reset', { method: 'POST' });
         const data = await res.json();
@@ -485,10 +493,18 @@
           loadAuditStats();
           loadAuditHistory();
         } else {
-          alert(data.message || 'Gagal reset audit (Perlu Super User)');
+          await showCustomAlert({
+            title: 'Gagal Reset Audit',
+            message: data.message || 'Gagal reset audit (Perlu Super User)',
+            type: 'danger'
+          });
         }
       } catch (err) {
-        alert('Gagal me-reset status audit: ' + err.message);
+        await showCustomAlert({
+          title: 'Error',
+          message: 'Gagal me-reset status audit: ' + err.message,
+          type: 'danger'
+        });
       }
     });
 
