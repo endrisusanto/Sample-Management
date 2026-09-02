@@ -81,28 +81,36 @@ async function loadUsers() {
               <div class="text-dark fw-bold small mt-1" style="font-size: 11px;">${u.name}</div>
             </div>
 
-            <div class="d-flex flex-column gap-2 mt-2">
-              <div class="btn-group w-100">
-                <button class="btn btn-surface btn-view-badge py-1" 
-                        data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" data-qr="${qrUrl}" style="font-size: 11px;">
-                  <i class="fas fa-qrcode me-1 text-primary"></i> Badge
-                </button>
-                <button class="btn btn-surface btn-register-face py-1 ${u.face_descriptor ? 'text-success' : 'text-info'}"
-                        data-id="${u.id}" data-name="${u.name}" title="Daftarkan Biometrik Wajah" style="font-size: 11px;">
-                  <i class="fas fa-camera me-1"></i> ${u.face_descriptor ? 'Face ID ✅' : 'Daftar Face ID'}
-                </button>
+            <div class="d-flex flex-column gap-2 mt-3">
+              <div class="row g-2 m-0">
+                <div class="col-6 p-0 pe-1">
+                  <button class="btn btn-surface btn-view-badge w-100 py-1 d-flex align-items-center justify-content-center" 
+                          data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" data-qr="${qrUrl}" style="font-size: 11px;">
+                    <i class="fas fa-qrcode me-1 text-primary"></i> <span>Badge</span>
+                  </button>
+                </div>
+                <div class="col-6 p-0 ps-1">
+                  <button class="btn btn-surface btn-register-face w-100 py-1 d-flex align-items-center justify-content-center ${u.face_descriptor ? 'text-success' : 'text-info'}" 
+                          data-id="${u.id}" data-name="${u.name}" title="Daftarkan Biometrik Wajah" style="font-size: 11px;">
+                    <i class="fas fa-camera me-1"></i> <span>${u.face_descriptor ? 'Face ID ✅' : 'Face ID'}</span>
+                  </button>
+                </div>
               </div>
 
               ${isSuper ? `
-                <div class="btn-group w-100">
-                  <button class="btn btn-surface btn-edit-user py-1" 
-                          data-id="${u.id}" data-name="${u.name}" data-email="${u.email}" data-level="${u.level}">
-                    <i class="fas fa-edit text-warning me-1"></i> Edit
-                  </button>
-                  <button class="btn btn-surface text-danger btn-delete-user py-1" 
-                          data-id="${u.id}" data-name="${u.name}" ${isMe ? 'disabled title="Tidak dapat menghapus akun sendiri"' : ''}>
-                    <i class="fas fa-trash me-1"></i> Hapus
-                  </button>
+                <div class="row g-2 m-0">
+                  <div class="col-6 p-0 pe-1">
+                    <button class="btn btn-surface btn-edit-user w-100 py-1 d-flex align-items-center justify-content-center" 
+                            data-id="${u.id}" data-name="${u.name}" data-email="${u.email}" data-level="${u.level}" style="font-size: 11px;">
+                      <i class="fas fa-edit text-warning me-1"></i> <span>Edit</span>
+                    </button>
+                  </div>
+                  <div class="col-6 p-0 ps-1">
+                    <button class="btn btn-surface text-danger btn-delete-user w-100 py-1 d-flex align-items-center justify-content-center" 
+                            data-id="${u.id}" data-name="${u.name}" ${isMe ? 'disabled title="Tidak dapat menghapus akun sendiri"' : ''} style="font-size: 11px;">
+                      <i class="fas fa-trash me-1"></i> <span>Hapus</span>
+                    </button>
+                  </div>
                 </div>
               ` : ''}
             </div>
