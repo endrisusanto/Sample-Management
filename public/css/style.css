@@ -930,12 +930,7 @@ body {
 }
 
 .live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  box-shadow: 0 0 8px var(--accent-green);
-  display: inline-block;
+  display: none !important;
 }
 
 /* Dropdown Menu */
@@ -1375,6 +1370,53 @@ body {
     width: 50% !important;
     text-align: center !important;
     justify-content: center !important;
+  }
+
+  /* Full Width Form Controls & Search Inputs on Mobile */
+  .input-group,
+  .input-group:has(#model-search-input),
+  .input-group:has(#modal-unit-search),
+  .input-group:has(#search-input),
+  #model-search-input,
+  #modal-unit-search,
+  #search-input {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Full Width Button Groups on Mobile */
+  .btn-group,
+  .mobile-full-width {
+    width: 100% !important;
+    display: flex !important;
+  }
+  .btn-group > .btn {
+    flex: 1 1 auto !important;
+  }
+
+  /* Uniform Height & Shape for Buttons, Inputs, Selects on Mobile */
+  .form-control,
+  .form-select,
+  .input-group-text,
+  .btn-primary-custom,
+  .btn-surface {
+    min-height: 38px !important;
+    height: 38px !important;
+    border-radius: var(--radius-sm, 8px) !important;
+    font-size: 12px !important;
+  }
+
+  /* Preserve input-group border radii */
+  .input-group > :first-child {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+  .input-group > :last-child {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+  }
+  .input-group > :not(:first-child):not(:last-child) {
+    border-radius: 0 !important;
   }
 
   /* 50:50 Button Split on Modal & Action Bars */

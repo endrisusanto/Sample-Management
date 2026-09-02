@@ -1,5 +1,5 @@
 import { Auth, setupWebSocket, showGiantAlert, SoundEffects, showCustomAlert, showCustomConfirm } from '/js/app.js';
-import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.98';
+import { CameraProofEngine } from '/js/camera-proof.js?v=2.0.99';
 
 const cardsGrid = document.getElementById('model-cards-grid');
 const searchInput = document.getElementById('model-search-input');
@@ -374,9 +374,9 @@ function openModelDetailModal(modelName) {
   if (modalBody) {
     modalBody.innerHTML = `
       <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div class="input-group" style="max-width: 320px;">
+        <div class="input-group w-100">
           <span class="input-group-text bg-surface border-secondary py-1 px-2"><i class="fas fa-search"></i></span>
-          <input type="text" id="modal-unit-search" class="form-control form-control-sm" placeholder="Cari Serial, Asset, PIC, IMEI..." style="font-size: 11.5px;">
+          <input type="text" id="modal-unit-search" class="form-control form-control-sm" placeholder="Cari Serial, Asset, PIC, IMEI..." style="font-size: 12px;">
         </div>
         <div class="text-secondary small">
           <i class="fas fa-building me-1"></i> Departemen: <strong>${modelObj.items[0]?.Dept || 'PE Solution P /SEIN-P'}</strong>
