@@ -125,6 +125,62 @@ body {
   --bs-table-hover-bg: transparent !important;
 }
 
+/* Custom Large High-Visibility Checkbox */
+.custom-check-lg {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 21px;
+  height: 21px;
+  border: 2px solid #64748b;
+  border-radius: 6px;
+  background-color: rgba(15, 23, 42, 0.95);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  transition: all 0.15s ease-in-out;
+  outline: none;
+  position: relative;
+  margin: 0;
+}
+
+.custom-check-lg:hover {
+  border-color: var(--accent-blue, #3b82f6);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.custom-check-lg:checked {
+  background-color: var(--accent-blue, #3b82f6) !important;
+  border-color: var(--accent-blue, #3b82f6) !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+}
+
+.custom-check-lg:checked::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 11px;
+  border: solid #ffffff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.custom-check-lg:indeterminate {
+  background-color: var(--accent-blue, #3b82f6) !important;
+  border-color: var(--accent-blue, #3b82f6) !important;
+}
+
+.custom-check-lg:indeterminate::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
 /* Filter Chip Pill (Interactive Legend & Filter Chips) */
 .filter-chip-group {
   display: flex;

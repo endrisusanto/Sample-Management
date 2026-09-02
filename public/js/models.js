@@ -308,7 +308,7 @@ function openModelDetailModal(modelName) {
           <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated, #0f172a); z-index: 5;">
             <tr>
               <th style="width: 35px;" class="text-center">
-                <input type="checkbox" class="form-check-input" id="check-all-model-units" title="Pilih / Batalkan Semua">
+                <input type="checkbox" class="custom-check-lg" id="check-all-model-units" title="Pilih / Batalkan Semua">
               </th>
               <th style="width: 25px;">#</th>
               <th>No. Asset</th>
@@ -488,7 +488,7 @@ function renderModalTableRows(items) {
     return `
       <tr>
         <td class="text-center">
-          <input type="checkbox" class="form-check-input unit-check-item" data-asset="${assetNo}" data-status="${u.status_pinjam || 'KEMBALI'}">
+          <input type="checkbox" class="custom-check-lg unit-check-item" data-asset="${assetNo}" data-status="${u.status_pinjam || 'KEMBALI'}">
         </td>
         <td class="text-secondary font-monospace">${i + 1}</td>
         <td><strong class="text-primary font-monospace">${assetNo}</strong></td>
