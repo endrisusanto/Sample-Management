@@ -101,14 +101,26 @@ body {
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* Stacked Modal Z-Index Hierarchy (Preview on top of Detail) */
-#proofViewModal, 
-#auditProofModal {
-  z-index: 1095 !important;
+/* Stacked Modal Z-Index Hierarchy (Confirmations on top of Overview) */
+#borrowerDetailModal,
+#sampleDetailModal {
+  z-index: 1060 !important;
 }
 
 #sampleEditModal {
-  z-index: 1080 !important;
+  z-index: 1075 !important;
+}
+
+#transactionProofModal,
+#bulkProofModal,
+#qrScanModal,
+#proofViewModal,
+#auditProofModal {
+  z-index: 1090 !important;
+}
+
+#appNavModal {
+  z-index: 1099 !important;
 }
 
 /* Ensure modal tables stay transparent dark themed and prevent text wrapping */

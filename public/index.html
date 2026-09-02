@@ -140,65 +140,6 @@
 
   </main>
 
-  <!-- Seamless Photo Proof & Transaction Confirmation Modal -->
-  <div class="modal fade" id="transactionProofModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-      <div class="modal-content border-primary shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
-        <div class="modal-header border-0 pb-1 d-flex justify-content-between align-items-center">
-          <h5 class="modal-title text-light fw-bold fs-6">
-            <i class="fas fa-camera text-primary me-2"></i> Konfirmasi & Bukti Foto Transaksi
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btn-close-proof-modal"></button>
-        </div>
-
-        <div class="modal-body p-3 pt-1">
-          <!-- Summary Target Banner -->
-          <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-75 p-2 rounded border border-secondary mb-2 small">
-            <div>
-              <div class="text-secondary" style="font-size: 11px;">Peminjam:</div>
-              <strong class="text-primary" id="proof-pic-label">-</strong>
-            </div>
-            <div class="text-end">
-              <div class="text-secondary" style="font-size: 11px;">Nomor Asset:</div>
-              <strong class="text-warning font-monospace" id="proof-asset-label">-</strong>
-            </div>
-          </div>
-
-          <!-- Camera Switch & Options Bar -->
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <button type="button" class="btn btn-surface btn-sm py-1 px-2 text-info" id="btn-switch-proof-cam" title="Ganti Kamera Depan / Belakang">
-              <i class="fas fa-camera-rotate me-1"></i> <span id="label-proof-cam-facing" style="font-size: 11px;">Kamera Depan (Mirror)</span>
-            </button>
-            <span class="badge bg-success bg-opacity-25 text-success border border-success" style="font-size: 10px;">
-              <i class="fas fa-circle fa-xs me-1"></i> Auto-Watermark Aktif
-            </span>
-          </div>
-
-          <!-- Live Camera Viewport -->
-          <div class="position-relative mx-auto rounded overflow-hidden mb-3 border border-secondary" style="background: #000; height: 260px;">
-            <video id="proof-modal-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
-            
-            <!-- Watermark HUD Overlay Preview -->
-            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 py-1 px-2 d-flex justify-content-between align-items-center text-white small" style="font-size: 10px;">
-              <span><i class="fas fa-shield-alt text-success me-1"></i> PE SOLUTION P / SEIN-P</span>
-              <span id="proof-hud-time" class="font-monospace text-warning">LIVE TIME</span>
-            </div>
-          </div>
-
-          <!-- Action Submit Buttons -->
-          <div class="d-flex flex-column gap-2">
-            <button type="button" class="btn btn-primary-custom w-100 py-2 fw-bold fs-6 justify-content-center" id="btn-capture-confirm-transaction">
-              <i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Transaksi
-            </button>
-            <button type="button" class="btn btn-surface w-100 py-1 text-secondary small" id="btn-skip-photo-transaction">
-              <i class="fas fa-forward me-1"></i> Simpan Tanpa Foto
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Collapsible Sticky Footer Log Drawer -->
   <div class="footer-log-drawer" id="footer-log-drawer">
     <div class="footer-log-header" id="footer-log-header" title="Klik / Sentuh untuk Expand atau Collapse Log">
@@ -266,6 +207,65 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-3" id="borrowerDetailModalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seamless Photo Proof & Transaction Confirmation Modal (Highest Z-Index Overlay) -->
+  <div class="modal fade" id="transactionProofModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+      <div class="modal-content border-primary shadow-2xl" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-1 d-flex justify-content-between align-items-center">
+          <h5 class="modal-title text-light fw-bold fs-6">
+            <i class="fas fa-camera text-primary me-2"></i> Konfirmasi & Bukti Foto Transaksi
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btn-close-proof-modal"></button>
+        </div>
+
+        <div class="modal-body p-3 pt-1">
+          <!-- Summary Target Banner -->
+          <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-75 p-2 rounded border border-secondary mb-2 small">
+            <div>
+              <div class="text-secondary" style="font-size: 11px;">Peminjam:</div>
+              <strong class="text-primary" id="proof-pic-label">-</strong>
+            </div>
+            <div class="text-end">
+              <div class="text-secondary" style="font-size: 11px;">Nomor Asset:</div>
+              <strong class="text-warning font-monospace" id="proof-asset-label">-</strong>
+            </div>
+          </div>
+
+          <!-- Camera Switch & Options Bar -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <button type="button" class="btn btn-surface btn-sm py-1 px-2 text-info" id="btn-switch-proof-cam" title="Ganti Kamera Depan / Belakang">
+              <i class="fas fa-camera-rotate me-1"></i> <span id="label-proof-cam-facing" style="font-size: 11px;">Kamera Depan (Mirror)</span>
+            </button>
+            <span class="badge bg-success bg-opacity-25 text-success border border-success" style="font-size: 10px;">
+              <i class="fas fa-circle fa-xs me-1"></i> Auto-Watermark Aktif
+            </span>
+          </div>
+
+          <!-- Live Camera Viewport -->
+          <div class="position-relative mx-auto rounded overflow-hidden mb-3 border border-secondary" style="background: #000; height: 260px;">
+            <video id="proof-modal-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+            
+            <!-- Watermark HUD Overlay Preview -->
+            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 py-1 px-2 d-flex justify-content-between align-items-center text-white small" style="font-size: 10px;">
+              <span><i class="fas fa-shield-alt text-success me-1"></i> PE SOLUTION P / SEIN-P</span>
+              <span id="proof-hud-time" class="font-monospace text-warning">LIVE TIME</span>
+            </div>
+          </div>
+
+          <!-- Action Submit Buttons -->
+          <div class="d-flex flex-column gap-2">
+            <button type="button" class="btn btn-primary-custom w-100 py-2 fw-bold fs-6 justify-content-center" id="btn-capture-confirm-transaction">
+              <i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi Transaksi
+            </button>
+            <button type="button" class="btn btn-surface w-100 py-1 text-secondary small" id="btn-skip-photo-transaction">
+              <i class="fas fa-forward me-1"></i> Simpan Tanpa Foto
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

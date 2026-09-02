@@ -341,6 +341,30 @@ export function showCustomConfirm({ title = 'Konfirmasi', message = '', type = '
   });
 }
 
+// Universal Multi-Modal Stacking Manager (Guarantees top modals appear above all backdrops & parent modals)
+if (typeof document !== 'undefined') {
+  document.addEventListener('show.bs.modal', (event) => {
+    const openModals = Array.from(document.querySelectorAll('.modal.show')).filter(m => m !== event.target);
+    const zIndex = 1060 + (20 * openModals.length);
+    event.target.style.zIndex = zIndex;
+    setTimeout(() => {
+      const backdrops = document.querySelectorAll('.modal-backdrop:not(.modal-stack)');
+      if (backdrops.length > 0) {
+        const lastBackdrop = backdrops[backdrops.length - 1];
+        lastBackdrop.style.zIndex = zIndex - 5;
+        lastBackdrop.classList.add('modal-stack');
+      }
+    }, 0);
+  });
+
+  document.addEventListener('hidden.bs.modal', () => {
+    const openModals = document.querySelectorAll('.modal.show');
+    if (openModals.length > 0) {
+      document.body.classList.add('modal-open');
+    }
+  });
+}
+
 // Inactivity Timeout & Screensaver Transition (5 Minutes = 300,000 ms)
 export const InactivityManager = {
   timeoutMs: 5 * 60 * 1000, // 5 minutes (300 seconds)
