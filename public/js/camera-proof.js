@@ -8,6 +8,7 @@ export class CameraProofEngine {
     this.video = document.getElementById(videoElementId);
     this.stream = null;
     this.canvas = document.createElement('canvas');
+    this.facingMode = 'user';
   }
 
   async startCamera(facingMode = 'user') {
@@ -15,6 +16,7 @@ export class CameraProofEngine {
       throw new Error('Kamera tidak didukung pada browser ini.');
     }
     
+    this.facingMode = facingMode;
     // Stop any active stream first to release hardware lock before requesting new stream
     this.stopCamera();
 
@@ -64,7 +66,8 @@ export class CameraProofEngine {
   }
 
   /**
-   * Captures current camera frame and burns clean, monochrome inline chip watermark
+   * Captures current camera frame cropped strictly to the landscape preview viewport
+   * and burns clean, monochrome inline chip watermark
    */
   captureStampedPhoto({ action = 'PINJAM', model = '-', nomorAsset = '-', picName = 'PIC', location = 'PE SOLUTION' } = {}) {
     if (!this.video || !this.stream) return null;
@@ -72,22 +75,53 @@ export class CameraProofEngine {
     const rawWidth = this.video.videoWidth || 640;
     const rawHeight = this.video.videoHeight || 480;
 
-    // Smart downscaling to optimal proof resolution (max 960x720) to save 85-90% bandwidth and disk space
-    const maxDimension = 960;
-    let width = rawWidth;
-    let height = rawHeight;
-    if (width > maxDimension || height > maxDimension) {
-      const scale = Math.min(maxDimension / width, maxDimension / height);
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
+    // Determine target aspect ratio from actual video preview element (landscape viewport)
+    let targetAspect = 16 / 9; // Default landscape standard
+    if (this.video && this.video.clientWidth && this.video.clientHeight && this.video.clientHeight > 0) {
+      targetAspect = this.video.clientWidth / this.video.clientHeight;
+    }
+    // Ensure the output is strictly landscape format (>= 1.33)
+    if (targetAspect < 1.33) {
+      targetAspect = 16 / 9;
     }
 
-    this.canvas.width = width;
-    this.canvas.height = height;
+    // Calculate source crop rectangle from raw camera frame corresponding to CSS object-fit: cover
+    const videoAspect = rawWidth / rawHeight;
+    let srcX = 0, srcY = 0, srcW = rawWidth, srcH = rawHeight;
+
+    if (videoAspect > targetAspect) {
+      // Video is wider than target landscape -> crop left & right
+      srcW = Math.round(rawHeight * targetAspect);
+      srcH = rawHeight;
+      srcX = Math.round((rawWidth - srcW) / 2);
+      srcY = 0;
+    } else {
+      // Video is taller/portrait -> crop top & bottom to exact landscape center
+      srcW = rawWidth;
+      srcH = Math.round(rawWidth / targetAspect);
+      srcX = 0;
+      srcY = Math.round((rawHeight - srcH) / 2);
+    }
+
+    // Target dimensions for high-efficiency storage (max width 960px landscape)
+    const targetWidth = Math.min(960, srcW);
+    const targetHeight = Math.round(targetWidth / targetAspect);
+
+    this.canvas.width = targetWidth;
+    this.canvas.height = targetHeight;
     const ctx = this.canvas.getContext('2d');
 
-    // 1. Draw scaled camera frame
-    ctx.drawImage(this.video, 0, 0, width, height);
+    // Handle horizontal flip if user-facing camera (Mirror mode)
+    const isMirror = this.facingMode === 'user' || (this.video.style.transform && this.video.style.transform.includes('scaleX(-1)'));
+    if (isMirror) {
+      ctx.save();
+      ctx.translate(targetWidth, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(this.video, srcX, srcY, srcW, srcH, 0, 0, targetWidth, targetHeight);
+      ctx.restore();
+    } else {
+      ctx.drawImage(this.video, srcX, srcY, srcW, srcH, 0, 0, targetWidth, targetHeight);
+    }
 
     // 2. Format Date & Time with Jakarta WIB timezone
     const now = new Date();
@@ -104,12 +138,12 @@ export class CameraProofEngine {
     const cleanModel = model || '-';
 
     // 3. Compact Monochrome Inline Chip Watermark
-    const fontSize = Math.max(11, Math.floor(height * 0.028));
+    const fontSize = Math.max(11, Math.floor(targetHeight * 0.032));
     ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
 
     const singleLineText = `[ ${cleanAction} ]   ${cleanAsset}  •  ${cleanModel}   |   ${cleanPic}   |   ${dateStr}, ${timeStr}`;
     const singleLineWidth = ctx.measureText(singleLineText).width;
-    const maxAvailableWidth = width - 28;
+    const maxAvailableWidth = targetWidth - 28;
 
     const padX = Math.max(10, Math.floor(fontSize * 0.9));
     const padY = Math.max(5, Math.floor(fontSize * 0.5));
@@ -120,7 +154,7 @@ export class CameraProofEngine {
       // --- Single Line Inline Pill Chip ---
       const chipWidth = singleLineWidth + (padX * 2);
       const chipX = 14;
-      const chipY = height - chipHeight - 14;
+      const chipY = targetHeight - chipHeight - 14;
 
       // Draw frosted monochrome pill container
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -146,7 +180,7 @@ export class CameraProofEngine {
 
       const totalH = (chipHeight * 2) + 4;
       const chipX = 14;
-      const chipY = height - totalH - 12;
+      const chipY = targetHeight - totalH - 12;
 
       // Draw frosted monochrome rounded card
       ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
