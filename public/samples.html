@@ -147,20 +147,37 @@
     </div>
   </main>
 
-  <!-- Modal Detail & QR Code -->
-  <div class="modal fade" id="sampleDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content glass-panel" style="background: var(--bg-surface);">
-        <div class="modal-header border-bottom border-secondary">
-          <h5 class="modal-title fw-bold" id="detailModalTitle">Detail Sample</h5>
+  <!-- Image Proof Viewer Modal -->
+  <div class="modal fade" id="proofViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-info" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-info fw-bold fs-6" id="proofModalTitle">
+            <i class="fas fa-camera-retro me-2"></i> Bukti Transaksi Sample (Watermarked)
+          </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body" id="detailModalBody">
+        <div class="modal-body text-center p-3">
+          <img id="proofModalImg" src="" alt="Bukti Foto" class="img-fluid rounded border border-secondary shadow-lg mb-2" style="max-height: 70vh;">
+          <div class="text-secondary small" id="proofModalSubtitle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detail & QR Code -->
+  <div class="modal fade" id="sampleDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-primary shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
+        <div class="modal-header border-bottom border-secondary py-2 px-3">
+          <h5 class="modal-title fw-bold text-light" id="detailModalTitle" style="font-size: 14px;">Detail Sample</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3" id="detailModalBody">
           <!-- Populated by JS -->
         </div>
-        <div class="modal-footer border-top border-secondary">
-          <button type="button" class="btn btn-surface" data-bs-dismiss="modal">Tutup</button>
-          <button type="button" class="btn btn-primary-custom" id="btn-print-qr"><i class="fas fa-print me-1"></i> Cetak QR Badge</button>
+        <div class="modal-footer border-top border-secondary py-2">
+          <button type="button" class="btn btn-primary-custom fw-bold" id="btn-print-qr"><i class="fas fa-print me-1"></i> Cetak QR Badge</button>
         </div>
       </div>
     </div>

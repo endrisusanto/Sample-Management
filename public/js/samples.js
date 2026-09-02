@@ -97,33 +97,66 @@ async function showDetail(id) {
     const qrUrl = `/api/qr?text=${encodeURIComponent(assetNo)}&width=250`;
 
     document.getElementById('detailModalTitle').textContent = `Detail Sample: ${sample.model || ''} (${assetNo})`;
+    const isPinjam = sample.status_pinjam === 'PINJAM';
+    const isAudited = sample.status_audit === 'SUDAH';
+    const isNormal = !sample.defect_status || sample.defect_status === 'Normal' || sample.defect_status === '';
+    const proofModalEl = document.getElementById('proofViewModal');
+    const proofModal = proofModalEl ? new bootstrap.Modal(proofModalEl) : null;
+
+    const proofThumbnail = sample.proof_image
+      ? `<img src="${sample.proof_image}" id="detail-proof-img" class="img-thumbnail" style="width: 55px; height: 55px; object-fit: cover; cursor: pointer; border-radius: 8px; padding: 1px;" title="Klik untuk memperbesar foto bukti" data-img="${sample.proof_image}">`
+      : `<span class="text-secondary small">-</span>`;
+
+    document.getElementById('detailModalTitle').textContent = `Detail Sample: ${sample.model || ''} (${assetNo})`;
     document.getElementById('detailModalBody').innerHTML = `
-      <div class="row">
-        <div class="col-md-5 text-center mb-3">
-          <div class="p-3 bg-white rounded shadow-sm d-inline-block">
-            <img src="${qrUrl}" alt="QR Code" class="img-fluid" style="width: 180px; height: 180px;">
+      <div class="row g-3">
+        <div class="col-md-4 text-center d-flex flex-column align-items-center justify-content-center p-2 rounded bg-dark bg-opacity-50 border border-secondary">
+          <div class="p-2 bg-white rounded shadow-sm d-inline-block mb-2">
+            <img src="${qrUrl}" alt="QR Code" class="img-fluid" style="width: 150px; height: 150px;">
           </div>
-          <div class="mt-2 fw-bold text-light">${assetNo}</div>
+          <div class="fw-bold text-primary font-monospace">${assetNo}</div>
           <div class="text-secondary small">${sample.model || ''}</div>
+          ${sample.proof_image ? `
+            <div class="mt-3 pt-2 border-top border-secondary w-100 text-center">
+              <div class="text-secondary small mb-1" style="font-size: 10px;">Bukti Foto Transaksi:</div>
+              ${proofThumbnail}
+            </div>
+          ` : ''}
         </div>
-        <div class="col-md-7">
-          <table class="table table-sm table-borderless text-light">
-            <tr><th width="40%" class="text-secondary">Model</th><td>${sample.model || '-'}</td></tr>
-            <tr><th class="text-secondary">Serial / No. Asset</th><td><span class="badge bg-dark border border-secondary">${assetNo}</span></td></tr>
-            <tr><th class="text-secondary">Status Pinjam</th><td><span class="badge ${sample.status_pinjam === 'PINJAM' ? 'bg-danger' : 'bg-success'}">${sample.status_pinjam}</span></td></tr>
-            <tr><th class="text-secondary">Peminjam Terakhir</th><td>${sample.name || '-'}</td></tr>
-            <tr><th class="text-secondary">Status Audit</th><td><span class="badge ${sample.status_audit === 'SUDAH' ? 'bg-success' : 'bg-warning'}">${sample.status_audit}</span></td></tr>
-            <tr><th class="text-secondary">Tanggal Pengecekan</th><td>${sample.latest_check || '-'}</td></tr>
-            <tr><th class="text-secondary">IMEI 1</th><td>${sample.imei || '-'}</td></tr>
-            <tr><th class="text-secondary">IMEI 2</th><td>${sample.imei2 || '-'}</td></tr>
-            <tr><th class="text-secondary">UN Code</th><td>${sample.un || '-'}</td></tr>
-            <tr><th class="text-secondary">HW Rev.</th><td>${sample.hw_rev || '-'}</td></tr>
-            <tr><th class="text-secondary">Retention Owner</th><td>${sample.retention_owner || sample.pic_sample || '-'}</td></tr>
-            <tr><th class="text-secondary">Departemen</th><td>${sample.retention_department || sample.Dept || '-'}</td></tr>
-          </table>
+        <div class="col-md-8">
+          <div class="table-responsive rounded border border-secondary" style="background: var(--bg-surface-elevated, #0f172a);">
+            <table class="table table-sm table-borderless text-light mb-0" style="font-size: 11.5px;">
+              <tbody>
+                <tr class="border-bottom border-secondary border-opacity-25"><th width="38%" class="text-secondary ps-3 py-1">Model</th><td class="fw-bold text-primary py-1">${sample.model || '-'}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Serial / No. Asset</th><td class="py-1"><span class="badge bg-dark border border-secondary">${assetNo}</span></td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Status Pinjam</th><td class="py-1"><span class="badge ${isPinjam ? 'bg-danger' : 'bg-success'}"><i class="fas ${isPinjam ? 'fa-user-lock' : 'fa-check-circle'} me-1"></i>${sample.status_pinjam || 'KEMBALI'}</span></td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Peminjam / PIC</th><td class="py-1 ${isPinjam ? 'text-warning fw-bold' : 'text-light'}">${sample.name || '-'}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Status Audit</th><td class="py-1"><span class="badge ${isAudited ? 'bg-info' : 'bg-secondary'}"><i class="fas ${isAudited ? 'fa-clipboard-check' : 'fa-hourglass-start'} me-1"></i>${sample.status_audit || 'RESET'}</span></td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Kondisi Perangkat</th><td class="py-1"><span class="badge ${isNormal ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-warning bg-opacity-25 text-warning border border-warning'}">${sample.defect_status || 'Normal'}</span>${sample.defect ? `<div class="text-muted small mt-1">${sample.defect}</div>` : ''}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Status OCTA</th><td class="py-1">${sample.octa_status ? `<span class="badge bg-secondary">${sample.octa_status}</span>` : '-'}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">IMEI 1 / 2</th><td class="font-monospace text-secondary py-1">${sample.imei || '-'}${sample.imei2 ? ` / ${sample.imei2}` : ''}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">UN Code</th><td class="font-monospace text-secondary py-1">${sample.un || '-'}</td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">HW Rev.</th><td class="py-1"><span class="badge bg-dark border border-secondary">${sample.hw_rev || '-'}</span></td></tr>
+                <tr class="border-bottom border-secondary border-opacity-25"><th class="text-secondary ps-3 py-1">Retention Owner</th><td class="py-1">${sample.retention_owner || sample.pic_sample || '-'}</td></tr>
+                <tr><th class="text-secondary ps-3 py-1">Departemen</th><td class="py-1">${sample.retention_department || sample.Dept || '-'}</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
+
+    // Proof click listener
+    const imgProof = document.getElementById('detail-proof-img');
+    if (imgProof && proofModal) {
+      imgProof.addEventListener('click', () => {
+        const modalImg = document.getElementById('proofModalImg');
+        const modalSub = document.getElementById('proofModalSubtitle');
+        if (modalImg) modalImg.src = imgProof.dataset.img;
+        if (modalSub) modalSub.innerHTML = `<strong>${assetNo} (${sample.model || ''})</strong> — ${sample.status_pinjam} • PIC: ${sample.name || '-'}`;
+        proofModal.show();
+      });
+    }
 
     document.getElementById('btn-print-qr').onclick = () => {
       const win = window.open('', '_blank');
