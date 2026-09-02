@@ -393,7 +393,7 @@ function openModelDetailModal(modelName) {
               <th>Kondisi / Defect</th>
               <th>OCTA</th>
               <th>Waktu Update</th>
-              <th class="text-center" style="width: 70px;">Aksi</th>
+              <th class="text-center sticky-col-right" style="width: 75px;">Aksi</th>
             </tr>
           </thead>
           <tbody id="modal-units-tbody">
@@ -693,7 +693,7 @@ function renderModalTableRows(items) {
         </td>
         <td class="text-nowrap">${u.octa_status ? `<span class="badge bg-secondary">${u.octa_status}</span>` : '-'}</td>
         <td class="small text-secondary font-monospace text-nowrap">${u.timestamp || '-'}</td>
-        <td class="text-center text-nowrap">
+        <td class="text-center text-nowrap sticky-col-right">
           <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2 btn-open-sample-edit text-nowrap" data-id="${u.id}" title="Edit Sample & Kondisi">
             <i class="fas fa-edit me-1"></i>Edit
           </button>

@@ -67,7 +67,7 @@ async function loadSamples(page = 1) {
           <td>${s.hw_rev || '-'}</td>
           <td>${s.retention_owner || s.pic_sample || '-'}</td>
           <td class="small text-secondary">${s.retention_department || s.Dept || '-'}</td>
-          <td class="text-center">
+          <td class="text-center sticky-col-right">
             <div class="btn-group btn-group-sm">
               <button class="btn btn-surface btn-view" data-id="${s.id}" title="Detail & QR"><i class="fas fa-eye"></i></button>
               <button class="btn btn-surface btn-edit" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>

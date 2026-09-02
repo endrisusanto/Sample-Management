@@ -569,6 +569,31 @@ body {
   background: var(--table-row-hover);
 }
 
+/* Sticky Right Action Column (Freeze Column on horizontal scroll) */
+.custom-table th.sticky-col-right,
+.custom-table td.sticky-col-right,
+.modal-content table th.sticky-col-right,
+.modal-content table td.sticky-col-right,
+.table th.sticky-col-right,
+.table td.sticky-col-right {
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 6 !important;
+  background: var(--bg-surface-elevated, #0f172a) !important;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.custom-table th.sticky-col-right,
+.modal-content table th.sticky-col-right {
+  z-index: 8 !important;
+  background: var(--table-header-bg, #1e293b) !important;
+}
+
+.custom-table tr:hover td.sticky-col-right,
+.modal-content table tr:hover td.sticky-col-right {
+  background: var(--table-row-hover, #1e293b) !important;
+}
+
 /* Status Badges */
 .badge-status {
   padding: 0.2rem 0.5rem;
