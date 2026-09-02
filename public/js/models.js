@@ -344,6 +344,7 @@ function openModelDetailModal(modelName) {
 
   currentSelectedModel = modelObj;
   const modalTitle = document.getElementById('detailModalTitle');
+  const modalBody = document.getElementById('detailModalBody');
   const user = Auth.getCurrentUser();
   const currentUserName = (user && user.name) ? user.name.toUpperCase() : '';
 
