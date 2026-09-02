@@ -168,6 +168,23 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_cred_id ON user_credentials(credential_id);
   `);
 
+  // Auto-normalize legacy UTC timestamps (< 07:00 from initial seed) to Asia/Jakarta WIB
+  try {
+    db.prepare(`
+      UPDATE database_sample 
+      SET timestamp = datetime(timestamp, '+7 hours'),
+          updated_at = datetime(updated_at, '+7 hours')
+      WHERE timestamp LIKE '2026-09-02 0%'
+    `).run();
+
+    db.prepare(`
+      UPDATE flow_sample 
+      SET timestamp = datetime(timestamp, '+7 hours'),
+          created_at = datetime(created_at, '+7 hours')
+      WHERE timestamp LIKE '2026-09-02 0%'
+    `).run();
+  } catch (e) {}
+
   return db;
 }
 
