@@ -728,7 +728,12 @@
             };
 
             txProofModal.show();
-            await startProofCamera();
+            try {
+              labelProofCamFacing.textContent = proofFacingMode === 'user' ? 'Kamera Depan (Mirror)' : 'Kamera Belakang';
+              await cameraProof.startCamera(proofFacingMode);
+            } catch (err) {
+              console.warn('Could not start camera:', err);
+            }
           });
         }
 
@@ -796,15 +801,6 @@
         chk.addEventListener('change', () => updateBorrowerBulkBar());
       });
 
-      document.querySelectorAll('.btn-view-borrow-proof').forEach(img => {
-        img.addEventListener('click', (e) => {
-          e.stopPropagation();
-          proofModalImg.src = img.dataset.img;
-          proofModalSubtitle.innerHTML = `<strong>${img.dataset.title}</strong> — ${img.dataset.sub}`;
-          proofModal.show();
-        });
-      });
-    }
       document.querySelectorAll('.btn-view-borrow-proof').forEach(img => {
         img.addEventListener('click', (e) => {
           e.stopPropagation();
