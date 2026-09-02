@@ -395,7 +395,7 @@ export function initAppNavModal() {
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-surface rounded-circle d-flex align-items-center justify-content-center border-secondary shadow-sm" id="modal-nav-theme-toggle" title="Ganti Tema" style="width: 32px; height: 32px; padding: 0;">
+                <button type="button" class="btn btn-surface btn-circle border-secondary shadow-sm" id="modal-nav-theme-toggle" title="Ganti Tema">
                   <i class="fas ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'fa-sun text-warning' : 'fa-moon text-primary'}"></i>
                 </button>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
