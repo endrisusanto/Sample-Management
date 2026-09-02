@@ -20,11 +20,17 @@ async function loadUsers() {
     currentUser = await Auth.getUser() || Auth.getCurrentUser();
     const isSuper = currentUser && (currentUser.level === 'super user' || currentUser.level === 'admin');
 
-    // Toggle Super-User-only toolbar buttons
+    // Toggle Super-User-only toolbar buttons & adapt description
     const resetDbBtn = document.getElementById('btn-reset-db');
     const addUserBtn = document.getElementById('btn-add-user');
+    const subtitleEl = document.getElementById('user-page-subtitle');
     if (resetDbBtn) resetDbBtn.style.display = isSuper ? 'inline-flex' : 'none';
     if (addUserBtn) addUserBtn.style.display = isSuper ? 'inline-flex' : 'none';
+    if (subtitleEl) {
+      subtitleEl.textContent = isSuper
+        ? 'Kelola seluruh akun pengguna, edit profil, hapus akun (Super User), cetak QR badge, dan opsi reset database sistem.'
+        : 'Profil Pengguna Saya & Kartu QR Badge. Anda dapat mencetak badge dan mendaftarkan sensor biometrik (Wajah / Sidik Jari).';
+    }
 
     const res = await fetch('/api/auth/users');
     const data = await res.json();
@@ -43,7 +49,10 @@ async function loadUsers() {
       return;
     }
 
-    const users = data.users || [];
+    let users = data.users || [];
+    if (!isSuper && currentUser) {
+      users = users.filter(u => u.id === currentUser.id);
+    }
     if (users.length === 0) {
       usersGrid.innerHTML = '<div class="col-12 text-center py-5 text-muted">Belum ada data user terdaftar.</div>';
       return;
