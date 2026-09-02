@@ -40,7 +40,8 @@ apiRouter.post('/borrow-return', authenticate, async (req, res) => {
     const result = SampleService.borrowReturnProcess({
       name: borrowerName,
       nomor_asset,
-      proof_image
+      proof_image,
+      userLevel: req.user?.level
     });
 
     if (result.success) {
@@ -87,7 +88,8 @@ apiRouter.post('/borrow-return-batch', authenticate, async (req, res) => {
         name: borrowerName,
         nomor_asset,
         proof_image: savedProofPath,
-        forcedAction: action || null
+        forcedAction: action || null,
+        userLevel: req.user?.level
       });
       results.push(resItem);
     }

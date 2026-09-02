@@ -423,18 +423,18 @@ function openModelDetailModal(modelName) {
       });
     }
 
-    // Select All Checkbox - selects only units that match the current active status
+    // Select All Checkbox - selects only units that match the current active status and user has access to
     const checkAll = document.getElementById('check-all-model-units');
     if (checkAll) {
       checkAll.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
         const allBoxes = Array.from(document.querySelectorAll('.unit-check-item'));
         if (isChecked) {
-          // If already some selected, use active status; otherwise pick first visible item's status
-          const checked = allBoxes.find(c => c.checked);
-          const targetStatus = checked ? (checked.dataset.status || 'KEMBALI') : (allBoxes[0]?.dataset.status || 'KEMBALI');
+          const validBoxes = allBoxes.filter(c => c.dataset.noAccess !== 'true');
+          const checked = validBoxes.find(c => c.checked);
+          const targetStatus = checked ? (checked.dataset.status || 'KEMBALI') : (validBoxes[0]?.dataset.status || 'KEMBALI');
           allBoxes.forEach(chk => {
-            if ((chk.dataset.status || 'KEMBALI') === targetStatus) {
+            if (chk.dataset.noAccess !== 'true' && (chk.dataset.status || 'KEMBALI') === targetStatus) {
               chk.checked = true;
             } else {
               chk.checked = false;
@@ -522,41 +522,46 @@ async function processBulkBorrowExecution(proofImageBase64, currentUserName) {
         action: pendingBulkTargetAction
       })
     });
-    const result = await res.json();
+    const data = await res.json();
 
     if (bulkProofModal) bulkProofModal.hide();
     if (cameraProof) cameraProof.stopCamera();
 
-    if (result.success) {
-      SoundEffects.play(pendingBulkTargetAction === 'KEMBALI' ? 'KEMBALI' : 'PINJAM');
-      showGiantAlert({
+    if (data.success) {
+      SoundEffects.play('SUCCESS');
+      await showGiantAlert({
         title: `${actionLabel.toUpperCase()} MASSAL BERHASIL`,
-        message: `Berhasil memproses ${actionLabel.toLowerCase()} <strong>${result.count} Unit</strong> (${pendingBulkModelName}) untuk <strong>${currentUserName}</strong>!`,
-        action: pendingBulkTargetAction === 'KEMBALI' ? 'KEMBALI' : 'PINJAM'
+        message: `Berhasil memproses <strong>${data.count} Unit</strong> (${pendingBulkModelName}) untuk PIC: <strong>${currentUserName}</strong>!`,
+        action: pendingBulkTargetAction
       });
 
+      // Reload models overview cards and modal
       await loadModelCards();
-      const updated = allModels.find(m => m.model === pendingBulkModelName);
-      if (updated) {
-        openModelDetailModal(updated.model);
+      if (currentSelectedModel) {
+        const updated = allModels.find(m => m.model === currentSelectedModel.model);
+        if (updated) {
+          openModelDetailModal(updated.model);
+        }
       }
     } else {
+      SoundEffects.play('ERROR');
       await showCustomAlert({
-        title: `Gagal ${actionLabel} Massal`,
-        message: result.message || `Gagal memproses ${actionLabel.toLowerCase()} massal`,
+        title: `Gagal ${actionLabel}`,
+        message: data.message || `Terjadi kesalahan saat memproses ${actionLabel.toLowerCase()} massal.`,
         type: 'danger'
       });
     }
   } catch (err) {
+    SoundEffects.play('ERROR');
     await showCustomAlert({
-      title: 'Error',
+      title: 'Error Jaringan',
       message: err.message,
       type: 'danger'
     });
   } finally {
     if (btnCapture) {
       btnCapture.disabled = false;
-      btnCapture.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Konfirmasi';
+      btnCapture.innerHTML = '<i class="fas fa-camera-retro me-2"></i> Ambil Foto & Simpan Transaksi';
     }
     if (btnSkip) btnSkip.disabled = false;
   }
@@ -576,13 +581,22 @@ function updateBulkBarState() {
     if (bulkBar) {
       bulkBar.classList.add('d-none');
     }
-    // Re-enable all checkboxes
+    // Re-enable all valid checkboxes, keeping unauthorized ones locked
     allCheckboxes.forEach(chk => {
-      chk.disabled = false;
       const tr = chk.closest('tr');
-      if (tr) {
-        tr.style.opacity = '1';
-        tr.removeAttribute('title');
+      if (chk.dataset.noAccess === 'true') {
+        chk.disabled = true;
+        chk.checked = false;
+        if (tr) {
+          tr.style.opacity = '0.6';
+          tr.setAttribute('title', 'Pengembalian hanya bisa dilakukan oleh PIC peminjam atau Super User');
+        }
+      } else {
+        chk.disabled = false;
+        if (tr) {
+          tr.style.opacity = '1';
+          tr.removeAttribute('title');
+        }
       }
     });
     if (checkAll) {
@@ -596,11 +610,18 @@ function updateBulkBarState() {
   const activeStatus = checkedItems[0].dataset.status || 'KEMBALI';
   pendingBulkTargetAction = (activeStatus === 'PINJAM') ? 'KEMBALI' : 'PINJAM';
 
-  // Conflict Prevention: Lock and disable checkboxes that have a different status
+  // Conflict Prevention: Lock and disable checkboxes that have a different status or no access
   allCheckboxes.forEach(chk => {
     const itemStatus = chk.dataset.status || 'KEMBALI';
     const tr = chk.closest('tr');
-    if (itemStatus !== activeStatus) {
+    if (chk.dataset.noAccess === 'true') {
+      chk.disabled = true;
+      chk.checked = false;
+      if (tr) {
+        tr.style.opacity = '0.6';
+        tr.setAttribute('title', 'Pengembalian hanya bisa dilakukan oleh PIC peminjam atau Super User');
+      }
+    } else if (itemStatus !== activeStatus) {
       chk.disabled = true;
       chk.checked = false;
       if (tr) {
@@ -637,7 +658,7 @@ function updateBulkBarState() {
     bulkBar.classList.remove('d-none');
   }
 
-  const validSameStatusItems = allCheckboxes.filter(c => (c.dataset.status || 'KEMBALI') === activeStatus);
+  const validSameStatusItems = allCheckboxes.filter(c => c.dataset.noAccess !== 'true' && (c.dataset.status || 'KEMBALI') === activeStatus);
   if (checkAll && validSameStatusItems.length > 0) {
     checkAll.checked = count === validSameStatusItems.length;
     checkAll.indeterminate = count > 0 && count < validSameStatusItems.length;
@@ -649,11 +670,21 @@ function renderModalTableRows(items) {
     return `<tr><td colspan="15" class="text-center py-4 text-muted">Tidak ada unit yang cocok dengan pencarian.</td></tr>`;
   }
 
+  const currentUser = Auth.getCurrentUser();
+  const isSuperUser = currentUser && (currentUser.level === 'super user' || currentUser.level === 'admin');
+  const currentUserName = (currentUser && currentUser.name) ? currentUser.name.trim().toUpperCase() : '';
+
   return items.map((u, i) => {
     const isPinjam = u.status_pinjam === 'PINJAM';
     const isAudited = u.status_audit === 'SUDAH';
     const isNormal = !u.defect_status || u.defect_status === 'Normal' || u.defect_status === '';
     const assetNo = u.nomor_asset || u.sn || '-';
+    const picName = (u.name || '').trim().toUpperCase();
+
+    // Return authorization: only Super User or current PIC
+    const canReturn = isSuperUser || (currentUserName && picName && currentUserName === picName);
+    const isNoAccess = isPinjam && !canReturn;
+    const tooltipMsg = isNoAccess ? `Pengembalian hanya bisa dilakukan oleh PIC peminjam (${u.name || '-'}) atau Super User` : '';
 
     const proofThumbnail = u.proof_image 
       ? `<img src="${u.proof_image}" class="img-thumbnail btn-view-proof-img" style="width: 36px; height: 36px; object-fit: cover; cursor: pointer; border-radius: 6px; padding: 1px;" title="Klik untuk lihat foto bukti transaksi" data-img="${u.proof_image}" data-title="${assetNo} (${u.model || ''})" data-sub="${u.status_pinjam || ''} • PIC: ${u.name || '-'}">`
@@ -662,9 +693,15 @@ function renderModalTableRows(items) {
     const imeiDisplay = u.imei ? (u.imei2 ? `${u.imei} / ${u.imei2}` : u.imei) : '-';
 
     return `
-      <tr>
+      <tr style="${isNoAccess ? 'opacity: 0.6;' : ''}">
         <td class="text-center">
-          <input type="checkbox" class="custom-check-lg unit-check-item" data-asset="${assetNo}" data-status="${u.status_pinjam || 'KEMBALI'}">
+          <input type="checkbox" 
+                 class="custom-check-lg unit-check-item" 
+                 data-asset="${assetNo}" 
+                 data-status="${u.status_pinjam || 'KEMBALI'}"
+                 data-no-access="${isNoAccess ? 'true' : 'false'}"
+                 ${isNoAccess ? 'disabled' : ''}
+                 title="${tooltipMsg}">
         </td>
         <td class="text-secondary font-monospace text-nowrap">${i + 1}</td>
         <td class="text-nowrap"><strong class="text-primary font-monospace">${assetNo}</strong></td>

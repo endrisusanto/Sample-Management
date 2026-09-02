@@ -51,7 +51,7 @@ export class SampleService {
   /**
    * Process Borrow / Return transaction with QR or Barcode
    */
-  static borrowReturnProcess({ name, nomor_asset, proof_image, forcedAction = null }) {
+  static borrowReturnProcess({ name, nomor_asset, proof_image, forcedAction = null, userLevel = null }) {
     if (!name || !nomor_asset) {
       throw new Error('Name and Nomor Asset / Serial are required');
     }
@@ -80,12 +80,16 @@ export class SampleService {
     const prevStatus = (sample.status_pinjam || '').trim().toUpperCase();
     const model = sample.model || sample.model_name || 'UNKNOWN';
     const targetAssetNo = sample.nomor_asset;
+    const isSuper = userLevel === 'super user' || userLevel === 'admin';
 
     let newStatus = 'PINJAM';
     let actionType = 'PINJAM';
     let message = '';
 
     if (forcedAction === 'KEMBALI') {
+      if (prevStatus === 'PINJAM' && prevName && cleanName !== prevName && !isSuper) {
+        throw new Error(`Pengembalian unit ${targetAssetNo} (${model}) hanya bisa dilakukan oleh PIC peminjam (${prevName}) atau Super User.`);
+      }
       newStatus = 'KEMBALI';
       actionType = 'KEMBALI';
       message = `SAMPLE: ${model} | NO. ASSET: ${targetAssetNo} BERHASIL DIKEMBALIKAN (PIC: ${cleanName})`;
