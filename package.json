@@ -1,6 +1,6 @@
 {
   "name": "sample-management-node",
-  "version": "2.0.72",
+  "version": "2.0.73",
   "description": "Modern Sample Management & Tracking System with Barcode/QR Scanning, Audit, and Live Dashboard",
   "main": "src/server.js",
   "type": "module",
