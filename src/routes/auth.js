@@ -159,5 +159,3 @@ authRouter.post('/face-login', async (req, res) => {
   }
 });
 
-});
-
