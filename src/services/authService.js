@@ -31,7 +31,7 @@ export class AuthService {
     return { token, user: userSafe };
   }
 
-  static async register({ name, email, password, level = 'member', pin }, isSuperUserReq = false) {
+  static async register({ name, email, password, level = 'member', pin, faceDescriptor, facePhoto }, isSuperUserReq = false) {
     if (!name || !email || !password) {
       throw new Error('Nama, email, dan password wajib diisi');
     }
@@ -56,7 +56,11 @@ export class AuthService {
           WHERE id = ?
         `).run(name.trim().toUpperCase(), hashedPassword, level, existing.id);
         
-        return db.prepare('SELECT id, name, email, qr, level, created_at FROM users WHERE id = ?').get(existing.id);
+        if (faceDescriptor) {
+          AuthService.registerFace(existing.id, faceDescriptor, facePhoto);
+        }
+
+        return db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor, face_photo FROM users WHERE id = ?').get(existing.id);
       }
       throw new Error('Email sudah terdaftar. Jika ingin mereset password akun ini, pilih Super User dan masukkan PIN Otorisasi.');
     }
@@ -70,7 +74,12 @@ export class AuthService {
       VALUES (?, ?, ?, ?, ?)
     `).run(name.trim().toUpperCase(), email.trim().toLowerCase(), hashedPassword, qrPath, level);
 
-    const newUser = db.prepare('SELECT id, name, email, qr, level, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const newUserId = result.lastInsertRowid;
+    if (faceDescriptor) {
+      AuthService.registerFace(newUserId, faceDescriptor, facePhoto);
+    }
+
+    const newUser = db.prepare('SELECT id, name, email, qr, level, created_at, face_descriptor, face_photo FROM users WHERE id = ?').get(newUserId);
     return newUser;
   }
 
