@@ -25,11 +25,18 @@ let allModels = [];
 let currentFilteredModels = [];
 let currentSelectedModel = null;
 let currentChipFilter = 'all';
-let currentGridCols = parseInt(localStorage.getItem('model_card_grid') || '3', 10);
+let currentGridCols = (() => {
+  const saved = localStorage.getItem('model_card_grid_v2');
+  if (!saved) {
+    localStorage.removeItem('model_card_grid');
+    return 4;
+  }
+  return parseInt(saved, 10) || 4;
+})();
 
 function applyGridLayout(cols) {
   currentGridCols = cols;
-  localStorage.setItem('model_card_grid', cols);
+  localStorage.setItem('model_card_grid_v2', cols);
 
   const targetGrid = cardsGrid || document.getElementById('model-cards-grid');
   if (targetGrid) {
