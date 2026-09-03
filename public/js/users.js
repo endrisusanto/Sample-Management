@@ -356,24 +356,16 @@ document.getElementById('btn-reset-db').addEventListener('click', () => {
   resetDbModal.show();
 });
 
-// Mutual exclusivity for sample options
-document.getElementById('check-delete-samples').addEventListener('change', (e) => {
-  if (e.target.checked) document.getElementById('check-reload-samples').checked = false;
-});
-document.getElementById('check-reload-samples').addEventListener('change', (e) => {
-  if (e.target.checked) document.getElementById('check-delete-samples').checked = false;
-});
-
 // Execute Reset Database with Checklists
 resetDbForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const delete_all_samples = document.getElementById('check-delete-samples').checked;
-  const reload_default_samples = document.getElementById('check-reload-samples').checked;
+  const reload_default_samples = false;
   const clear_flow = document.getElementById('check-reset-history').checked;
   const reset_status = document.getElementById('check-reset-status').checked;
   const reset_users = document.getElementById('check-reset-users').checked;
 
-  if (!delete_all_samples && !reload_default_samples && !clear_flow && !reset_status && !reset_users) {
+  if (!delete_all_samples && !clear_flow && !reset_status && !reset_users) {
     await showCustomAlert({
       title: 'Perhatian',
       message: 'Silakan pilih minimal 1 opsi checklist untuk di-reset!',

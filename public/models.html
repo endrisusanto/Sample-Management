@@ -30,7 +30,7 @@
     }
     .model-card-header {
       padding: 0.6rem 0.85rem;
-      background: #141414;
+      background: var(--bg-card-header);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
@@ -48,10 +48,11 @@
       max-height: 250px;
       overflow-y: auto;
       flex-grow: 1;
+      background: var(--bg-surface);
     }
     .model-card-footer {
       padding: 0.45rem 0.85rem;
-      background: #0d0d0d;
+      background: var(--bg-card-footer);
       border-top: 1px solid var(--border-color);
       font-size: 10.5px;
       color: var(--text-secondary);
@@ -368,6 +369,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="/js/models.js?v=2.1.2"></script>
+  <script type="module" src="/js/models.js?v=2.1.3"></script>
 </body>
 </html>
