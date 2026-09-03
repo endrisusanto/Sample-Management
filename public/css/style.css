@@ -1722,3 +1722,205 @@ textarea::placeholder {
   padding: 0.15rem 0.35rem;
 }
 
+/* ==========================================================================
+   In-App A4 Print Overlay & Cutout Sheet Styles
+   ========================================================================== */
+.grid-container-print {
+  display: grid;
+  width: 100%;
+}
+.grid-container-print.print-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5mm;
+}
+.grid-container-print.print-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4mm;
+}
+.grid-container-print.print-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3.5mm;
+}
+.grid-container-print.print-cols-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3mm;
+}
+
+.print-card-cutout {
+  position: relative;
+  border: 1.5px dashed #475569;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  break-inside: avoid;
+  page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+}
+
+.cut-corner-mark {
+  position: absolute;
+  top: -7px;
+  left: 6px;
+  font-size: 9px;
+  color: #64748b;
+  background: #ffffff;
+  padding: 0 4px;
+  line-height: 1;
+  font-family: monospace;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.card-inner-print {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.card-header-print {
+  background: #f8fafc;
+  border-bottom: 1.5px solid #0f172a;
+  padding: 4px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-title-print {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badges-print {
+  display: flex;
+  gap: 3px;
+}
+
+.badge-print {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #0f172a;
+}
+
+.badge-print.total {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.badge-print.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-print.borrowed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.card-body-print {
+  padding: 2px 0;
+  flex-grow: 1;
+}
+
+.table-print {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5px;
+  color: #000000;
+}
+
+.table-print th {
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 2px 4px;
+  font-weight: 700;
+  text-align: left;
+  font-size: 8px;
+  color: #000000;
+}
+
+.table-print td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2px 4px;
+  line-height: 1.25;
+  color: #000000;
+}
+
+.card-footer-print {
+  background: #f8fafc;
+  border-top: 1px solid #cbd5e1;
+  padding: 3px 6px;
+  font-size: 8px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+  
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+  }
+
+  body > *:not(#print-a4-overlay) {
+    display: none !important;
+  }
+
+  #print-a4-overlay {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    z-index: auto !important;
+    padding: 0 !important;
+  }
+
+  #print-a4-overlay .no-print,
+  #print-a4-overlay .sticky-top {
+    display: none !important;
+  }
+
+  .print-sheet-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  #print-sheet-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .print-card-cutout {
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
