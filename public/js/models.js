@@ -22,8 +22,28 @@ let pendingBulkModelName = '';
 let pendingBulkTargetAction = 'PINJAM';
 
 let allModels = [];
+let currentFilteredModels = [];
 let currentSelectedModel = null;
 let currentChipFilter = 'all';
+let currentGridCols = parseInt(localStorage.getItem('model_card_grid') || '3', 10);
+
+function applyGridLayout(cols) {
+  currentGridCols = cols;
+  localStorage.setItem('model_card_grid', cols);
+
+  const targetGrid = cardsGrid || document.getElementById('model-cards-grid');
+  if (targetGrid) {
+    targetGrid.classList.remove('grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6');
+    targetGrid.classList.add(`grid-cols-${cols}`);
+  }
+
+  document.querySelectorAll('#grid-layout-switcher button').forEach(b => b.classList.remove('active'));
+  const targetBtn = document.getElementById(`btn-grid-${cols}`);
+  if (targetBtn) {
+    targetBtn.classList.add('active');
+  }
+}
+window.switchGridCols = applyGridLayout;
 
 export async function initModelsPage() {
   if (detailModalEl) {
@@ -121,6 +141,21 @@ export async function initModelsPage() {
       syncChipButtons();
       loadModelCards();
     });
+  }
+
+  // Grid Switcher (3, 4, 5, 6 Layout)
+  applyGridLayout(currentGridCols);
+  document.querySelectorAll('#grid-layout-switcher button[data-grid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cols = parseInt(btn.dataset.grid, 10);
+      applyGridLayout(cols);
+    });
+  });
+
+  // Print A4 Button
+  const btnPrintA4 = document.getElementById('btn-print-cards-a4');
+  if (btnPrintA4) {
+    btnPrintA4.addEventListener('click', printCardsA4);
   }
 
   // Handle Edit Form Submission
@@ -240,6 +275,8 @@ function renderFilteredCards() {
     filtered = allModels.filter(m => m.audited < m.total);
   }
 
+  currentFilteredModels = filtered;
+
   if (totalBadge) {
     totalBadge.textContent = `${filtered.length} Model (${filtered.reduce((acc, m) => acc + m.total, 0)} Unit)`;
   }
@@ -288,7 +325,7 @@ function renderFilteredCards() {
     const moreCount = m.items.length > 8 ? m.items.length - 8 : 0;
 
     return `
-      <div class="col-xl-4 col-lg-6 col-12">
+      <div class="model-card-col">
         <div class="model-card clickable-model-card" data-model="${m.model}" style="cursor: pointer;">
           <div class="model-card-header">
             <div>
@@ -844,6 +881,300 @@ async function openSampleEditModal(id) {
     });
   }
 }
+
+/**
+ * Cetak Card sesuai layout pilihan dalam format kertas A4 siap potong
+ */
+function printCardsA4() {
+  if (!currentFilteredModels || currentFilteredModels.length === 0) {
+    showCustomAlert({
+      title: 'Tidak Ada Data',
+      message: 'Tidak ada model yang dapat dicetak dengan filter saat ini.',
+      type: 'warning'
+    });
+    return;
+  }
+
+  const printWin = window.open('', '_blank');
+  if (!printWin) {
+    alert('Pop-up terblokir oleh browser. Harap izinkan pop-up untuk mencetak kartu model.');
+    return;
+  }
+
+  const cols = currentGridCols || 3;
+  const isLandscape = cols >= 5;
+
+  const cardsHtml = currentFilteredModels.map(m => {
+    const rowsHtml = m.items.map((item, idx) => {
+      const isPinjam = item.status_pinjam === 'PINJAM';
+      const assetNo = item.nomor_asset || item.sn || '-';
+      const serial = item.sn || item.serial_no || '-';
+
+      return `
+        <tr>
+          <td style="width: 18px; text-align: center; color: #555; font-size: 8px;">${idx + 1}</td>
+          <td style="font-weight: bold; font-family: monospace; font-size: 8.5px;">${assetNo}</td>
+          <td style="font-family: monospace; font-size: 8px;">${serial}</td>
+          <td style="text-align: center; font-size: 8px;">
+            <span style="display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 8px; font-weight: 700; border: 1px solid #444; ${isPinjam ? 'background: #fee2e2; color: #991b1b;' : 'background: #dcfce7; color: #166534;'}">
+              ${isPinjam ? (item.name ? 'PINJAM: ' + item.name : 'PINJAM') : 'READY'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="print-card-cutout">
+        <div class="cut-corner-mark">✂ potong</div>
+        <div class="card-inner">
+          <div class="card-header-print">
+            <div class="model-title">${m.model}</div>
+            <div class="badges-print">
+              <span class="badge-print total">${m.total} Unit</span>
+              <span class="badge-print ${m.borrowed > 0 ? 'borrowed' : 'ready'}">${m.borrowed > 0 ? m.borrowed + ' Pinjam' : m.available + ' Ready'}</span>
+            </div>
+          </div>
+
+          <div class="card-body-print">
+            <table class="table-print">
+              <thead>
+                <tr>
+                  <th style="width: 18px; text-align: center;">#</th>
+                  <th>No. Asset</th>
+                  <th>Serial</th>
+                  <th style="text-align: center;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-footer-print">
+            <span>${m.items[0]?.Dept || 'PE Solution P'}</span>
+            <span>Audit: <strong>${m.audited}/${m.total}</strong></span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  printWin.document.open();
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cetak Kartu Model Sample A4 (${currentFilteredModels.length} Model)</title>
+  <style>
+    @page {
+      size: A4 ${isLandscape ? 'landscape' : 'portrait'};
+      margin: 6mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #000000;
+      padding: 12px;
+      font-size: 9px;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-card-cutout {
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+    .no-print-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .no-print-toolbar button {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .no-print-toolbar button:hover {
+      background: #1d4ed8;
+    }
+    .no-print-toolbar button.btn-secondary {
+      background: #475569;
+      margin-left: 8px;
+    }
+    .no-print-toolbar button.btn-secondary:hover {
+      background: #334155;
+    }
+    .grid-container-print {
+      display: grid;
+      grid-template-columns: repeat(${cols}, minmax(0, 1fr));
+      gap: 5mm;
+      width: 100%;
+    }
+    .print-card-cutout {
+      position: relative;
+      border: 1.5px dashed #475569;
+      border-radius: 6px;
+      background: #ffffff;
+      padding: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      break-inside: avoid;
+      page-break-inside: avoid;
+      display: flex;
+      flex-direction: column;
+    }
+    .cut-corner-mark {
+      position: absolute;
+      top: -7px;
+      left: 6px;
+      font-size: 9px;
+      color: #64748b;
+      background: #ffffff;
+      padding: 0 4px;
+      line-height: 1;
+      font-family: monospace;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .card-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border: 1px solid #94a3b8;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .card-header-print {
+      background: #f8fafc;
+      border-bottom: 1.5px solid #0f172a;
+      padding: 4px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .model-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badges-print {
+      display: flex;
+      gap: 3px;
+    }
+    .badge-print {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #0f172a;
+    }
+    .badge-print.total {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .badge-print.ready {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .badge-print.borrowed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .card-body-print {
+      padding: 2px 0;
+      flex-grow: 1;
+    }
+    .table-print {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5px;
+    }
+    .table-print th {
+      background: #f1f5f9;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 2px 4px;
+      font-weight: 700;
+      text-align: left;
+      font-size: 8px;
+    }
+    .table-print td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 2px 4px;
+      line-height: 1.25;
+    }
+    .card-footer-print {
+      background: #f8fafc;
+      border-top: 1px solid #cbd5e1;
+      padding: 3px 6px;
+      font-size: 8px;
+      font-weight: 600;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print-toolbar no-print">
+    <div>
+      <strong>🖨️ Format Cetak A4 Siap Potong</strong> &bull; 
+      <span style="font-size: 11.5px; color: #cbd5e1;">${currentFilteredModels.length} Model &bull; Layout: Grid ${cols} Kolom &bull; Kertas A4 ${isLandscape ? 'Landscape' : 'Portrait'} &bull; Garis Potong Gunting (✂)</span>
+    </div>
+    <div>
+      <button onclick="window.print()">🖨️ Cetak Sekarang / Simpan PDF</button>
+      <button class="btn-secondary" onclick="window.close()">Tutup</button>
+    </div>
+  </div>
+
+  <div class="grid-container-print">
+    ${cardsHtml}
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => { window.print(); }, 450);
+    });
+  </script>
+</body>
+</html>`);
+  printWin.document.close();
+}
+window.printCardsA4 = printCardsA4;
 
 // Auto-run if loaded as page module
 if (document.getElementById('model-cards-grid')) {
