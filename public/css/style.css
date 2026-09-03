@@ -403,8 +403,39 @@ body {
   box-shadow: 0 0 0 2px var(--accent-blue-glow) !important;
 }
 
-.form-control::placeholder {
-  color: var(--text-muted);
+/* High-Contrast Clearly Visible Placeholders */
+::placeholder {
+  color: #a3a3a3 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #a3a3a3 !important;
+}
+
+::-webkit-input-placeholder {
+  color: #a3a3a3 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #a3a3a3 !important;
+}
+
+::-moz-placeholder {
+  color: #a3a3a3 !important;
+  opacity: 1 !important;
+}
+
+:-ms-input-placeholder {
+  color: #a3a3a3 !important;
+  opacity: 1 !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #a3a3a3 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #a3a3a3 !important;
+}
+
+.text-muted {
+  color: var(--text-muted, #a3a3a3) !important;
 }
 
 .input-group-text {
