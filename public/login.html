@@ -26,85 +26,172 @@
     .login-card {
       width: 100%;
       max-width: 440px;
-      padding: 2.5rem 2rem;
+      padding: 2.25rem 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      border-radius: 16px;
+    }
+    #login-mode-tabs .btn {
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-size: 13px;
+      border: none;
+    }
+    #login-mode-tabs .btn.active {
+      background: var(--accent-blue, #3b82f6) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+    }
+    #login-mode-tabs .btn:not(.active) {
+      background: transparent;
+      color: var(--text-secondary, #94a3b8);
+    }
+    #login-mode-tabs .btn:not(.active):hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #f8fafc;
+    }
+    .biometric-scanner-frame {
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid var(--accent-blue, #3b82f6);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.35);
+      background: #080d1a;
+      transition: all 0.3s ease;
+    }
+    .biometric-scanner-frame.scanning {
+      border-color: #00e5ff;
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+    }
+    .face-scanner-beam {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #38bdf8, #00e5ff, transparent);
+      box-shadow: 0 0 12px #00e5ff;
+      animation: scanMove 2s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes scanMove {
+      0% { top: 5%; opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { top: 95%; opacity: 0.3; }
     }
   </style>
 </head>
 <body>
 
   <div class="glass-panel login-card">
-    <div class="text-center mb-4">
-      <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
+    <div class="text-center mb-3">
+      <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
         <i class="fas fa-barcode fs-1"></i>
       </div>
       <h3 class="fw-bold m-0 text-light">Sample Tracker</h3>
-      <p class="text-secondary small">PE Solution P / SEIN-P</p>
+      <p class="text-secondary small mb-0">PE Solution P / SEIN-P</p>
     </div>
 
-    <form id="login-form">
-      <div class="mb-3">
-        <label class="form-label text-secondary small fw-semibold">Email Perusahaan</label>
-        <div class="input-group">
-          <span class="input-group-text bg-surface border-secondary"><i class="fas fa-envelope"></i></span>
-          <input type="email" id="email" class="form-control" required placeholder="name@samsung.com" autofocus>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label text-secondary small fw-semibold">Password</label>
-        <div class="input-group">
-          <span class="input-group-text bg-surface border-secondary"><i class="fas fa-lock"></i></span>
-          <input type="password" id="password" class="form-control" required placeholder="••••••••">
-        </div>
-      </div>
-
-      <div id="login-alert" class="alert alert-danger d-none py-2 px-3 small mb-3" style="font-size: 11.5px;"></div>
-
-      <button type="submit" class="btn btn-primary-custom w-100 py-2 fs-6 justify-content-center mb-2" id="btn-login-submit">
-        <i class="fas fa-sign-in-alt me-1"></i> Masuk ke Sistem
+    <!-- Login Mode Switcher Tabs -->
+    <div class="d-flex p-1 bg-surface border border-secondary rounded-3 mb-3" id="login-mode-tabs">
+      <button type="button" class="btn btn-sm flex-fill active py-2 fw-semibold" id="tab-face-id">
+        <i class="fas fa-camera me-1"></i> Face ID
       </button>
+      <button type="button" class="btn btn-sm flex-fill py-2 text-secondary fw-semibold" id="tab-manual">
+        <i class="fas fa-key me-1"></i> Input Manual
+      </button>
+    </div>
 
-      <div class="mb-3">
-        <button type="button" class="btn btn-surface w-100 py-2 text-info border-info d-flex align-items-center justify-content-center" id="btn-face-login" style="font-size: 13px;">
-          <i class="fas fa-camera me-2 fs-6"></i> Masuk dengan Scan Wajah (Face ID)
+    <!-- ================= 1. MAIN OPTION: FACE ID ================= -->
+    <div id="section-face-id">
+      <div class="text-center mb-3">
+        <p class="text-secondary small m-0" style="font-size: 12px;">Masuk instan menggunakan pengenalan biometrik wajah AI.</p>
+      </div>
+
+      <!-- Circular Biometric Viewfinder -->
+      <div class="position-relative mx-auto mb-3 biometric-scanner-frame" id="face-frame">
+        <!-- Inactive Placeholder State -->
+        <div id="face-placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-3">
+          <div class="mb-2 position-relative">
+            <i class="fas fa-id-badge text-info fs-1"></i>
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success border border-light rounded-circle"></span>
+          </div>
+          <span class="text-light fw-bold small mb-1" style="font-size: 12px; letter-spacing: 0.5px;">BIOMETRIC SCAN</span>
+          <span class="text-secondary" style="font-size: 10.5px;">Klik tombol di bawah untuk mulai</span>
+        </div>
+
+        <!-- Active Camera Video Stream -->
+        <video id="face-video" autoplay playsinline muted class="d-none" style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+        
+        <!-- Target Ring & Scanning Laser Beam -->
+        <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="border: 2px dashed rgba(59, 130, 246, 0.45); border-radius: 50%; pointer-events: none;"></div>
+        <div id="face-scan-beam" class="face-scanner-beam d-none"></div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div id="face-scan-status" class="alert alert-info py-2 px-3 small mb-3 text-center" style="font-size: 11.5px;">
+        <i class="fas fa-shield-alt text-info me-1"></i> Sistem Biometrik Siap Digunakan
+      </div>
+
+      <!-- Primary Action Buttons for Face ID -->
+      <div class="d-flex flex-column gap-2 mb-3">
+        <!-- Button to start camera -->
+        <button type="button" class="btn btn-primary-custom w-100 py-2 fs-6 justify-content-center" id="btn-start-camera">
+          <i class="fas fa-camera me-2"></i> Aktifkan Kamera & Pindai
+        </button>
+
+        <!-- Button to scan/capture face once camera is active (hidden initially) -->
+        <button type="button" class="btn btn-success w-100 py-2 fs-6 justify-content-center d-none" id="btn-capture-face-login">
+          <i class="fas fa-expand me-2"></i> Pindai Wajah Sekarang
+        </button>
+
+        <!-- Button to stop camera (hidden initially) -->
+        <button type="button" class="btn btn-surface btn-sm w-100 py-1 text-secondary d-none" id="btn-stop-camera">
+          <i class="fas fa-video-slash me-1"></i> Matikan Kamera
         </button>
       </div>
 
-      <div class="text-center">
-        <span class="text-secondary small">Belum punya akun / Lupa password?</span>
-        <a href="/register" class="text-primary small fw-bold ms-1 text-decoration-none">Daftar Akun Baru</a>
+      <div class="text-center mt-3">
+        <span class="text-secondary small">Belum mendaftarkan Face ID?</span>
+        <a href="/register" class="text-primary small fw-bold ms-1 text-decoration-none">Daftar Akun / Bantuan</a>
       </div>
-    </form>
-  </div>
+    </div>
 
-  <!-- Face Recognition Login Modal -->
-  <div class="modal fade" id="faceLoginModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
-      <div class="modal-content border-info shadow-lg" style="background: var(--bg-surface-elevated, #0f172a); border-radius: 16px;">
-        <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title text-info fw-bold fs-6">
-            <i class="fas fa-camera me-2"></i> Biometric Face ID Login
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btn-close-face-modal"></button>
-        </div>
-        <div class="modal-body text-center p-4">
-          <p class="text-secondary small mb-3">Posisikan wajah Anda di dalam lingkaran kamera untuk masuk instan.</p>
-          
-          <!-- Face Video Frame with Circular Scanner Target -->
-          <div class="position-relative mx-auto mb-3" style="width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent-blue, #3b82f6); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);">
-            <video id="face-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
-            <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none;"></div>
-          </div>
-
-          <div id="face-scan-status" class="alert alert-info py-2 px-3 small mb-3" style="font-size: 11.5px;">
-            <i class="fas fa-spinner fa-spin me-1"></i> Mengaktifkan kamera...
-          </div>
-
-          <button type="button" class="btn btn-primary-custom w-100 py-2" id="btn-capture-face-login">
-            <i class="fas fa-expand me-1"></i> Pindai Wajah Sekarang
-          </button>
-        </div>
+    <!-- ================= 2. ALTERNATIVE OPTION: MANUAL INPUT ================= -->
+    <div id="section-manual" class="d-none">
+      <div class="text-center mb-3">
+        <p class="text-secondary small m-0" style="font-size: 12px;">Masukkan kredensial email perusahaan dan password Anda.</p>
       </div>
+
+      <form id="login-form">
+        <div class="mb-3">
+          <label class="form-label text-secondary small fw-semibold">Email Perusahaan</label>
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary"><i class="fas fa-envelope"></i></span>
+            <input type="email" id="email" class="form-control" required placeholder="name@samsung.com">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label text-secondary small fw-semibold">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-surface border-secondary"><i class="fas fa-lock"></i></span>
+            <input type="password" id="password" class="form-control" required placeholder="••••••••">
+          </div>
+        </div>
+
+        <div id="login-alert" class="alert alert-danger d-none py-2 px-3 small mb-3" style="font-size: 11.5px;"></div>
+
+        <button type="submit" class="btn btn-primary-custom w-100 py-2 fs-6 justify-content-center mb-3" id="btn-login-submit">
+          <i class="fas fa-sign-in-alt me-1"></i> Masuk ke Sistem
+        </button>
+
+        <div class="text-center mt-3">
+          <span class="text-secondary small">Belum punya akun / Lupa password?</span>
+          <a href="/register" class="text-primary small fw-bold ms-1 text-decoration-none">Daftar Akun Baru</a>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -167,12 +254,50 @@
     import { FaceEngine } from '/js/face-engine.js';
     import { SoundEffects } from '/js/app.js';
 
+    const tabFaceId = document.getElementById('tab-face-id');
+    const tabManual = document.getElementById('tab-manual');
+    const sectionFaceId = document.getElementById('section-face-id');
+    const sectionManual = document.getElementById('section-manual');
+
     const alertBox = document.getElementById('login-alert');
     const submitBtn = document.getElementById('btn-login-submit');
-    const faceLoginModal = new bootstrap.Modal(document.getElementById('faceLoginModal'));
+
     const faceEngine = new FaceEngine('face-video');
+    const faceFrame = document.getElementById('face-frame');
+    const facePlaceholder = document.getElementById('face-placeholder');
+    const faceVideo = document.getElementById('face-video');
+    const faceScanBeam = document.getElementById('face-scan-beam');
     const faceStatus = document.getElementById('face-scan-status');
+    const btnStartCamera = document.getElementById('btn-start-camera');
     const btnCaptureFace = document.getElementById('btn-capture-face-login');
+    const btnStopCamera = document.getElementById('btn-stop-camera');
+
+    // Tab & Mode Switching
+    function setMode(mode) {
+      if (mode === 'manual') {
+        stopCameraSession();
+        tabFaceId.classList.remove('active');
+        tabFaceId.classList.add('text-secondary');
+        tabManual.classList.add('active');
+        tabManual.classList.remove('text-secondary');
+
+        sectionFaceId.classList.add('d-none');
+        sectionManual.classList.remove('d-none');
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.focus();
+      } else {
+        tabManual.classList.remove('active');
+        tabManual.classList.add('text-secondary');
+        tabFaceId.classList.add('active');
+        tabFaceId.classList.remove('text-secondary');
+
+        sectionManual.classList.add('d-none');
+        sectionFaceId.classList.remove('d-none');
+      }
+    }
+
+    tabFaceId.addEventListener('click', () => setMode('face'));
+    tabManual.addEventListener('click', () => setMode('manual'));
 
     function redirectAfterLogin() {
       const params = new URLSearchParams(window.location.search);
@@ -200,6 +325,7 @@
       }, 1200);
     }
 
+    // Manual Form Submission
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       alertBox.classList.add('d-none');
@@ -234,28 +360,62 @@
       }
     });
 
-    // Face ID Login Flow
-    document.getElementById('btn-face-login').addEventListener('click', async () => {
-      faceLoginModal.show();
-      faceStatus.className = 'alert alert-info py-2 px-3 small mb-3';
-      faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengaktifkan kamera...';
+    // Face ID Flow
+    function stopCameraSession() {
+      try {
+        faceEngine.stopCamera();
+      } catch (e) {}
+
+      faceVideo.classList.add('d-none');
+      faceScanBeam.classList.add('d-none');
+      facePlaceholder.classList.remove('d-none');
+      faceFrame.classList.remove('scanning');
+
+      btnStartCamera.classList.remove('d-none');
+      btnStartCamera.disabled = false;
+      btnStartCamera.innerHTML = '<i class="fas fa-camera me-2"></i> Aktifkan Kamera & Pindai';
+
+      btnCaptureFace.classList.add('d-none');
+      btnCaptureFace.disabled = false;
+      btnStopCamera.classList.add('d-none');
+
+      faceStatus.className = 'alert alert-info py-2 px-3 small mb-3 text-center';
+      faceStatus.innerHTML = '<i class="fas fa-shield-alt text-info me-1"></i> Sistem Biometrik Siap Digunakan';
+    }
+
+    btnStopCamera.addEventListener('click', stopCameraSession);
+
+    btnStartCamera.addEventListener('click', async () => {
+      btnStartCamera.disabled = true;
+      btnStartCamera.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengaktifkan kamera...';
+
+      faceStatus.className = 'alert alert-info py-2 px-3 small mb-3 text-center';
+      faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menghubungkan kamera & AI neural model...';
 
       try {
         await faceEngine.startCamera('user');
-        faceStatus.innerHTML = '<i class="fas fa-user-check text-success me-1"></i> Kamera siap. Tatap lurus ke layar dan klik Pindai.';
+        facePlaceholder.classList.add('d-none');
+        faceVideo.classList.remove('d-none');
+        faceScanBeam.classList.remove('d-none');
+        faceFrame.classList.add('scanning');
+
+        btnStartCamera.classList.add('d-none');
+        btnCaptureFace.classList.remove('d-none');
+        btnCaptureFace.disabled = false;
+        btnStopCamera.classList.remove('d-none');
+
+        faceStatus.className = 'alert alert-success py-2 px-3 small mb-3 text-center';
+        faceStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i> Kamera aktif! Posisikan wajah Anda lalu klik Pindai.';
       } catch (err) {
-        faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3';
+        stopCameraSession();
+        faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3 text-center';
         faceStatus.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> ' + err.message;
       }
     });
 
-    document.getElementById('btn-close-face-modal').addEventListener('click', () => {
-      faceEngine.stopCamera();
-    });
-
     btnCaptureFace.addEventListener('click', async () => {
       btnCaptureFace.disabled = true;
-      faceStatus.className = 'alert alert-primary py-2 px-3 small mb-3';
+      faceStatus.className = 'alert alert-primary py-2 px-3 small mb-3 text-center';
       faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mendeteksi biometrik wajah AI...';
 
       try {
@@ -271,17 +431,17 @@
 
         if (data.success) {
           if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
-          faceEngine.stopCamera();
-          faceLoginModal.hide();
+          stopCameraSession();
           showMinimalSuccess(data.user);
         } else {
           SoundEffects.play('ERROR');
-          faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3';
+          faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3 text-center';
           faceStatus.innerHTML = `❌ ${data.message || 'Wajah tidak dikenali.'}`;
           btnCaptureFace.disabled = false;
         }
       } catch (err) {
-        faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3';
+        SoundEffects.play('ERROR');
+        faceStatus.className = 'alert alert-danger py-2 px-3 small mb-3 text-center';
         faceStatus.innerHTML = '❌ ' + err.message;
         btnCaptureFace.disabled = false;
       }

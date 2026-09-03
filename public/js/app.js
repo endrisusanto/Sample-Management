@@ -628,11 +628,6 @@ export function initAppNavModal() {
                   <div class="nav-tile-title">Bulk Ingestion</div>
                   <div class="nav-tile-desc">Import Data Excel / CSV</div>
                 </a>
-                <a href="/screensaver" class="nav-grid-tile ${currentPath === '/screensaver' || currentPath === '/screensaver.html' ? 'active' : ''}">
-                  <div class="nav-tile-icon" style="color: #c084fc;"><i class="fas fa-tv"></i></div>
-                  <div class="nav-tile-title">Screensaver</div>
-                  <div class="nav-tile-desc">Display Standby Mode</div>
-                </a>
               </div>
 
               <!-- 50:50 Keep Awake & Darkmode Toggle Below Grid -->
